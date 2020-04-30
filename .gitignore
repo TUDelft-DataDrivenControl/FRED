@@ -14,11 +14,17 @@
 *.dll
 *.exe
 *.dylib
+
+
+# figures and output
+*.pdf
+*.png
 *.vtu
 *.pvd
 
 
- .idea
+
+.idea
 results
 log
 jit*
@@ -26,4 +32,3 @@ docs/build/*
 
 *.sublime-project
 *.sublime-workspace
-
