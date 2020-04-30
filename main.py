@@ -103,60 +103,6 @@ def setup_boundary_conditions(domain, inflow_velocity, mixed_function_space):
     return bcs
 
 
-def compute_turbine_forcing_two_dim_old(u, position, yaw, radius):
-    """
-        Computes two-dimensional turbine forcing based on Actuator-Disk Model.
-        The force is distributed using a kernel similar to [King2017].
-
-        :param u: two-dimensional vector velocity field
-        :return: two-dimensional vector force field
-        forcing - flow forcing field
-        force - scaled force to three-d turbine
-        power - power scaled to three-d turbine
-        """
-    area = np.pi * radius ** 2
-    thickness = 0.2 * radius
-
-    def _compute_thrust_coefficient_prime(axial_induction):
-        ct = 4 * axial_induction * (1 - axial_induction)
-        return ct / (1 - axial_induction) ** 2
-
-    thrust_coefficient_prime = _compute_thrust_coefficient_prime(axial_induction=0.33)
-    force = 0.5 * area * thrust_coefficient_prime
-    ud = u[0] * cos(yaw) + u[1] * sin(yaw)
-
-    # Compute forcing kernel with shifted space.
-    # 1.85544, 2.91452 are magic numbers that make kernel integrate to 1.
-    # Need this monstrosity because dolfin-adjoint won't rotate the kernel if the yaw constant
-    # is buried three layers deep in a nested expression... :(
-    forcing = Expression(("-f * cos(yaw) *"
-                          "exp(-1 * pow((cos(yaw) * (x[0]-xt) + sin(yaw) * (x[1]-yt)) / w, gamma)) "
-                          "/ (1.85544 * w)"
-                          "* exp(-1 * pow(pow((-sin(yaw) * (x[0]-xt) + cos(yaw) * (x[1]-yt)) / r, 2), gamma)) "
-                          "/ (2.91452* pow(r, 2))",
-                          "-f * sin(yaw) *"
-                          "exp(-1 * pow((cos(yaw) * (x[0]-xt) + sin(yaw) * (x[1]-yt)) / w, gamma)) "
-                          "/ (1.85544 * w)"
-                          "* exp(-1 * pow(pow((-sin(yaw) * (x[0]-xt) + cos(yaw) * (x[1]-yt)) / r, 2), gamma)) "
-                          "/ (2.91452* pow(r, 2))")
-                         ,
-                         xt=position[0], yt=position[1],
-                         gamma=6,
-                         yaw=yaw, f=force,
-                         w=float(thickness), r=float(radius),
-                         degree=2
-                         ) * ud ** 2
-    # forcing = forcing_expr
-
-    # The above computation yields a two-dimensional body force.
-    # This is scaled to a 3D equivalent for output.
-    fscale = pi * 0.5 * radius
-    force = forcing * fscale
-    power = -dot(force, u)
-    # power = force * fscale * kernel * ud**3
-
-    return forcing, force, power
-
 def compute_turbine_forcing_two_dim(u, farm_mesh, position, yaw):
     """
         Computes two-dimensional turbine forcing based on Actuator-Disk Model.
@@ -180,7 +126,7 @@ def compute_turbine_forcing_two_dim(u, farm_mesh, position, yaw):
     force = 0.5 * area * thrust_coefficient_prime
     ud = u[0] * cos(yaw) + u[1] * sin(yaw)
 
-    x = SpatialCoordinate(farm_mesh)
+    x = SpatialCoordinate(u)
     # turbine position
     xt = position[0]
     yt = position[1]
@@ -267,37 +213,13 @@ def main():
     # make yaw angles Dolfin constants for later adjustment
     turbine_yaw = [Constant(x) for x in conf.par.wind_farm.yaw_angles]
 
-    # step = np.deg2rad(20.)
-    # # yaw_series = np.array([
-    # #     [0., 0., 0.],
-    # #     [30., step, 0.],
-    # #     [999.9, step, 0.]
-    # # ])
-    # yaw_series = np.array([
-    #     [0., 0.0, 0.],
-    #     [299.9, 0., 0.],
-    #     [300.0, step, 0.],
-    #     [599.9, step, 0.],
-    #     [600.0, 0., 0.],
-    #     [999.9, 0, 0.]
-    # ])
-
-
     refine_radius = conf.par.wind_farm.refine_radius  # m
-
-    time_step = 0.5  # s
-
-    final_time = 999.  # s
-    inflow_velocity = [8., 0.]  # m.s^-1
-    kinematic_viscosity = 0.000015
-    tuning_viscosity = 1.
-    mixing_length = 20.
 
     control_discretisation = 120.
 
     epsilon = 1e-14
-    write_time_step = 10.
-    results_dir = "./results/two"
+
+    results_dir = "./results/"+conf.par.simulation.name
     vtk_file_u = File(results_dir + "_U.pvd")
     vtk_file_p = File(results_dir + "_p.pvd")
     vtk_file_f = File(results_dir + "_f.pvd")
@@ -306,7 +228,7 @@ def main():
 
     # set up mesh with refinements
     farm_mesh = generate_mesh(domain, cells)
-    # farm_mesh = refine_mesh(farm_mesh, turbine_positions, 2 * refine_radius)
+    farm_mesh = refine_mesh(farm_mesh, turbine_positions, 2 * refine_radius)
     farm_mesh = refine_mesh(farm_mesh, conf.par.wind_farm.positions, refine_radius)
     #
     # set up Taylor-Hood function space over the mesh
@@ -325,7 +247,7 @@ def main():
     u_prev2, p_prev2 = split(up_prev2)
 
     # Set initial conditions for the numerical simulation
-    initial_condition = Constant([inflow_velocity[0], inflow_velocity[1], 0.])  # velocity and pressure
+    initial_condition = Constant([conf.par.flow.inflow_velocity[0], conf.par.flow.inflow_velocity[1], 0.])  # velocity and pressure
     up_prev.assign(interpolate(initial_condition, mixed_function_space))
 
     # specify time discretisation of Navier-Stokes solutions.
@@ -350,7 +272,6 @@ def main():
         grad_u = grad(u_prev)
         b = grad_u + grad_u.T
         s = sqrt(0.5 * inner(b, b))
-        # s = sqrt(2*inner(0.5*(grad(u_prev)+grad(u_prev).T),0.5*(grad(u_prev)+grad(u_prev).T)))
         nu_turbulent = ml ** 2 * s
     else:
         nu_turbulent = Constant(0.)
@@ -372,7 +293,7 @@ def main():
     left = lhs(variational_form)
     right = rhs(variational_form)
 
-    boundary_conditions = setup_boundary_conditions(domain, inflow_velocity, mixed_function_space)
+    boundary_conditions = setup_boundary_conditions(domain, conf.par.flow.inflow_velocity, mixed_function_space)
 
     num_steps = int(conf.par.simulation.total_time // conf.par.simulation.time_step + 1)
     simulation_time = 0.0
@@ -406,10 +327,7 @@ def main():
                                                                                        turbine_yaw[idx], controls[-len(turbine_positions) + idx])
             print(print_string)
         elif conf.par.wind_farm.controller == 'series':
-            update_yaw_with_series(simulation_time, turbine_yaw, yaw_series)
-
-
-
+            update_yaw_with_series(simulation_time, turbine_yaw, conf.par.wind_farm.y)
 
         # update_yaw(simulation_time, turbine_yaw, yaw_series)
         A = assemble(left)
@@ -426,7 +344,7 @@ def main():
         # print("J = {}\n".format(functional))
 
         print("{:.2f} seconds sim-time in {:.2f} seconds real-time".format(simulation_time, time.time() - time_start))
-        simulation_time += time_step
+        simulation_time += conf.par.simulation.time_step
         up_prev2.assign(up_prev)
         up_prev.assign(up_next)
 
@@ -445,36 +363,8 @@ def main():
                 project(f, force_space,
                         annotate=False))
 
-
-    # ctrls = [Control(x) for x in turbine_yaw]
-
-    # # jacobian matrix gradients
-    # set_log_level(LogLevel.ERROR)
-    # m = [Control(x) for x in controls]
-    # for turbine in range(len(turbine_positions)):
-    #     for idx in range(len(functional_list)):
-    #         gradient = compute_gradient(functional_list[idx], m[turbine::len(turbine_positions)])
-    #         print([float(x) for x in gradient])
-    #     print("\n")
-
-    # # Taylor Test
-    # rf = ReducedFunctional(functional, ctrls)
-    # h = [Constant(0.1), Constant(0.1)]
-    # conv_rate = taylor_test(rf,turbine_yaw,h)
-
-
-    # set_log_level(LogLevel.ERROR)
-    # y = minimize(rf, bounds=[[-0.5, -0.5], [0.5, 0.5]], method="BFGS", tol=1e-3,
-    #              options={"maxiter": 5, "disp": False})
-    # print(y)
     time_end = time.time()
     print("Total time: {:.2f} seconds".format(time_end - time_start))
-    # plot_matrix(A)
-    # plt.figure()
-    # plt.plot(mixed_function_space.tabulate_dof_coordinates()[:, 0],
-    #          mixed_function_space.tabulate_dof_coordinates()[:, 1], '.')
-
-    print("a")
 
 
 if __name__ == '__main__':
