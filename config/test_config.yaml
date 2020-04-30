@@ -22,7 +22,7 @@ wind_farm:
   size: [2000,1000]
   cells: [20, 10]
   do_refine_turbines: True
-  refine_radius: 150.
+  refine_radius: 100.
   positions: # [x, y] m
     - [400,500]
     - [1300,500]

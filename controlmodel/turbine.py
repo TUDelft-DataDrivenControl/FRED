@@ -26,16 +26,16 @@ class Turbine:
     def set_yaw(self,new_yaw):
         self._yaw.assign(new_yaw)
 
-    def compute_force(self, u):
+    def compute_forcing(self, u):
         if conf.par.simulation.dimensions == 2:
-            return self._compute_force_two_dim(u)
+            return self._compute_turbine_forcing_two_dim(u)
         elif conf.par.simulation.dimensions == 3:
             raise NotImplementedError("Three-dimensional turbine forcing not yet defined")
             # return self._compute_force_three_dim(u)
         else:
             raise ValueError("Invalid dimension.")
 
-    def compute_turbine_forcing_two_dim(self, u):
+    def _compute_turbine_forcing_two_dim(self, u):
         """
             Computes two-dimensional turbine forcing based on Actuator-Disk Model.
             The force is distributed using a kernel similar to [King2017].

@@ -2,7 +2,7 @@ from fenics import *
 from fenics_adjoint import *
 
 import controlmodel.conf as conf
-
+from controlmodel.turbine import Turbine
 import numpy as np
 import time
 import matplotlib.pyplot as plt
@@ -207,11 +207,13 @@ def main():
 
     domain = conf.par.wind_farm.size  # m
     cells = conf.par.wind_farm.cells
+
     turbine_positions = conf.par.wind_farm.positions
     num_turbines = len(conf.par.wind_farm.positions)
 
     # make yaw angles Dolfin constants for later adjustment
     turbine_yaw = [Constant(x) for x in conf.par.wind_farm.yaw_angles]
+    turbines = [Turbine(x, y) for (x, y) in zip(turbine_positions, turbine_yaw)]
 
     refine_radius = conf.par.wind_farm.refine_radius  # m
 
@@ -260,7 +262,8 @@ def main():
     # Take the combination of all turbine forcing kernels to add into the flow
     forcing_list, force_list, power_list = [], [], []
     for idx in range(num_turbines):
-        forcing, force, power = compute_turbine_forcing_two_dim(u_prev, farm_mesh, turbine_positions[idx], turbine_yaw[idx])
+        forcing, force, power = turbines[idx].compute_forcing(u_prev)
+        # compute_turbine_forcing_two_dim(u_prev, farm_mesh, turbine_positions[idx], turbine_yaw[idx])
         forcing_list.append(forcing)
         force_list.append(force)
         power_list.append(power)
@@ -303,32 +306,6 @@ def main():
     controls = []
 
     for n in range(num_steps):
-        if conf.par.wind_farm.controller == 'gradient_step':
-            if simulation_time % control_discretisation <= epsilon:
-                if len(functional_list) >= 1:
-                    # gradient step update to yaw
-                    m = [Control(x) for x in controls[-len(turbine_yaw):]]
-                    J = functional_list[-1]
-                    gradient = compute_gradient(J,m)
-
-                    scale = 1e-7/control_discretisation
-                    new_yaw = [Constant(float(x) + scale * float(y)) for (x, y) in zip(turbine_yaw, gradient)]
-
-                else:
-                    new_yaw = [Constant(float(x)) for x in turbine_yaw]
-                set_working_tape(Tape())
-                for idx in range(len(turbine_yaw)):
-                    turbine_yaw[idx].assign(new_yaw[idx])
-                controls += new_yaw
-                functional_list += [0.]
-            print_string = "[{:6.2f}s] - step: {:04n}: \n".format(simulation_time, n)
-            for idx in range(num_turbines):
-                print_string += "  - wt{:n}.yaw: {:.6f} ({}) [control: {}],\n ".format(idx, float(turbine_yaw[idx]),
-                                                                                       turbine_yaw[idx], controls[-len(turbine_positions) + idx])
-            print(print_string)
-        elif conf.par.wind_farm.controller == 'series':
-            update_yaw_with_series(simulation_time, turbine_yaw, conf.par.wind_farm.y)
-
         # update_yaw(simulation_time, turbine_yaw, yaw_series)
         A = assemble(left)
         b = assemble(right)
@@ -337,11 +314,6 @@ def main():
             bc.apply(A, b)
         solve(A, x, b,
               solver, preconditioner)
-        if conf.par.wind_farm.controller == 'gradient_step':
-            for idx in range(len(turbine_positions)):
-                functional_list[-1] += assemble((dt*power_list[idx])*dx)
-
-        # print("J = {}\n".format(functional))
 
         print("{:.2f} seconds sim-time in {:.2f} seconds real-time".format(simulation_time, time.time() - time_start))
         simulation_time += conf.par.simulation.time_step
