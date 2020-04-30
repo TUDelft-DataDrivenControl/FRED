@@ -42,6 +42,11 @@ class ControlModelParameters:
                 self.refine_radius = config_dict["refine_radius"]
             else:
                 self.refine_radius = None
+            self.controller = self.FarmController(config_dict["farm_controller"])
+
+        class FarmController:
+            def __init__(self, config_dict):
+                self.type = config_dict["type"]
 
     class Turbine:
         """
