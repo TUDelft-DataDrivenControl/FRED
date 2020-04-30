@@ -2,46 +2,43 @@
 # DTU10MWRef
 
 simulation:
-  name: one_turbine_test
+  name: two_turbine_test
   is_dynamic: True
-  total_time: 120 # s
-#  total_time: 500 # s
+  total_time: 59. # s
   time_step: 0.5 # s
   dimensions: 2 # -
   save_logs: True
   write_time_step: 10.0
-#  output_file:
-#  name:
+
+
 flow:
   inflow_velocity: [8., 0.] # [u, v] m.s^-1
   kinematic_viscosity: 0.000015 # kg.m^-1.s^-1
   tuning_viscosity: 1. # kg.m^-1.s^-1
   mixing_length: 10. #30. #20 # m
-#  turbulent_viscosity: 100 # todo turbulence model
   density: 1.2 # kg.m^-3
 
 wind_farm:
   size: [2000,1000]
   cells: [20, 10]
   do_refine_turbines: True
-  refine_radius: 100.
+  refine_radius: 150.
   positions: # [x, y] m
     - [400,500]
     - [1300,500]
-
   yaw_angles: # [gamma] rad
     - 0.3
     - 0.3
 
   farm_controller:
-    type: optimal
-    time_discretisation: 15. #s
-    time_horizon: 40. #s
-    time_advance: 30. #s
-    regularisation_alpha: 0.5
-    time_start_control: 10.
+#    type: optimal
+#    time_discretisation: 15. #s
+#    time_horizon: 40. #s
+#    time_advance: 30. #s
+#    regularisation_alpha: 0.5
+#    time_start_control: 10.
 #    type: fixed
-#    type: series
+    type: series
 
 turbine:
   axial_induction: 0.33

@@ -1,6 +1,8 @@
 from fenics import *
 from fenics_adjoint import *
 
+import controlmodel.conf as conf
+
 import numpy as np
 import time
 import matplotlib.pyplot as plt
@@ -244,28 +246,29 @@ def write_data(data_file, num_turbines, sim_time, yaw, force_list, power_list):
 
 
 def main():
+    conf.par.load("./config/test_config.yaml")
+
     solver = 'petsc'
     preconditioner = 'none'
     # solver = 'minres'
     # preconditioner = 'hypre_amg'
 
     # controller = 'series'
-    controller = 'gradient_step'
+    # controller = 'gradient_step'
 
     time_start = time.time()
-    domain = [2000., 1000.]  # m
-    cells = [20, 10]
-    turbine_positions = [
-        [400., 500.],
-        [1300., 500.]
-    ]  # m
-    num_turbines = len(turbine_positions)
-    turbine_yaw_values = [
-        0.0,
-        0.0
-    ]  # rad
+
+    domain = conf.par.wind_farm.size  # m
+    cells = conf.par.wind_farm.cells
+    turbine_positions = conf.par.wind_farm.positions
+    # turbine_positions = [
+    #     [400., 500.],
+    #     [1300., 500.]
+    # ]  # m
+    num_turbines = len(conf.par.wind_farm.positions)
+
     # make yaw angles Dolfin constants for later adjustment
-    turbine_yaw = [Constant(x) for x in turbine_yaw_values]
+    turbine_yaw = [Constant(x) for x in conf.par.wind_farm.yaw_angles]
     # turbine_yaw = [x.assign(y) for (x,y) in zip(turbine_yaw, turbine_yaw_values)]
 
     step = np.deg2rad(20.)
@@ -287,7 +290,7 @@ def main():
         89.,
         89.
     ]
-    refine_radius = 100.  # m
+    refine_radius = conf.par.wind_farm.refine_radius  # m
 
     time_step = 0.5  # s
 
@@ -310,9 +313,9 @@ def main():
 
     # set up mesh with refinements
     farm_mesh = generate_mesh(domain, cells)
-    farm_mesh = refine_mesh(farm_mesh, turbine_positions, 2 * refine_radius)
-    farm_mesh = refine_mesh(farm_mesh, turbine_positions, refine_radius)
-
+    # farm_mesh = refine_mesh(farm_mesh, turbine_positions, 2 * refine_radius)
+    farm_mesh = refine_mesh(farm_mesh, conf.par.wind_farm.positions, refine_radius)
+    #
     # set up Taylor-Hood function space over the mesh
     mixed_function_space = setup_function_space(farm_mesh)
     force_space = mixed_function_space.sub(0).collapse()
@@ -350,8 +353,8 @@ def main():
     f = sum(forcing_list)
 
     # Turbulence modelling with a mixing length model.
-    if mixing_length > 1e-14:
-        ml = Constant(mixing_length)
+    if conf.par.flow.mixing_length > 1e-14:
+        ml = Constant(conf.par.flow.mixing_length)
         grad_u = grad(u_prev)
         b = grad_u + grad_u.T
         s = sqrt(0.5 * inner(b, b))
@@ -361,7 +364,7 @@ def main():
         nu_turbulent = Constant(0.)
 
     # Tuning viscosity may be used instead of a mixing length model
-    nu_tuning = Constant(tuning_viscosity)
+    nu_tuning = Constant(conf.par.flow.tuning_viscosity)
 
     # skew-symmetric formulation of the convective term
     convective_term = 0.5 * (inner(dot(u_tilde, nabla_grad(u_bar)), v)
@@ -379,7 +382,7 @@ def main():
 
     boundary_conditions = setup_boundary_conditions(domain, inflow_velocity, mixed_function_space)
 
-    num_steps = int(final_time // time_step + 1)
+    num_steps = int(conf.par.simulation.total_time // conf.par.simulation.time_step + 1)
     simulation_time = 0.0
 
     # initialise a cost functional for adjoint methods
@@ -387,7 +390,7 @@ def main():
     controls = []
 
     for n in range(num_steps):
-        if controller == 'gradient_step':
+        if conf.par.wind_farm.controller == 'gradient_step':
             if simulation_time % control_discretisation <= epsilon:
                 if len(functional_list) >= 1:
                     # gradient step update to yaw
@@ -411,11 +414,11 @@ def main():
                 controls += new_yaw
                 functional_list += [0.]
             print_string = "[{:6.2f}s] - step: {:04n}: \n".format(simulation_time, n)
-            for idx in range(len(turbine_positions)):
+            for idx in range(num_turbines):
                 print_string += "  - wt{:n}.yaw: {:.6f} ({}) [control: {}],\n ".format(idx, float(turbine_yaw[idx]),
                                                                                        turbine_yaw[idx], controls[-len(turbine_positions) + idx])
             print(print_string)
-        elif controller == 'series':
+        elif conf.par.wind_farm.controller == 'series':
             update_yaw_with_series(simulation_time, turbine_yaw, yaw_series)
 
 
@@ -429,7 +432,7 @@ def main():
             bc.apply(A, b)
         solve(A, x, b,
               solver, preconditioner)
-        if controller == 'gradient_step':
+        if conf.par.wind_farm.controller == 'gradient_step':
             for idx in range(len(turbine_positions)):
                 functional_list[-1] += assemble((dt*power_list[idx])*dx)
 
@@ -447,8 +450,6 @@ def main():
                    power_list=power_list
                    )
 
-
-
         if simulation_time % write_time_step <= epsilon:
             u_sol, p_sol = up_next.split()
             vtk_file_u.write(u_sol)
@@ -456,7 +457,6 @@ def main():
             vtk_file_f.write(
                 project(f, force_space,
                         annotate=False))
-                        # solver_type='gmres', annotate=False))
 
 
     # ctrls = [Control(x) for x in turbine_yaw]

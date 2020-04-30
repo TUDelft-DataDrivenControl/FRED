@@ -9,11 +9,15 @@ class ControlModelParameters:
 
     def __init__(self):
         self._config = None
+        self.wind_farm = None
+        self.turbine = None
+        self.simulation = None
+        self.flow = None
 
     def load(self, file):
         self._load_configuration_from_yaml(file)
         try:
-           self._assign_configuration()
+            self._assign_configuration()
         except KeyError as ke:
             raise KeyError("Missing definition in config file, did not find {}".format(ke))
 
@@ -79,8 +83,12 @@ class ControlModelParameters:
             self.inflow_velocity = config_dict["inflow_velocity"]
             self.mixing_length = config_dict["mixing_length"]
 
-par = ControlModelParameters()
 
+par = ControlModelParameters()
+wind_farm = par.wind_farm
+turbine = par.turbine
+flow = par.flow
+simulation = par.simulation
 
 if __name__ == '__main__':
     par = ControlModelParameters()
