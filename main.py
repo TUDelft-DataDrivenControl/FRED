@@ -157,7 +157,7 @@ def compute_turbine_forcing_two_dim_old(u, position, yaw, radius):
 
     return forcing, force, power
 
-def compute_turbine_forcing_two_dim(u, farm_mesh, position, yaw, radius):
+def compute_turbine_forcing_two_dim(u, farm_mesh, position, yaw):
     """
         Computes two-dimensional turbine forcing based on Actuator-Disk Model.
         The force is distributed using a kernel similar to [King2017].
@@ -168,6 +168,7 @@ def compute_turbine_forcing_two_dim(u, farm_mesh, position, yaw, radius):
         force - scaled force to three-d turbine
         power - power scaled to three-d turbine
         """
+    radius = conf.par.turbine.radius
     area = np.pi * radius ** 2
     thickness = 0.2 * radius
 
@@ -261,35 +262,27 @@ def main():
     domain = conf.par.wind_farm.size  # m
     cells = conf.par.wind_farm.cells
     turbine_positions = conf.par.wind_farm.positions
-    # turbine_positions = [
-    #     [400., 500.],
-    #     [1300., 500.]
-    # ]  # m
     num_turbines = len(conf.par.wind_farm.positions)
 
     # make yaw angles Dolfin constants for later adjustment
     turbine_yaw = [Constant(x) for x in conf.par.wind_farm.yaw_angles]
-    # turbine_yaw = [x.assign(y) for (x,y) in zip(turbine_yaw, turbine_yaw_values)]
 
-    step = np.deg2rad(20.)
+    # step = np.deg2rad(20.)
+    # # yaw_series = np.array([
+    # #     [0., 0., 0.],
+    # #     [30., step, 0.],
+    # #     [999.9, step, 0.]
+    # # ])
     # yaw_series = np.array([
-    #     [0., 0., 0.],
-    #     [30., step, 0.],
-    #     [999.9, step, 0.]
+    #     [0., 0.0, 0.],
+    #     [299.9, 0., 0.],
+    #     [300.0, step, 0.],
+    #     [599.9, step, 0.],
+    #     [600.0, 0., 0.],
+    #     [999.9, 0, 0.]
     # ])
-    yaw_series = np.array([
-        [0., 0.0, 0.],
-        [299.9, 0., 0.],
-        [300.0, step, 0.],
-        [599.9, step, 0.],
-        [600.0, 0., 0.],
-        [999.9, 0, 0.]
-    ])
 
-    turbine_radius = [
-        89.,
-        89.
-    ]
+
     refine_radius = conf.par.wind_farm.refine_radius  # m
 
     time_step = 0.5  # s
@@ -339,14 +332,13 @@ def main():
     u_tilde = 1.5 * u_prev - 0.5 * u_prev2  # (1-alpha)*u+alpha*u_prev
     u_bar = 0.5 * (u + u_prev)  # (1-alpha)*u+alpha*u_prev
 
-    dt = Constant(time_step)
-    nu = Constant(kinematic_viscosity)
+    dt = Constant(conf.par.simulation.time_step)
+    nu = Constant(conf.par.flow.kinematic_viscosity)
 
     # Take the combination of all turbine forcing kernels to add into the flow
     forcing_list, force_list, power_list = [], [], []
-    for idx in range(len(turbine_positions)):
-        forcing, force, power = compute_turbine_forcing_two_dim(u_prev, farm_mesh, turbine_positions[idx], turbine_yaw[idx],
-                                                                turbine_radius[idx])
+    for idx in range(num_turbines):
+        forcing, force, power = compute_turbine_forcing_two_dim(u_prev, farm_mesh, turbine_positions[idx], turbine_yaw[idx])
         forcing_list.append(forcing)
         force_list.append(force)
         power_list.append(power)
@@ -396,16 +388,11 @@ def main():
                     # gradient step update to yaw
                     m = [Control(x) for x in controls[-len(turbine_yaw):]]
                     J = functional_list[-1]
-                    # rf = ReducedFunctional(J,m)
-                    # rf.derivative()
                     gradient = compute_gradient(J,m)
 
-                    # print([float(x) for x in gradient])
                     scale = 1e-7/control_discretisation
                     new_yaw = [Constant(float(x) + scale * float(y)) for (x, y) in zip(turbine_yaw, gradient)]
-                    # new_yaw = [Constant(0.) for x in turbine_yaw]
-                    # [x.assign(float(y)) for (x,y) in zip(new_yaw,turbine_yaw)]
-                    # new_yaw = [Constant(float(x) - 0.15) for x in turbine_yaw]
+
                 else:
                     new_yaw = [Constant(float(x)) for x in turbine_yaw]
                 set_working_tape(Tape())
@@ -450,7 +437,7 @@ def main():
                    power_list=power_list
                    )
 
-        if simulation_time % write_time_step <= epsilon:
+        if simulation_time % conf.par.simulation.write_time_step <= epsilon:
             u_sol, p_sol = up_next.split()
             vtk_file_u.write(u_sol)
             vtk_file_p.write(p_sol)
