@@ -22,3 +22,8 @@ class ControlModelParameters:
 
     def print(self):
         print(yaml.dump(self._config))
+
+if __name__ == '__main__':
+    par = ControlModelParameters()
+    par.load("../config/test_config.yaml")
+    par.print()
