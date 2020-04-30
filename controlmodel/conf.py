@@ -27,6 +27,8 @@ class ControlModelParameters:
     def _assign_configuration(self):
         self.wind_farm = self.WindFarm(self._config["wind_farm"])
         self.turbine = self.Turbine(self._config["turbine"])
+        self.simulation = self.Simulation(self._config["simulation"])
+        self.flow = self.Flow(self._config["flow"])
 
     class WindFarm:
         def __init__(self, config_dict):
@@ -52,7 +54,27 @@ class ControlModelParameters:
             self.thickness = config_dict["thickness"]
             self.hub_height = config_dict["hub_height"]
 
+    class Simulation:
+        def __init__(self, config_dict):
+            self.is_dynamic = config_dict["is_dynamic"]
+            if not self.is_dynamic:
+                raise NotImplementedError("Steady flow currently not implemented")
+            self.total_time = config_dict["total_time"]
+            self.time_step = config_dict["time_step"]
+            self.name = config_dict["name"]
+            self.save_logs = config_dict["save_logs"]
+            self.write_time_step = config_dict["write_time_step"]
+            self.dimensions = config_dict["dimensions"]
 
+    class Flow:
+        def __init__(self, config_dict):
+            self.kinematic_viscosity = config_dict["kinematic_viscosity"]
+            self.tuning_viscosity = config_dict["tuning_viscosity"]
+            self.density = config_dict["density"]
+            self.inflow_velocity = config_dict["inflow_velocity"]
+            self.mixing_length = config_dict["mixing_length"]
+
+par = ControlModelParameters()
 
 
 if __name__ == '__main__':
