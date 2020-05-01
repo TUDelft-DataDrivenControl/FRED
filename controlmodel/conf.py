@@ -40,7 +40,7 @@ class ControlModelParameters:
             self.cells = config_dict["cells"]
             self.positions = config_dict["positions"]
             self.yaw_angles = config_dict["yaw_angles"]
-            self.yaw_angles = [np.array(x) for x in self.yaw_angles]
+            # self.yaw_angles = [np.array(x) for x in self.yaw_angles]
             self.do_refine_turbines = config_dict["do_refine_turbines"]
             if self.do_refine_turbines:
                 self.refine_radius = config_dict["refine_radius"]
@@ -51,6 +51,8 @@ class ControlModelParameters:
         class FarmController:
             def __init__(self, config_dict):
                 self.type = config_dict["type"]
+                if self.type == "series":
+                    self.yaw_series = np.array(config_dict["yaw_series"])
 
     class Turbine:
         """

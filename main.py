@@ -15,14 +15,6 @@ parameters["form_compiler"]["optimize"] = True
 
 # parameters["reorder_dofs_serial"] = False
 
-def update_yaw_with_series(simulation_time, turbine_yaw, yaw_series):
-    t = yaw_series[:, 0]
-    for idx in range(len(turbine_yaw)):
-        y = yaw_series[:, idx + 1]
-        turbine_yaw[idx].assign(np.interp(simulation_time, t, y))
-        # print(float(turbine_yaw[idx]))
-
-
 def main():
     conf.par.load("./config/test_config.yaml")
 
