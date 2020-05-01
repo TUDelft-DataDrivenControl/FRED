@@ -2,7 +2,7 @@ from fenics import *
 from fenics_adjoint import *
 import controlmodel.conf as conf
 from controlmodel.turbine import Turbine
-
+from controlmodel.controller import Controller
 
 class WindFarm:
 
@@ -13,5 +13,10 @@ class WindFarm:
         turbine_positions = conf.par.wind_farm.positions
         self._turbines = [Turbine(x, y) for (x, y) in zip(turbine_positions, turbine_yaw)]
 
+        self._controller = Controller(self)
+
     def get_turbines(self):
         return self._turbines
+
+    def apply_controller(self, simulation_time):
+        self._controller.control_yaw(simulation_time)

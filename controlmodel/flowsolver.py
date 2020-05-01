@@ -40,6 +40,7 @@ class DynamicFlowSolver():
             self._solve_step()
 
     def _solve_step(self):
+        self._flow_problem.get_wind_farm().apply_controller(self._simulation_time)
         A = assemble(self._left)
         b = assemble(self._right)
         x = self._up_next.vector()

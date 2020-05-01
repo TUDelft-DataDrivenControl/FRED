@@ -23,34 +23,6 @@ def update_yaw_with_series(simulation_time, turbine_yaw, yaw_series):
         # print(float(turbine_yaw[idx]))
 
 
-def write_headers(data_file, num_turbines):
-    # write headers for csv data log file
-    with open(data_file, 'w') as log:
-        log.write("time")
-        for idx in range(num_turbines):
-            log.write(",yaw_{0:03n}".format(idx))
-            log.write(",force_x_{0:03n}".format(idx))
-            log.write(",force_y_{0:03n}".format(idx))
-            log.write(",power_{0:03n}".format(idx))
-        log.write("\r\n")
-
-
-def write_data(data_file, num_turbines, sim_time, yaw, force_list, power_list):
-    # write data line to file
-
-    with open(data_file, 'a') as log:
-        log.write("{:.6f}".format(sim_time))
-        for idx in range(num_turbines):
-            # integrate force distribution
-            force = [assemble(force_list[idx][0] * dx), assemble(force_list[idx][1] * dx)]
-            power = assemble(power_list[idx]*dx)
-            log.write(",{:.6f}".format(float(yaw[idx])))
-            log.write(",{:.6f}".format(force[0]))
-            log.write(",{:.6f}".format(force[1]))
-            log.write(",{:.6f}".format(power))
-        log.write("\r\n")
-
-
 def main():
     conf.par.load("./config/test_config.yaml")
 
