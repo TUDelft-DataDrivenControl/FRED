@@ -15,16 +15,17 @@ class DynamicFlowProblem:
 
         self._mixed_function_space = None
         self._setup_function_space()
+        self._force_space = self._mixed_function_space.sub(0).collapse()
 
         self._boundary_conditions = []
         self._inflow_velocity = conf.par.flow.inflow_velocity
         self._setup_boundary_conditions()
 
-
         self._variational_form = None
         self._up_next = None
         self._up_prev = None
         self._up_prev2 = None
+        self._forcing = None
         self._construct_variational_form()
         self._lhs = None
         self._rhs = None
@@ -136,15 +137,9 @@ class DynamicFlowProblem:
         nu = Constant(conf.par.flow.kinematic_viscosity)
 
         # Take the combination of all turbine forcing kernels to add into the flow
-        forcing_list, force_list, power_list = [], [], []
-        turbines = self._wind_farm.get_turbines()
-
-        for idx in range(len(turbines)):
-            forcing, force, power = turbines[idx].compute_forcing(u_prev)
-            forcing_list.append(forcing)
-            force_list.append(force)
-            power_list.append(power)
+        forcing_list = [wt.compute_forcing(u_prev) for wt in self._wind_farm.get_turbines()]
         f = sum(forcing_list)
+        self._forcing = f
 
         # Turbulence modelling with a mixing length model.
         if conf.par.flow.mixing_length > 1e-14:
@@ -182,6 +177,13 @@ class DynamicFlowProblem:
     def get_state_vectors(self):
         return self._up_next, self._up_prev, self._up_prev2
 
-    # variational form
+    def get_forcing(self):
+        return self._forcing
+
+    def get_force_space(self):
+        return self._force_space
+
+    def get_wind_farm(self):
+        return self._wind_farm
 
 

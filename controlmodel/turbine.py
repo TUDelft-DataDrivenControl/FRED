@@ -18,6 +18,9 @@ class Turbine:
         self._axial_induction = conf.par.turbine.axial_induction
         self._thrust_coefficient_prime = self._compute_ct_prime(self._axial_induction)
 
+        self._force = None
+        self._power = None
+
     def _compute_ct_prime(self, a):
         ct = 4 * a * (1 - a)
         ctp = ct / (1 - a)**2
@@ -73,7 +76,16 @@ class Turbine:
         # The above computation yields a two-dimensional body force.
         # This is scaled to a 3D equivalent for output.
         fscale = pi * 0.5 * self._radius
-        force = forcing * fscale
-        power = -dot(force, u)
+        self._force = forcing * fscale
+        self._power = -dot(self._force, u)
 
-        return forcing, force, power
+        return forcing
+
+    def get_yaw(self):
+        return self._yaw
+
+    def get_force(self):
+        return [assemble(self._force[0] * dx), assemble(self._force[1] * dx)]
+
+    def get_power(self):
+        return assemble(self._power * dx)

@@ -12,7 +12,6 @@ class WindFarm:
         turbine_yaw = [Constant(x) for x in conf.par.wind_farm.yaw_angles]
         turbine_positions = conf.par.wind_farm.positions
         self._turbines = [Turbine(x, y) for (x, y) in zip(turbine_positions, turbine_yaw)]
-        print('smth')
 
     def get_turbines(self):
         return self._turbines
