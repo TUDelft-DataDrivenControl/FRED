@@ -4,6 +4,7 @@ import controlmodel.conf as conf
 from controlmodel.turbine import Turbine
 from controlmodel.controller import Controller
 
+
 class WindFarm:
 
     def __init__(self):

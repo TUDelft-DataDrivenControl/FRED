@@ -10,8 +10,8 @@ class Controller:
         self._turbines = wind_farm.get_turbines()
         self._yaw_ref = conf.par.wind_farm.yaw_angles
         if self._control_type == "series":
-            self._time_series = conf.par.wind_farm.controller.yaw_series[:,0]
-            self._yaw_series = conf.par.wind_farm.controller.yaw_series[:,1:]
+            self._time_series = conf.par.wind_farm.controller.yaw_series[:, 0]
+            self._yaw_series = conf.par.wind_farm.controller.yaw_series[:, 1:]
 
     def control_yaw(self, simulation_time):
         switcher = {
@@ -38,4 +38,3 @@ class Controller:
         for (wt, y) in zip(self._turbines, self._yaw_ref):
             if wt.get_yaw() != y:
                 wt.set_yaw(y)
-        # [wt.set_yaw(y) for (wt,y) in zip(self._turbines, self._yaw_ref)]

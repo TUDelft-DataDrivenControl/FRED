@@ -10,7 +10,6 @@ simulation:
   save_logs: True
   write_time_step: 10.0
 
-
 flow:
   inflow_velocity: [8., 0.] # [u, v] m.s^-1
   kinematic_viscosity: 0.000015 # kg.m^-1.s^-1
@@ -31,11 +30,11 @@ wind_farm:
     - 0.3
 
   farm_controller:
-#    type: fixed
-    type: series
-    yaw_series: # [time, yaw_0, ... , yaw_n]
-      - [0., 0.3, 0.,]
-      - [59., -0.3, 0.,]
+    type: fixed
+#    type: series
+#    yaw_series: # [time, yaw_0, ... , yaw_n]
+#      - [0., 0.3, 0.,]
+#      - [59., -0.3, 0.,]
 
 turbine:
   axial_induction: 0.33

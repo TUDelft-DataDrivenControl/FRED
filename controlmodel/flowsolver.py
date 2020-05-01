@@ -4,7 +4,7 @@ import controlmodel.conf as conf
 import time
 
 
-class DynamicFlowSolver():
+class DynamicFlowSolver:
 
     def __init__(self, flow_problem):
         self._flow_problem = flow_problem
@@ -27,20 +27,21 @@ class DynamicFlowSolver():
         self._simulation_time = 0.0
         self._time_start = 0.
 
+        self._functional_list = []
+
     def solve(self):
         num_steps = int(conf.par.simulation.total_time // conf.par.simulation.time_step + 1)
 
-        self._time_start = time.time()
-        # # initialise a cost functional for adjoint methods
-        # functional_list = []
-        # controls = []
+        self._time_start = time.time()  # runtime timing
 
         for n in range(num_steps):
-            # todo: add yaw controller
             self._solve_step()
+            # append individual turbine power
+            self._functional_list.append([wt.get_power() for wt in self._flow_problem.get_wind_farm().get_turbines()])
 
     def _solve_step(self):
         self._flow_problem.get_wind_farm().apply_controller(self._simulation_time)
+
         A = assemble(self._left)
         b = assemble(self._right)
         x = self._up_next.vector()
@@ -58,7 +59,6 @@ class DynamicFlowSolver():
         self._up_prev.assign(self._up_next)
 
         self._write_step_data()
-
 
     def _setup_output_files(self):
         results_dir = "./results/" + conf.par.simulation.name
@@ -97,3 +97,6 @@ class DynamicFlowSolver():
             self._vtk_file_f.write(
                 project(self._forcing, self._force_space,
                         annotate=False))
+
+    def get_power_functional_list(self):
+        return self._functional_list
