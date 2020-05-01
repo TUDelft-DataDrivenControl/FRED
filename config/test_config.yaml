@@ -31,14 +31,11 @@ wind_farm:
     - 0.3
 
   farm_controller:
-#    type: optimal
-#    time_discretisation: 15. #s
-#    time_horizon: 40. #s
-#    time_advance: 30. #s
-#    regularisation_alpha: 0.5
-#    time_start_control: 10.
-    type: fixed
-#    type: series
+#    type: fixed
+    type: series
+    yaw_series: # [time, yaw_0, ... , yaw_n]
+      - [0., 0.3, 0.,]
+      - [59., -0.3, 0.,]
 
 turbine:
   axial_induction: 0.33
