@@ -5,6 +5,7 @@ import floris.tools as wfct
 import scipy.signal as sig
 import pandas as pd
 
+import controlmodel.conf as conf
 
 def read_vtk_unstructured(filename_one):
     reader = vtk.vtkXMLUnstructuredGridReader()
@@ -103,6 +104,12 @@ def calculate_turbulence_intensity(u):
     unorm = np.sqrt(np.sum(u**2,1))
     ti = np.std(unorm)/np.mean(unorm)
     return ti
+
+
+def load_jacobian():
+    with open("./results/"+conf.par.simulation.name+"_djdm_T{:d}".format(0), "rb") as f:
+        dj_dm = np.load(f)
+    return dj_dm
 
 if __name__ == '__main__':
     run

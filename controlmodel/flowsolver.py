@@ -100,3 +100,6 @@ class DynamicFlowSolver:
 
     def get_power_functional_list(self):
         return self._functional_list
+
+    def get_flow_problem(self):
+        return self._flow_problem

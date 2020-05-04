@@ -82,6 +82,24 @@ def plot_power(ax,time_sowfa, power_sowfa, time_wasp, power_wasp, power_floris):
     ax.set_ylim(bottom=0)
     return ax
 
+def plot_jacobian(djdm):
+    fig = plt.figure(figsize=(4,3))
+    grid = AxesGrid(fig,
+                    rect=(0.1, 0.1, 0.80, 0.80),
+                    nrows_ncols=(1, 1),
+                    axes_pad=0.1,
+                    cbar_mode='each',
+                    cbar_location='right',
+                    cbar_pad=0.2,
+                    cbar_size=0.15
+                    )
+    vmax = np.abs(djdm).max()
+    colours = grid[0].imshow(djdm,cmap='seismic',vmin=-vmax, vmax=vmax)
+    cb = fig.colorbar(colours, grid[0].cax)
+    cb.solids.set_edgecolor("face")
+    grid[0].xaxis.set_major_formatter()
+
+
 def get_colours(n):
     return plt.cm.viridis(np.linspace(0.1, 0.9, n))
 

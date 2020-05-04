@@ -98,10 +98,10 @@ def two_turbine_grad_control():
     # ax.set_xlabel(labels['t'])
     # ax.legend()
 
-def show_jacobian():
+def show_jacobian(djdm):
     fig = plt.figure(figsize=(4,3))
     grid = AxesGrid(fig,
-                    rect=(0.1, 0.1, 0.80, 0.85),
+                    rect=(0.1, 0.1, 0.80, 0.80),
                     nrows_ncols=(1, 1),
                     axes_pad=0.1,
                     cbar_mode='each',
@@ -109,31 +109,11 @@ def show_jacobian():
                     cbar_pad=0.2,
                     cbar_size=0.15
                     )
-    # for g in grid[0:2]:
-    #     fig.delaxes(g.cax)
-
-
-
-    J =     np.array([
-    [-0.11319150125368826, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-    [-0.010256450752651691, 0.03877607698495744, 0.0, 0.0, 0.0, 0.0, 0.0],
-    [0.14579850221658014, -0.006077104281188905, 0.09689505309245483, 0.0, 0.0, 0.0, 0.0],
-    [0.055432190265938305, -0.17111777405391404, -0.3781151735917918, 0.01704513065639457, 0.0, 0.0, 0.0],
-    [0.046327736354919734, 0.08828856875145208, -0.21733478609172163, -0.25853010834014434, -0.10693326858602603, 0.0,
-     0.0],
-    [-0.005617228101322876, -0.32868653214225696, -0.02099240102762412, -0.9264448591142687, -0.19298552949005732,
-     -0.011680613331357392, 0.0],
-    [-0.00029218176107287234, 0.012324202625854978, -0.048030963096149876, -0.07802603681905157, -0.013449212404498478,
-     -0.006894831908802174, 0.0012653387406089678]
-    ])
-    J = J[0:5,0:5]
-    max = np.abs(J).max()
-    colours = grid[0].imshow(J,cmap='seismic',vmin=-max, vmax=max)
+    max = np.abs(djdm).max()
+    colours = grid[0].imshow(djdm,cmap='seismic',vmin=-max, vmax=max)
     cb = fig.colorbar(colours, grid[0].cax)
     cb.solids.set_edgecolor("face")
-    # cb.set_label(labels["umag"])
-    # ticks = cb.get_ticks()
-    # cb.set_ticks(np.arange(np.round(ticks.min(), 0), ticks.max(), 2))
+
 
 
 if __name__ == '__main__':
