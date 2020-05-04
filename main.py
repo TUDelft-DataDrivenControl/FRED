@@ -28,9 +28,19 @@ def main():
     dfs.solve()
 
     functional_list = dfs.get_power_functional_list()
-    J = sum(functional_list)
-    m = [Control(wt.get_yaw()) for wt in wind_farm.get_turbines()]
-    # m = controls?
+
+    # J = sum([sum(x) for x in functional_list])
+    n = int(conf.par.wind_farm.controller.control_discretisation / conf.par.simulation.time_step)
+    binned_J = []
+    for idx in range(len(functional_list) // n):
+        print(idx)
+        print(functional_list[idx*n:(idx+1)*n])
+        binned_J.append(sum([sum(x) for x in functional_list][idx*n:(idx+1)*n]))
+
+    # J = sum([sum(x) for x in functional_list[0:n]])
+    # J = sum([sum(x) for x in functional_list[n:2*n]])
+
+    m = [Control(c[0]) for c in wind_farm.get_controls()]
     g = compute_gradient(J, m)
 
 

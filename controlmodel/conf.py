@@ -51,6 +51,7 @@ class ControlModelParameters:
         class FarmController:
             def __init__(self, config_dict):
                 self.type = config_dict["type"]
+                self.control_discretisation = config_dict["control_discretisation"]
                 if self.type == "series":
                     self.yaw_series = np.array(config_dict["yaw_series"])
 

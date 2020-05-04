@@ -21,3 +21,6 @@ class WindFarm:
 
     def apply_controller(self, simulation_time):
         self._controller.control_yaw(simulation_time)
+
+    def get_controls(self):
+        return self._controller.get_controls()
