@@ -106,8 +106,8 @@ def calculate_turbulence_intensity(u):
     return ti
 
 
-def load_jacobian():
-    with open("./results/"+conf.par.simulation.name+"_djdm_T{:d}".format(0), "rb") as f:
+def load_jacobian(turbine_idx=0):
+    with open("./results/"+conf.par.simulation.name+"/djdm_T{:d}".format(turbine_idx), "rb") as f:
         dj_dm = np.load(f)
     return dj_dm
 

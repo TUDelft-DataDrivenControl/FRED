@@ -97,7 +97,6 @@ def plot_jacobian(djdm):
     colours = grid[0].imshow(djdm,cmap='seismic',vmin=-vmax, vmax=vmax)
     cb = fig.colorbar(colours, grid[0].cax)
     cb.solids.set_edgecolor("face")
-    grid[0].xaxis.set_major_formatter()
 
 
 def get_colours(n):

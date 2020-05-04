@@ -2,6 +2,7 @@ from fenics import *
 from fenics_adjoint import *
 import controlmodel.conf as conf
 import time
+import os
 
 
 class DynamicFlowSolver:
@@ -61,11 +62,14 @@ class DynamicFlowSolver:
         self._write_step_data()
 
     def _setup_output_files(self):
+
         results_dir = "./results/" + conf.par.simulation.name
-        self._vtk_file_u = File(results_dir + "_U.pvd")
-        self._vtk_file_p = File(results_dir + "_p.pvd")
-        self._vtk_file_f = File(results_dir + "_f.pvd")
-        self._data_file = results_dir + "_log.csv"
+        os.makedirs(results_dir, exist_ok=True)
+
+        self._vtk_file_u = File(results_dir + "/U.pvd")
+        self._vtk_file_p = File(results_dir + "/p.pvd")
+        self._vtk_file_f = File(results_dir + "/f.pvd")
+        self._data_file = results_dir + "/log.csv"
 
         # write headers for csv data log file
         with open(self._data_file, 'w') as log:
