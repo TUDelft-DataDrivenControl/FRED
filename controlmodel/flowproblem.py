@@ -24,6 +24,12 @@ class FlowProblem:
         self._inflow_velocity = conf.par.flow.inflow_velocity
         self._setup_boundary_conditions()
 
+        self._variational_form = None
+        self._up_next = None
+        self._up_prev = None  # only used in dynamic
+        self._up_prev2 = None
+        self._forcing = None
+
     def _generate_mesh(self):
         southwest_corner = Point([0.0, 0.0])
         northeast_corner = Point(conf.par.wind_farm.size)
@@ -110,17 +116,42 @@ class SteadyFlowProblem(FlowProblem):
     def __init__(self, wind_farm):
         FlowProblem.__init__(self, wind_farm)
 
+    def _construct_variational_form(self):
+        self._up_next = Function(self._mixed_function_space)
+        (u, p) = split(self._up_next)
+        (v, q) = TestFunctions(self._mixed_function_space)
+
+        nu = Constant(conf.par.flow.kinematic_viscosity)
+        nu_tuning = Constant(conf.par.flow.tuning_viscosity)
+
+        if conf.par.flow.mixing_length > 1e-14:
+            ml = Constant(conf.par.flow.mixing_length)
+            grad_u = grad(u)
+            b = grad_u + grad_u.T
+            s = sqrt(0.5 * inner(b, b))
+            nu_turbulent = ml ** 2 * s
+        else:
+            nu_turbulent = Constant(0.)
+
+        nu_combined = nu + nu_tuning + nu_turbulent
+
+        # Take the combination of all turbine forcing kernels to add into the flow
+        forcing_list = [wt.compute_forcing(u) for wt in self._wind_farm.get_turbines()]
+        f = sum(forcing_list)
+        self._forcing = f
+
+        variational_form = inner(grad(u) * u, v) * dx + (nu_combined * inner(grad(u), grad(v))) * dx \
+                           - inner(div(v), p) * dx - inner(div(u), q) * dx \
+                           - inner(f, v) * dx
+
+        return variational_form
+
 
 class DynamicFlowProblem(FlowProblem):
 
     def __init__(self, wind_farm):
         FlowProblem.__init__(self, wind_farm)
 
-        self._variational_form = None
-        self._up_next = None
-        self._up_prev = None
-        self._up_prev2 = None
-        self._forcing = None
         self._construct_variational_form()
         self._lhs = None
         self._rhs = None

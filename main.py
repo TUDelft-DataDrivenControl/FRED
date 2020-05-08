@@ -26,20 +26,21 @@ def main():
 
     # this is where parameter adjustments are possible
 
-    # wind_farm = WindFarm()
-    # dfp = DynamicFlowProblem(wind_farm)
-    # dfs = DynamicFlowSolver(dfp)
-    #
-    # dfs.solve()
+    wind_farm = WindFarm()
+    dfp = DynamicFlowProblem(wind_farm)
+    dfs = DynamicFlowSolver(dfp)
+
+    dfs.solve()
 
     # analysis.construct_jacobian_matrix(dfs, turbine_idx=0)
 
-    dj_dm = load_jacobian(turbine_idx=0)
-    plot_jacobian(dj_dm)
-    plt.show()
+    # dj_dm = load_jacobian(turbine_idx=0)
+    # plot_jacobian(dj_dm)
+    # plt.show()
 
     time_end = time.time()
     print("Total time: {:.2f} seconds".format(time_end - time_start))
+
 
 def main_steady():
     time_start = time.time()
@@ -49,5 +50,7 @@ def main_steady():
     time_end = time.time()
     print("Total time: {:.2f} seconds".format(time_end - time_start))
 
+
 if __name__ == '__main__':
+    # main()
     main_steady()
