@@ -5,7 +5,7 @@ import time
 import os
 
 
-class DynamicFlowSolver:
+class FlowSolver:
 
     def __init__(self, flow_problem):
         self._flow_problem = flow_problem
@@ -14,7 +14,6 @@ class DynamicFlowSolver:
         self._up_next, self._up_prev, self._up_prev2 = self._flow_problem.get_state_vectors()
         self._forcing = self._flow_problem.get_forcing()
         self._force_space = self._flow_problem.get_force_space()
-        # todo: set up output files
 
         self._solver = 'petsc'
         self._preconditioner = 'none'
@@ -23,6 +22,13 @@ class DynamicFlowSolver:
         self._vtk_file_p = None
         self._vtk_file_f = None
         self._data_file = None
+
+
+class DynamicFlowSolver(FlowSolver):
+
+    def __init__(self, flow_problem):
+        FlowSolver.__init__(self, flow_problem)
+
         self._setup_output_files()
 
         self._simulation_time = 0.0
