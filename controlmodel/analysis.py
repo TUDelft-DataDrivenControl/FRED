@@ -5,6 +5,14 @@ import controlmodel.conf as conf
 
 
 def construct_jacobian_matrix(dfs, turbine_idx, power_idx=None):
+    """
+    Construct a Jacobian matrix to identify power-yaw sensitivity.
+    E_i/\psi_i
+    :param dfs:
+    :param turbine_idx:
+    :param power_idx:
+    :return:
+    """
     functional_list = dfs.get_power_functional_list()
 
     # sum functional over control discretisation steps
@@ -12,6 +20,7 @@ def construct_jacobian_matrix(dfs, turbine_idx, power_idx=None):
     binned_functional = []
 
     if power_idx is None:  # Take total wind farm power
+        power_idx = -1
         for idx in range(len(functional_list) // n):
             binned_functional.append(
                 sum([sum(x) for x in functional_list][idx * n:(idx + 1) * n]) * conf.par.simulation.time_step)
@@ -35,7 +44,7 @@ def construct_jacobian_matrix(dfs, turbine_idx, power_idx=None):
 
     dj_dm = np.array(dj_dm_list)
 
-    with open("./results/" + conf.par.simulation.name + "/djdm_T{:d}".format(turbine_idx), "wb") as f:
+    with open("./results/" + conf.par.simulation.name + "/djdm_P{:d}_T{:d}.npy".format(power_idx,turbine_idx), "wb") as f:
         np.save(f, dj_dm)
 
     return dj_dm

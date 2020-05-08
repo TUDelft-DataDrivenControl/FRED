@@ -69,13 +69,14 @@ class ControlModelParameters:
     class Simulation:
         def __init__(self, config_dict):
             self.is_dynamic = config_dict["is_dynamic"]
-            if not self.is_dynamic:
-                raise NotImplementedError("Steady flow currently not implemented")
-            self.total_time = config_dict["total_time"]
-            self.time_step = config_dict["time_step"]
+            # if not self.is_dynamic:
+            #     raise NotImplementedError("Steady flow currently not implemented")
+            if self.is_dynamic:
+                self.total_time = config_dict["total_time"]
+                self.time_step = config_dict["time_step"]
+                self.write_time_step = config_dict["write_time_step"]
             self.name = config_dict["name"]
             self.save_logs = config_dict["save_logs"]
-            self.write_time_step = config_dict["write_time_step"]
             self.dimensions = config_dict["dimensions"]
 
     class Flow:

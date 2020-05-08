@@ -2,13 +2,13 @@
 # DTU10MWRef
 
 simulation:
-  name: two_turbine_test
-  is_dynamic: True
-  total_time: 59. # s
-  time_step: 0.5 # s
+  name: two_turbine_test_steady
+  is_dynamic: False  # steady state model
+#  total_time: 59. # s
+#  time_step: 0.5 # s
   dimensions: 2 # -
   save_logs: True
-  write_time_step: 10.0
+#  write_time_step: 10.0
 
 flow:
   inflow_velocity: [8., 0.] # [u, v] m.s^-1

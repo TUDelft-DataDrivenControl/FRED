@@ -4,6 +4,7 @@ from fenics_adjoint import *
 import controlmodel.conf as conf
 from controlmodel.windfarm import WindFarm
 from controlmodel.flowproblem import DynamicFlowProblem
+from controlmodel.flowproblem import SteadyFlowProblem
 from controlmodel.flowsolver import DynamicFlowSolver
 
 import controlmodel.analysis as analysis
@@ -25,21 +26,28 @@ def main():
 
     # this is where parameter adjustments are possible
 
-    wind_farm = WindFarm()
-    dfp = DynamicFlowProblem(wind_farm)
-    dfs = DynamicFlowSolver(dfp)
+    # wind_farm = WindFarm()
+    # dfp = DynamicFlowProblem(wind_farm)
+    # dfs = DynamicFlowSolver(dfp)
+    #
+    # dfs.solve()
 
-    dfs.solve()
+    # analysis.construct_jacobian_matrix(dfs, turbine_idx=0)
 
-    analysis.construct_jacobian_matrix(dfs, turbine_idx=1)
-
-    dj_dm = load_jacobian(turbine_idx=1)
+    dj_dm = load_jacobian(turbine_idx=0)
     plot_jacobian(dj_dm)
     plt.show()
 
     time_end = time.time()
     print("Total time: {:.2f} seconds".format(time_end - time_start))
 
+def main_steady():
+    time_start = time.time()
+    conf.par.load("./config/test_config_steady.yaml")
+    wind_farm = WindFarm()
+    sfp = SteadyFlowProblem(wind_farm)
+    time_end = time.time()
+    print("Total time: {:.2f} seconds".format(time_end - time_start))
 
 if __name__ == '__main__':
-    main()
+    main_steady()

@@ -12,6 +12,12 @@ class FlowProblem:
         self._wind_farm = wind_farm
 
 
+class SteadyFlowProblem(FlowProblem):
+
+    def __init__(self, wind_farm):
+        FlowProblem.__init__(self, wind_farm)
+
+
 class DynamicFlowProblem(FlowProblem):
 
     def __init__(self, wind_farm):
