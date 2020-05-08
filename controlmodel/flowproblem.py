@@ -8,21 +8,9 @@ class FlowProblem:
     """
     Base class for flow problem definition
     """
+
     def __init__(self, wind_farm):
         self._wind_farm = wind_farm
-
-
-class SteadyFlowProblem(FlowProblem):
-
-    def __init__(self, wind_farm):
-        FlowProblem.__init__(self, wind_farm)
-
-
-class DynamicFlowProblem(FlowProblem):
-
-    def __init__(self, wind_farm):
-        FlowProblem.__init__(self, wind_farm)
-
         self._mesh = None
         self._generate_mesh()
         if conf.par.wind_farm.do_refine_turbines:
@@ -35,16 +23,6 @@ class DynamicFlowProblem(FlowProblem):
         self._boundary_conditions = []
         self._inflow_velocity = conf.par.flow.inflow_velocity
         self._setup_boundary_conditions()
-
-        self._variational_form = None
-        self._up_next = None
-        self._up_prev = None
-        self._up_prev2 = None
-        self._forcing = None
-        self._construct_variational_form()
-        self._lhs = None
-        self._rhs = None
-        self._split_variational_form()
 
     def _generate_mesh(self):
         southwest_corner = Point([0.0, 0.0])
@@ -93,7 +71,6 @@ class DynamicFlowProblem(FlowProblem):
         def wall_boundary_west(x, on_boundary):
             return x[0] <= 0. + bound_margin and on_boundary
 
-
         boundaries = [wall_boundary_north,
                       wall_boundary_east,
                       wall_boundary_south,
@@ -108,7 +85,7 @@ class DynamicFlowProblem(FlowProblem):
         idx_W = 3
 
         # make empty list for boundary indices
-        indices  = []
+        indices = []
         epsilon = DOLFIN_EPS_LARGE
         if current_inflow[1] <= -epsilon:
             indices.append(idx_N)
@@ -126,6 +103,28 @@ class DynamicFlowProblem(FlowProblem):
         # neither north and south boundaries are active within a conf.epsilon margin around 0.
 
         return [self._boundary_conditions[x] for x in indices]
+
+
+class SteadyFlowProblem(FlowProblem):
+
+    def __init__(self, wind_farm):
+        FlowProblem.__init__(self, wind_farm)
+
+
+class DynamicFlowProblem(FlowProblem):
+
+    def __init__(self, wind_farm):
+        FlowProblem.__init__(self, wind_farm)
+
+        self._variational_form = None
+        self._up_next = None
+        self._up_prev = None
+        self._up_prev2 = None
+        self._forcing = None
+        self._construct_variational_form()
+        self._lhs = None
+        self._rhs = None
+        self._split_variational_form()
 
     def _construct_variational_form(self):
         (u, p) = TrialFunctions(self._mixed_function_space)  # the velocity and pressure solution functions
@@ -200,5 +199,3 @@ class DynamicFlowProblem(FlowProblem):
 
     def get_wind_farm(self):
         return self._wind_farm
-
-
