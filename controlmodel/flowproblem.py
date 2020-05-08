@@ -30,6 +30,9 @@ class FlowProblem:
         self._up_prev2 = None
         self._forcing = None
 
+        self._lhs = None
+        self._rhs = None
+
     def _generate_mesh(self):
         southwest_corner = Point([0.0, 0.0])
         northeast_corner = Point(conf.par.wind_farm.size)
@@ -110,6 +113,25 @@ class FlowProblem:
 
         return [self._boundary_conditions[x] for x in indices]
 
+    def _split_variational_form(self):
+        self._lhs = lhs(self._variational_form)
+        self._rhs = rhs(self._variational_form)
+
+    def get_linear_system(self):
+        return self._lhs, self._rhs
+
+    def get_state_vectors(self):
+        return self._up_next, self._up_prev, self._up_prev2
+
+    def get_forcing(self):
+        return self._forcing
+
+    def get_force_space(self):
+        return self._force_space
+
+    def get_wind_farm(self):
+        return self._wind_farm
+
 
 class SteadyFlowProblem(FlowProblem):
 
@@ -153,8 +175,6 @@ class DynamicFlowProblem(FlowProblem):
         FlowProblem.__init__(self, wind_farm)
 
         self._construct_variational_form()
-        self._lhs = None
-        self._rhs = None
         self._split_variational_form()
 
     def _construct_variational_form(self):
@@ -211,22 +231,3 @@ class DynamicFlowProblem(FlowProblem):
                            + inner(div(u), q) * dx
 
         self._variational_form = variational_form
-
-    def _split_variational_form(self):
-        self._lhs = lhs(self._variational_form)
-        self._rhs = rhs(self._variational_form)
-
-    def get_linear_system(self):
-        return self._lhs, self._rhs
-
-    def get_state_vectors(self):
-        return self._up_next, self._up_prev, self._up_prev2
-
-    def get_forcing(self):
-        return self._forcing
-
-    def get_force_space(self):
-        return self._force_space
-
-    def get_wind_farm(self):
-        return self._wind_farm
