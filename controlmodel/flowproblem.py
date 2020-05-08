@@ -3,10 +3,19 @@ from fenics_adjoint import *
 import controlmodel.conf as conf
 from controlmodel.turbine import Turbine
 
-class DynamicFlowProblem:
 
+class FlowProblem:
+    """
+    Base class for flow problem definition
+    """
     def __init__(self, wind_farm):
         self._wind_farm = wind_farm
+
+
+class DynamicFlowProblem(FlowProblem):
+
+    def __init__(self, wind_farm):
+        FlowProblem.__init__(self, wind_farm)
 
         self._mesh = None
         self._generate_mesh()
