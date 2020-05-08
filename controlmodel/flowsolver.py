@@ -62,16 +62,10 @@ class SteadyFlowSolver(FlowSolver):
 
     def solve(self):
         bcs = self._flow_problem.get_boundary_conditions(conf.par.flow.inflow_velocity)
-        # solve(self._left == self._right,
-        #       self._up_next,
-        #       bcs
-        #       )
-        # solver_parameters = {"linear_solver": "lu"}
+
         solver_parameters = {"nonlinear_solver": "snes",
                              "snes_solver": {
                                  "linear_solver": "petsc",
-                                 # "linear_solver": "bicgstab",
-                                 # "preconditioner": "hypre_amg",
                                  "maximum_iterations": 40,
                                  "error_on_nonconvergence": True,
                                  "line_search": "bt",
@@ -81,6 +75,9 @@ class SteadyFlowSolver(FlowSolver):
               bcs=bcs,
               solver_parameters=solver_parameters
               )
+
+        self._functional_list.append([wt.get_power() for wt in self._flow_problem.get_wind_farm().get_turbines()])
+
         # write output
         u_sol, p_sol = self._up_next.split()
         self._vtk_file_u.write(u_sol)

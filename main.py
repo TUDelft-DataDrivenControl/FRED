@@ -49,6 +49,19 @@ def main_steady():
     sfs = SteadyFlowSolver(sfp)
     sfs.solve()
 
+    functional_list = sfs.get_power_functional_list()
+    controls = sfs.get_flow_problem().get_wind_farm().get_controls()
+
+    # J = sum(functional_list[0])
+    J = functional_list[0][1]
+    m = [Control(c) for c in controls]
+    # g = compute_gradient(J,m)
+    Jhat = ReducedFunctional(-J,m)
+    m_opt = minimize(Jhat, bounds=([-0.5,-0.5], [0.5,0.5]))
+    [print(float(x)) for x in m_opt]
+    [wt.set_yaw(y) for (wt,y) in zip(wind_farm.get_turbines(), m_opt)]
+    sfs.solve()
+
     time_end = time.time()
     print("Total time: {:.2f} seconds".format(time_end - time_start))
 

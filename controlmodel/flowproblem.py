@@ -1,7 +1,7 @@
 from fenics import *
 import controlmodel.conf as conf
-# if conf.with_adjoint:
-#     from fenics_adjoint import *
+if conf.with_adjoint:
+    from fenics_adjoint import *
 from controlmodel.turbine import Turbine
 
 

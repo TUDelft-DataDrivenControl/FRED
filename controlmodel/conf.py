@@ -94,7 +94,7 @@ turbine = par.turbine
 flow = par.flow
 simulation = par.simulation
 
-with_adjoint = False
+with_adjoint = True
 
 if __name__ == '__main__':
     par = ControlModelParameters()

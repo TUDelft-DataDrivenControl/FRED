@@ -11,8 +11,8 @@ class Controller:
         self._control_type = conf.par.wind_farm.controller.type
         self._wind_farm = wind_farm
         self._turbines = wind_farm.get_turbines()
-        # self._controls = [][wt.get_yaw() for wt in self._turbines]]
-        self._yaw_ref = [] # [[Constant(y) for y in conf.par.wind_farm.yaw_angles]]
+        # self._yaw_ref = []
+        self._yaw_ref = [wt.get_yaw() for wt in self._turbines]
         if self._control_type == "series":
             self._time_series = conf.par.wind_farm.controller.yaw_series[:, 0]
             self._yaw_series = conf.par.wind_farm.controller.yaw_series[:, 1:]
