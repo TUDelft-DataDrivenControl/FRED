@@ -1,11 +1,10 @@
 from fenics import *
-from fenics_adjoint import *
-
 import controlmodel.conf as conf
+if conf.with_adjoint:
+    from fenics_adjoint import *
 from controlmodel.windfarm import WindFarm
-from controlmodel.flowproblem import DynamicFlowProblem
-from controlmodel.flowproblem import SteadyFlowProblem
-from controlmodel.flowsolver import DynamicFlowSolver
+from controlmodel.flowproblem import DynamicFlowProblem, SteadyFlowProblem
+from controlmodel.flowsolver import DynamicFlowSolver, SteadyFlowSolver
 
 import controlmodel.analysis as analysis
 
@@ -47,6 +46,9 @@ def main_steady():
     conf.par.load("./config/test_config_steady.yaml")
     wind_farm = WindFarm()
     sfp = SteadyFlowProblem(wind_farm)
+    sfs = SteadyFlowSolver(sfp)
+    sfs.solve()
+
     time_end = time.time()
     print("Total time: {:.2f} seconds".format(time_end - time_start))
 

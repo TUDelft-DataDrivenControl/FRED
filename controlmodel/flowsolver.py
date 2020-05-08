@@ -1,6 +1,8 @@
 from fenics import *
-from fenics_adjoint import *
 import controlmodel.conf as conf
+if conf.with_adjoint:
+    from fenics_adjoint import *
+
 import time
 import os
 
@@ -23,18 +25,78 @@ class FlowSolver:
         self._vtk_file_f = None
         self._data_file = None
 
+        self._setup_output_files()
+
+        self._functional_list = []
+
+    def _setup_output_files(self):
+
+        results_dir = "./results/" + conf.par.simulation.name
+        os.makedirs(results_dir, exist_ok=True)
+
+        self._vtk_file_u = File(results_dir + "/U.pvd")
+        self._vtk_file_p = File(results_dir + "/p.pvd")
+        self._vtk_file_f = File(results_dir + "/f.pvd")
+        self._data_file = results_dir + "/log.csv"
+
+        # write headers for csv data log file
+        with open(self._data_file, 'w') as log:
+            log.write("time")
+            for idx in range(len(self._flow_problem.get_wind_farm().get_turbines())):
+                log.write(",yaw_{0:03n}".format(idx))
+                log.write(",force_x_{0:03n}".format(idx))
+                log.write(",force_y_{0:03n}".format(idx))
+                log.write(",power_{0:03n}".format(idx))
+            log.write("\r\n")
+
+    def get_power_functional_list(self):
+        return self._functional_list
+
+    def get_flow_problem(self):
+        return self._flow_problem
+
+
+class SteadyFlowSolver(FlowSolver):
+    def __init__(self, flow_problem):
+        FlowSolver.__init__(self, flow_problem)
+
+    def solve(self):
+        bcs = self._flow_problem.get_boundary_conditions(conf.par.flow.inflow_velocity)
+        # solve(self._left == self._right,
+        #       self._up_next,
+        #       bcs
+        #       )
+        # solver_parameters = {"linear_solver": "lu"}
+        solver_parameters = {"nonlinear_solver": "snes",
+                             "snes_solver": {
+                                 "linear_solver": "petsc",
+                                 # "linear_solver": "bicgstab",
+                                 # "preconditioner": "hypre_amg",
+                                 "maximum_iterations": 40,
+                                 "error_on_nonconvergence": True,
+                                 "line_search": "bt",
+                             }}
+        solve(self._flow_problem.get_variational_form() == 0,
+              self._up_next,
+              bcs=bcs,
+              solver_parameters=solver_parameters
+              )
+        # write output
+        u_sol, p_sol = self._up_next.split()
+        self._vtk_file_u.write(u_sol)
+        self._vtk_file_p.write(p_sol)
+        self._vtk_file_f.write(
+            project(self._forcing, self._force_space,
+                    annotate=False))
+
 
 class DynamicFlowSolver(FlowSolver):
 
     def __init__(self, flow_problem):
         FlowSolver.__init__(self, flow_problem)
 
-        self._setup_output_files()
-
         self._simulation_time = 0.0
         self._time_start = 0.
-
-        self._functional_list = []
 
     def solve(self):
         num_steps = int(conf.par.simulation.total_time // conf.par.simulation.time_step + 1)
@@ -67,26 +129,6 @@ class DynamicFlowSolver(FlowSolver):
 
         self._write_step_data()
 
-    def _setup_output_files(self):
-
-        results_dir = "./results/" + conf.par.simulation.name
-        os.makedirs(results_dir, exist_ok=True)
-
-        self._vtk_file_u = File(results_dir + "/U.pvd")
-        self._vtk_file_p = File(results_dir + "/p.pvd")
-        self._vtk_file_f = File(results_dir + "/f.pvd")
-        self._data_file = results_dir + "/log.csv"
-
-        # write headers for csv data log file
-        with open(self._data_file, 'w') as log:
-            log.write("time")
-            for idx in range(len(self._flow_problem.get_wind_farm().get_turbines())):
-                log.write(",yaw_{0:03n}".format(idx))
-                log.write(",force_x_{0:03n}".format(idx))
-                log.write(",force_y_{0:03n}".format(idx))
-                log.write(",power_{0:03n}".format(idx))
-            log.write("\r\n")
-
     def _write_step_data(self):
         with open(self._data_file, 'a') as log:
             log.write("{:.6f}".format(self._simulation_time))
@@ -108,8 +150,4 @@ class DynamicFlowSolver(FlowSolver):
                 project(self._forcing, self._force_space,
                         annotate=False))
 
-    def get_power_functional_list(self):
-        return self._functional_list
 
-    def get_flow_problem(self):
-        return self._flow_problem

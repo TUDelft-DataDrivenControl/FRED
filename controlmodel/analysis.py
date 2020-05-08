@@ -1,7 +1,9 @@
 from fenics import *
-from fenics_adjoint import *
-import numpy as np
 import controlmodel.conf as conf
+if conf.with_adjoint:
+    from fenics_adjoint import *
+import numpy as np
+
 
 
 def construct_jacobian_matrix(dfs, turbine_idx, power_idx=None):

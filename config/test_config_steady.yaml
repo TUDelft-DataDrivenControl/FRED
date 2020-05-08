@@ -11,7 +11,7 @@ simulation:
 #  write_time_step: 10.0
 
 flow:
-  inflow_velocity: [8., 0.] # [u, v] m.s^-1
+  inflow_velocity: [8., 2.] # [u, v] m.s^-1
   kinematic_viscosity: 0.000015 # kg.m^-1.s^-1
   tuning_viscosity: 1. # kg.m^-1.s^-1
   mixing_length: 20. #30. #20 # m

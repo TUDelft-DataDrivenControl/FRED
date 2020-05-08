@@ -1,6 +1,7 @@
 from fenics import *
-from fenics_adjoint import *
 import controlmodel.conf as conf
+# if conf.with_adjoint:
+#     from fenics_adjoint import *
 from controlmodel.turbine import Turbine
 
 
@@ -85,6 +86,7 @@ class FlowProblem:
                       wall_boundary_south,
                       wall_boundary_west]
         bcs = [DirichletBC(self._mixed_function_space.sub(0), self._inflow_velocity, b) for b in boundaries]
+
         self._boundary_conditions = bcs
 
     def get_boundary_conditions(self, current_inflow):
@@ -120,6 +122,9 @@ class FlowProblem:
     def get_linear_system(self):
         return self._lhs, self._rhs
 
+    def get_variational_form(self):
+        return self._variational_form
+
     def get_state_vectors(self):
         return self._up_next, self._up_prev, self._up_prev2
 
@@ -138,8 +143,17 @@ class SteadyFlowProblem(FlowProblem):
     def __init__(self, wind_farm):
         FlowProblem.__init__(self, wind_farm)
 
+        self._construct_variational_form()
+        self._split_variational_form()
+
     def _construct_variational_form(self):
         self._up_next = Function(self._mixed_function_space)
+
+        # Need initial condition for steady state because solver won't converge starting from 0_
+        initial_condition = Constant(
+            [conf.par.flow.inflow_velocity[0], conf.par.flow.inflow_velocity[1], 0.])  # velocity and pressure
+        self._up_next.assign(interpolate(initial_condition, self._mixed_function_space))
+
         (u, p) = split(self._up_next)
         (v, q) = TestFunctions(self._mixed_function_space)
 
@@ -166,7 +180,7 @@ class SteadyFlowProblem(FlowProblem):
                            - inner(div(v), p) * dx - inner(div(u), q) * dx \
                            - inner(f, v) * dx
 
-        return variational_form
+        self._variational_form = variational_form
 
 
 class DynamicFlowProblem(FlowProblem):

@@ -94,6 +94,8 @@ turbine = par.turbine
 flow = par.flow
 simulation = par.simulation
 
+with_adjoint = False
+
 if __name__ == '__main__':
     par = ControlModelParameters()
     par.load("../config/test_config.yaml")
