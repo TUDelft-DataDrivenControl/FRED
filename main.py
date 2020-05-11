@@ -31,7 +31,7 @@ def main():
 
     dfs.solve()
 
-    # analysis.construct_jacobian_matrix(dfs, turbine_idx=0)
+    analysis.construct_jacobian_matrix(dfs, turbine_idx=1)
 
     # dj_dm = load_jacobian(turbine_idx=0)
     # plot_jacobian(dj_dm)
@@ -52,8 +52,8 @@ def main_steady():
     functional_list = sfs.get_power_functional_list()
     controls = sfs.get_flow_problem().get_wind_farm().get_controls()
 
-    # J = sum(functional_list[0])
-    J = functional_list[0][1]
+    J = sum(functional_list[0])
+    # J = functional_list[0][1]
     m = [Control(c) for c in controls]
     # g = compute_gradient(J,m)
     Jhat = ReducedFunctional(-J,m)
@@ -83,6 +83,6 @@ def main_rotating():
 
 
 if __name__ == '__main__':
-    # main()
+    main()
     # main_steady()
-    main_rotating()
+    # main_rotating()

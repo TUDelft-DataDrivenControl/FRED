@@ -27,10 +27,14 @@ class FlowProblem:
 
         self._boundary_conditions = []
 
-        self._inflow_velocity = Constant((0.,0.))
         self._u_mag = conf.par.flow.inflow_velocity[0]
         self._theta = conf.par.flow.inflow_velocity[1]
-        self._update_inflow_velocity()
+        theta = self._theta * pi / 180.
+        self._inflow_velocity = Constant((-self._u_mag * sin(theta), -self._u_mag * cos(theta)))
+        # self._inflow_velocity = Constant((8.,0.))
+        # self._u_mag = conf.par.flow.inflow_velocity[0]
+        # self._theta = conf.par.flow.inflow_velocity[1]
+        # self._update_inflow_velocity()
 
         self._setup_boundary_conditions()
 
@@ -44,9 +48,9 @@ class FlowProblem:
         self._rhs = None
 
     def _update_inflow_velocity(self):
-        theta = np.deg2rad(self._theta)
-        # u = (-self._u_mag * sin(theta), -self._u_mag * cos(theta))
-        self._inflow_velocity.assign(Constant((-self._u_mag * sin(theta), -self._u_mag * cos(theta))))
+        theta = self._theta * pi / 180.
+        u = Constant((-self._u_mag * sin(theta), -self._u_mag * cos(theta)))
+        self._inflow_velocity.assign(u)
 
     def _generate_mesh(self):
         southwest_corner = Point([0.0, 0.0])
@@ -170,8 +174,8 @@ class SteadyFlowProblem(FlowProblem):
         self._up_next = Function(self._mixed_function_space)
 
         # Need initial condition for steady state because solver won't converge starting from 0_
-        initial_condition = Constant(
-            [conf.par.flow.inflow_velocity[0], conf.par.flow.inflow_velocity[1], 0.])  # velocity and pressure
+        vx, vy = self._inflow_velocity.values()
+        initial_condition = Constant((vx, vy, 0.))  # velocity and pressure
         self._up_next.assign(interpolate(initial_condition, self._mixed_function_space))
 
         (u, p) = split(self._up_next)
@@ -273,4 +277,3 @@ class DynamicFlowProblem(FlowProblem):
             self._u_mag = np.interp(simulation_time, t, u_mag_series)
             self._theta = np.interp(simulation_time, t, theta_series)
             self._update_inflow_velocity()
-            # self._inflow_velocity.assign(Constant(velocity(self._u_mag, self._theta)))

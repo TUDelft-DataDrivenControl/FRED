@@ -61,7 +61,7 @@ class SteadyFlowSolver(FlowSolver):
         FlowSolver.__init__(self, flow_problem)
 
     def solve(self):
-        bcs = self._flow_problem.get_boundary_conditions(conf.par.flow.inflow_velocity)
+        bcs = self._flow_problem.get_boundary_conditions()
 
         solver_parameters = {"nonlinear_solver": "snes",
                              "snes_solver": {
