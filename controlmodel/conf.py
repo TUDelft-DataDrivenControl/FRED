@@ -84,8 +84,13 @@ class ControlModelParameters:
             self.kinematic_viscosity = config_dict["kinematic_viscosity"]
             self.tuning_viscosity = config_dict["tuning_viscosity"]
             self.density = config_dict["density"]
-            self.inflow_velocity = config_dict["inflow_velocity"]
             self.mixing_length = config_dict["mixing_length"]
+            self.type = config_dict["type"]
+            if self.type == "steady":
+                self.inflow_velocity = config_dict["inflow_velocity"]
+            elif self.type == "series":
+                self.inflow_velocity_series = np.array(config_dict["inflow_velocity_series"])
+                self.inflow_velocity = self.inflow_velocity_series[0, 1:3]
 
 
 par = ControlModelParameters()

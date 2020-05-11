@@ -3,6 +3,10 @@ import controlmodel.conf as conf
 if conf.with_adjoint:
     from fenics_adjoint import *
 from controlmodel.turbine import Turbine
+import numpy as np
+
+
+
 
 
 class FlowProblem:
@@ -14,15 +18,20 @@ class FlowProblem:
         self._wind_farm = wind_farm
         self._mesh = None
         self._generate_mesh()
-        if conf.par.wind_farm.do_refine_turbines:
-            self._refine_mesh()
+        for step in range(conf.par.wind_farm.do_refine_turbines):
+            self._refine_mesh(step+1)
 
         self._mixed_function_space = None
         self._setup_function_space()
         self._force_space = self._mixed_function_space.sub(0).collapse()
 
         self._boundary_conditions = []
-        self._inflow_velocity = conf.par.flow.inflow_velocity
+
+        self._inflow_velocity = Constant((0.,0.))
+        self._u_mag = conf.par.flow.inflow_velocity[0]
+        self._theta = conf.par.flow.inflow_velocity[1]
+        self._update_inflow_velocity()
+
         self._setup_boundary_conditions()
 
         self._variational_form = None
@@ -34,6 +43,11 @@ class FlowProblem:
         self._lhs = None
         self._rhs = None
 
+    def _update_inflow_velocity(self):
+        theta = np.deg2rad(self._theta)
+        # u = (-self._u_mag * sin(theta), -self._u_mag * cos(theta))
+        self._inflow_velocity.assign(Constant((-self._u_mag * sin(theta), -self._u_mag * cos(theta))))
+
     def _generate_mesh(self):
         southwest_corner = Point([0.0, 0.0])
         northeast_corner = Point(conf.par.wind_farm.size)
@@ -41,7 +55,7 @@ class FlowProblem:
         self._mesh = RectangleMesh(southwest_corner, northeast_corner, cells[0], cells[1], diagonal='crossed')
         #  diagonal = “left”, “right”, “left/right”, “crossed”
 
-    def _refine_mesh(self):
+    def _refine_mesh(self,step):
         #
         cell_markers = MeshFunction("bool", self._mesh, 2)
         cell_markers.set_all(False)
@@ -54,7 +68,7 @@ class FlowProblem:
 
         for position in conf.par.wind_farm.positions:
             for cell in cells(self._mesh):
-                if _is_near_turbine(cell, position, conf.par.wind_farm.refine_radius):
+                if _is_near_turbine(cell, position, conf.par.wind_farm.refine_radius * step):
                     cell_markers[cell] = True
 
         self._mesh = refine(self._mesh, cell_markers)
@@ -89,7 +103,12 @@ class FlowProblem:
 
         self._boundary_conditions = bcs
 
-    def get_boundary_conditions(self, current_inflow):
+    def get_boundary_conditions(self):
+        # todo: fix
+        # current_inflow = [float(self._inflow_velocity[0]), float(self._inflow_velocity[1])]
+        current_inflow = self._inflow_velocity.values()
+        # self._inflow_velocity.eval()
+
         idx_N = 0
         idx_E = 1
         idx_S = 2
@@ -145,6 +164,7 @@ class SteadyFlowProblem(FlowProblem):
 
         self._construct_variational_form()
         self._split_variational_form()
+
 
     def _construct_variational_form(self):
         self._up_next = Function(self._mixed_function_space)
@@ -203,9 +223,8 @@ class DynamicFlowProblem(FlowProblem):
         u_prev, p_prev = split(self._up_prev)
         u_prev2, p_prev2 = split(self._up_prev2)
 
-        # Set initial conditions for the numerical simulation
-        initial_condition = Constant(
-            [conf.par.flow.inflow_velocity[0], conf.par.flow.inflow_velocity[1], 0.])  # velocity and pressure
+        vx, vy = self._inflow_velocity.values()
+        initial_condition = Constant((vx, vy, 0.))
         self._up_prev.assign(interpolate(initial_condition, self._mixed_function_space))
 
         # specify time discretisation of Navier-Stokes solutions.
@@ -245,3 +264,13 @@ class DynamicFlowProblem(FlowProblem):
                            + inner(div(u), q) * dx
 
         self._variational_form = variational_form
+
+    def update_inflow(self, simulation_time):
+        if conf.par.flow.type == "series":
+            t = conf.par.flow.inflow_velocity_series[:, 0]
+            u_mag_series = conf.par.flow.inflow_velocity_series[:, 1]
+            theta_series = conf.par.flow.inflow_velocity_series[:, 2]
+            self._u_mag = np.interp(simulation_time, t, u_mag_series)
+            self._theta = np.interp(simulation_time, t, theta_series)
+            self._update_inflow_velocity()
+            # self._inflow_velocity.assign(Constant(velocity(self._u_mag, self._theta)))

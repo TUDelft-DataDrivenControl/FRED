@@ -66,6 +66,23 @@ def main_steady():
     print("Total time: {:.2f} seconds".format(time_end - time_start))
 
 
+def main_rotating():
+    time_start = time.time()
+    conf.par.load("./config/test_config_rotating.yaml")
+
+    # this is where parameter adjustments are possible
+
+    wind_farm = WindFarm()
+    dfp = DynamicFlowProblem(wind_farm)
+    dfs = DynamicFlowSolver(dfp)
+
+    dfs.solve()
+
+    time_end = time.time()
+    print("Total time: {:.2f} seconds".format(time_end - time_start))
+
+
 if __name__ == '__main__':
     # main()
-    main_steady()
+    # main_steady()
+    main_rotating()

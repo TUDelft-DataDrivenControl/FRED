@@ -75,7 +75,6 @@ class SteadyFlowSolver(FlowSolver):
               bcs=bcs,
               solver_parameters=solver_parameters
               )
-
         self._functional_list.append([wt.get_power() for wt in self._flow_problem.get_wind_farm().get_turbines()])
 
         # write output
@@ -106,13 +105,14 @@ class DynamicFlowSolver(FlowSolver):
             self._functional_list.append([wt.get_power() for wt in self._flow_problem.get_wind_farm().get_turbines()])
 
     def _solve_step(self):
+        self._flow_problem.update_inflow(self._simulation_time)
         self._flow_problem.get_wind_farm().apply_controller(self._simulation_time)
 
         A = assemble(self._left)
         b = assemble(self._right)
         x = self._up_next.vector()
         # todo: time-varying velocity vector inflow
-        for bc in self._flow_problem.get_boundary_conditions(conf.par.flow.inflow_velocity):
+        for bc in self._flow_problem.get_boundary_conditions():
             bc.apply(A, b)
         solve(A, x, b,
               self._solver, self._preconditioner)
