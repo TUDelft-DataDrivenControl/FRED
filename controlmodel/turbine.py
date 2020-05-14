@@ -2,11 +2,14 @@ from fenics import *
 import controlmodel.conf as conf
 if conf.with_adjoint:
     from fenics_adjoint import *
+import logging
+logger = logging.getLogger("cm.turbine")
 
 
 class Turbine:
 
     def __init__(self, position, yaw):
+        logger.info("Initialising turbine at ({:6.0f}, {:6.0f})".format(position[0], position[1]))
         self._position = position
         self._yaw = Constant(yaw)
 
