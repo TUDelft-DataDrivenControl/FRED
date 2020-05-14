@@ -4,11 +4,13 @@ if conf.with_adjoint:
     from fenics_adjoint import *
 from controlmodel.turbine import Turbine
 from controlmodel.controller import Controller
-
+import logging
+logger = logging.getLogger("cm.windfarm")
 
 class WindFarm:
 
     def __init__(self):
+        logger.info("Setting up wind farm")
         self._size = conf.par.wind_farm.size
         self._turbines = []
         turbine_yaw = [Constant(x) for x in conf.par.wind_farm.yaw_angles]
