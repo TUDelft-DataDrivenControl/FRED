@@ -33,16 +33,16 @@ def main():
 
     # this is where parameter adjustments are possible
     #
-    # wind_farm = WindFarm()
-    # dfp = DynamicFlowProblem(wind_farm)
-    # dfs = DynamicFlowSolver(dfp)
+    wind_farm = WindFarm()
+    dfp = DynamicFlowProblem(wind_farm)
+    dfs = DynamicFlowSolver(dfp)
     #
-    # dfs.solve()
+    dfs.solve()
     #
     # analysis.construct_jacobian_matrix(dfs, turbine_idx=1)
 
-    dj_dm = load_jacobian(turbine_idx=0)
-    plot_jacobian(dj_dm)
+    # dj_dm = load_jacobian(turbine_idx=0)
+    # plot_jacobian(dj_dm)
     # plt.show()
 
     time_end = time.time()

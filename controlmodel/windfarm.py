@@ -12,12 +12,15 @@ class WindFarm:
     def __init__(self):
         logger.info("Setting up wind farm")
         self._size = conf.par.wind_farm.size
+
         self._turbines = []
         turbine_yaw = [Constant(x) for x in conf.par.wind_farm.yaw_angles]
         turbine_positions = conf.par.wind_farm.positions
         self._turbines = [Turbine(x, y) for (x, y) in zip(turbine_positions, turbine_yaw)]
+        logger.info("Added {} turbines to farm".format(len(self._turbines)))
 
         self._controller = Controller(self)
+        logger.info("Added controller to farm")
 
     def get_turbines(self):
         return self._turbines

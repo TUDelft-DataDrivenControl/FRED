@@ -2,11 +2,9 @@ from fenics import *
 import controlmodel.conf as conf
 if conf.with_adjoint:
     from fenics_adjoint import *
-from controlmodel.turbine import Turbine
 import numpy as np
-
-
-
+import logging
+logger = logging.getLogger("cm.flowproblem")
 
 
 class FlowProblem:
@@ -164,11 +162,11 @@ class FlowProblem:
 class SteadyFlowProblem(FlowProblem):
 
     def __init__(self, wind_farm):
+        logger.info("Constructing steady-state flow problem")
         FlowProblem.__init__(self, wind_farm)
 
         self._construct_variational_form()
         self._split_variational_form()
-
 
     def _construct_variational_form(self):
         self._up_next = Function(self._mixed_function_space)
@@ -210,6 +208,7 @@ class SteadyFlowProblem(FlowProblem):
 class DynamicFlowProblem(FlowProblem):
 
     def __init__(self, wind_farm):
+        logger.info("Constructing dynamic flow problem")
         FlowProblem.__init__(self, wind_farm)
 
         self._construct_variational_form()

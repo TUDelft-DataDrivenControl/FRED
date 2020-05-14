@@ -5,7 +5,8 @@ if conf.with_adjoint:
 
 import time
 import os
-
+import logging
+logger = logging.getLogger("cm.flowsolver")
 
 class FlowSolver:
 
@@ -58,9 +59,11 @@ class FlowSolver:
 
 class SteadyFlowSolver(FlowSolver):
     def __init__(self, flow_problem):
+        logger.info("Starting steady flow solver")
         FlowSolver.__init__(self, flow_problem)
 
     def solve(self):
+        logger.info("Starting solution of steady flow problem")
         bcs = self._flow_problem.get_boundary_conditions()
 
         solver_parameters = {"nonlinear_solver": "snes",
@@ -89,12 +92,14 @@ class SteadyFlowSolver(FlowSolver):
 class DynamicFlowSolver(FlowSolver):
 
     def __init__(self, flow_problem):
+        logger.info("Starting dynamic flow solver")
         FlowSolver.__init__(self, flow_problem)
 
         self._simulation_time = 0.0
         self._time_start = 0.
 
     def solve(self):
+        logger.info("Starting dynamic flow solution")
         num_steps = int(conf.par.simulation.total_time // conf.par.simulation.time_step + 1)
 
         self._time_start = time.time()  # runtime timing
@@ -103,15 +108,16 @@ class DynamicFlowSolver(FlowSolver):
             self._solve_step()
             # append individual turbine power
             self._functional_list.append([wt.get_power() for wt in self._flow_problem.get_wind_farm().get_turbines()])
+        logger.info("Ran dynamic flow solution until t={:.2f}".format(self._simulation_time))
 
     def _solve_step(self):
+        self._simulation_time += conf.par.simulation.time_step
         self._flow_problem.update_inflow(self._simulation_time)
         self._flow_problem.get_wind_farm().apply_controller(self._simulation_time)
 
         A = assemble(self._left)
         b = assemble(self._right)
         x = self._up_next.vector()
-        # todo: time-varying velocity vector inflow
         for bc in self._flow_problem.get_boundary_conditions():
             bc.apply(A, b)
         solve(A, x, b,
@@ -120,7 +126,6 @@ class DynamicFlowSolver(FlowSolver):
         print(
             "{:.2f} seconds sim-time in {:.2f} seconds real-time".format(self._simulation_time,
                                                                          time.time() - self._time_start))
-        self._simulation_time += conf.par.simulation.time_step
         self._up_prev2.assign(self._up_prev)
         self._up_prev.assign(self._up_next)
 
