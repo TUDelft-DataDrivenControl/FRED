@@ -21,7 +21,7 @@
 *.png
 *.vtu
 *.pvd
-
+*.log
 
 
 .idea

@@ -14,6 +14,14 @@ import time
 from tools.plot import *
 from tools.data import *
 
+import logging
+logging.basicConfig(level=logging.INFO,
+                    format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
+                    datefmt='%Y-%m-%d %H:%M',
+                    filename='main.log',
+                    filemode='w')
+logger = logging.getLogger('')
+
 parameters["form_compiler"]["quadrature_degree"] = 8
 parameters["form_compiler"]["optimize"] = True
 
@@ -24,21 +32,21 @@ def main():
     conf.par.load("./config/test_config.yaml")
 
     # this is where parameter adjustments are possible
+    #
+    # wind_farm = WindFarm()
+    # dfp = DynamicFlowProblem(wind_farm)
+    # dfs = DynamicFlowSolver(dfp)
+    #
+    # dfs.solve()
+    #
+    # analysis.construct_jacobian_matrix(dfs, turbine_idx=1)
 
-    wind_farm = WindFarm()
-    dfp = DynamicFlowProblem(wind_farm)
-    dfs = DynamicFlowSolver(dfp)
-
-    dfs.solve()
-
-    analysis.construct_jacobian_matrix(dfs, turbine_idx=1)
-
-    # dj_dm = load_jacobian(turbine_idx=0)
-    # plot_jacobian(dj_dm)
+    dj_dm = load_jacobian(turbine_idx=0)
+    plot_jacobian(dj_dm)
     # plt.show()
 
     time_end = time.time()
-    print("Total time: {:.2f} seconds".format(time_end - time_start))
+    logger.info("Total time: {:.2f} seconds".format(time_end - time_start))
 
 
 def main_steady():
@@ -63,7 +71,7 @@ def main_steady():
     sfs.solve()
 
     time_end = time.time()
-    print("Total time: {:.2f} seconds".format(time_end - time_start))
+    logger.info("Total time: {:.2f} seconds".format(time_end - time_start))
 
 
 def main_rotating():
@@ -79,7 +87,7 @@ def main_rotating():
     dfs.solve()
 
     time_end = time.time()
-    print("Total time: {:.2f} seconds".format(time_end - time_start))
+    logger.info("Total time: {:.2f} seconds".format(time_end - time_start))
 
 
 if __name__ == '__main__':
