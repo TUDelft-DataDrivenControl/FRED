@@ -61,6 +61,8 @@ class ControlModelParameters:
                 self.control_discretisation = config_dict["control_discretisation"]
                 if self.type == "series":
                     self.yaw_series = np.array(config_dict["yaw_series"])
+                if self.type == "external":
+                    self.port = config_dict["port"]
 
     class Turbine:
         """

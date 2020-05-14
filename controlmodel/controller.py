@@ -3,6 +3,8 @@ import controlmodel.conf as conf
 if conf.with_adjoint:
     from fenics_adjoint import *
 import numpy as np
+import zmq
+from io import StringIO
 import logging
 logger = logging.getLogger("cm.controller")
 
@@ -20,11 +22,20 @@ class Controller:
             self._time_series = conf.par.wind_farm.controller.yaw_series[:, 0]
             self._yaw_series = conf.par.wind_farm.controller.yaw_series[:, 1:]
 
+        if self._control_type == "external":
+            logger.info("Initialising ZMQ communication")
+            self._context = zmq.Context()
+            self._socket = self._context.socket(zmq.REQ)
+            address = "tcp://localhost:{}".format(conf.par.wind_farm.controller.port)
+            self._socket.connect(address)
+            logger.info("Connected to: {}".format(address))
+
     def control_yaw(self, simulation_time):
         if simulation_time % conf.par.wind_farm.controller.control_discretisation < conf.par.simulation.time_step:
             switcher = {
                 "fixed": self._fixed_yaw,
-                "series": self._fixed_time_series
+                "series": self._fixed_time_series,
+                "external": self._external_controller
             }
             controller_function = switcher.get(self._control_type)
             new_ref = controller_function(simulation_time)
@@ -35,8 +46,29 @@ class Controller:
         return new_ref
 
     def _fixed_time_series(self, simulation_time):
+        new_ref = conf.par.wind_farm.yaw_angles.copy()
         for idx in range(len(self._turbines)):
-            self._yaw_ref[idx] = np.interp(simulation_time, self._time_series, self._yaw_series[:,idx])
+            new_ref[idx] = np.interp(simulation_time, self._time_series, self._yaw_series[:,idx])
+        return new_ref
+
+    def _external_controller(self, simulation_time):
+        # todo: measurements
+        measurements = np.linspace(0, 6, 7)
+        measurements[0] = simulation_time
+        measurement_string = " ".join(["{:.6f}".format(x) for x in measurements]).encode()
+        logger.warning("Real measurements not implemented yet")
+        logger.info("Sending: {}".format(measurement_string))
+        self._socket.send(measurement_string)
+
+        message = self._socket.recv()
+        # raw message contains a long useless tail with b'\x00' characters  (at least if from sowfa)
+        # split off the tail before decoding into a Python unicode string
+        json_data = message.split(b'\x00', 1)[0].decode()
+        received_data = np.loadtxt(StringIO(json_data), delimiter=' ')
+        logger.info("Received controls: {}".format(json_data))
+        new_ref = [np.deg2rad(x) for x in received_data[0::2]]
+
+        return new_ref
 
     def _update_yaw(self, new_ref):
         if len(new_ref) != len(self._turbines):

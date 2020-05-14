@@ -9,7 +9,7 @@ logger = logging.getLogger("cm.turbine")
 class Turbine:
 
     def __init__(self, position, yaw):
-        logger.info("Initialising turbine at ({:6.0f}, {:6.0f})".format(position[0], position[1]))
+        logger.info("Initialising turbine at ({:5.0f}, {:5.0f})".format(position[0], position[1]))
         self._position = position
         self._yaw = Constant(yaw)
 
