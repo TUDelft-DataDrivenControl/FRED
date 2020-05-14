@@ -1,5 +1,8 @@
 import yaml
 import numpy as np
+import logging
+
+logger = logging.getLogger("cm.conf")
 
 
 class ControlModelParameters:
@@ -15,11 +18,15 @@ class ControlModelParameters:
         self.flow = None
 
     def load(self, file):
+        logger.info("Loading configuration from: {}".format(file))
         self._load_configuration_from_yaml(file)
         try:
             self._assign_configuration()
         except KeyError as ke:
+            message = "Missing definition in config file, did not find {}".format(ke)
+            logger.error(message, exc_info=1)
             raise KeyError("Missing definition in config file, did not find {}".format(ke))
+        logger.info("Loaded configuration.")
 
     def _load_configuration_from_yaml(self, file):
         stream = open(file, "r")
