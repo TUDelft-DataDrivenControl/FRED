@@ -5,7 +5,8 @@ if conf.with_adjoint:
 from controlmodel.windfarm import WindFarm
 from controlmodel.flowproblem import DynamicFlowProblem, SteadyFlowProblem
 from controlmodel.flowsolver import DynamicFlowSolver, SteadyFlowSolver
-
+from controlmodel.ssc import SuperController
+from multiprocessing import Process
 import controlmodel.analysis as analysis
 
 import numpy as np
@@ -16,7 +17,7 @@ from tools.data import *
 
 import logging
 logging.basicConfig(level=logging.INFO,
-                    format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
+                    format='%(asctime)s %(name)-16s %(levelname)-8s %(message)s',
                     datefmt='%Y-%m-%d %H:%M',
                     filename='main.log',
                     filemode='w')
@@ -89,8 +90,37 @@ def main_rotating():
     time_end = time.time()
     logger.info("Total time: {:.2f} seconds".format(time_end - time_start))
 
+def main_with_ssc():
+    time_start = time.time()
+    conf.par.load("./config/test_config.yaml")
+
+    def run_sim():
+        wind_farm = WindFarm()
+        dfp = DynamicFlowProblem(wind_farm)
+        dfs = DynamicFlowSolver(dfp)
+        dfs.solve()
+
+    def run_ssc():
+        ssc = SuperController()
+        ssc.start()
+
+    Process(target=run_sim).start()
+    Process(target=run_ssc).start()
+
+    # ssc.start()
+    # dfs.solve()
+    #
+    # analysis.construct_jacobian_matrix(dfs, turbine_idx=1)
+
+    # dj_dm = load_jacobian(turbine_idx=0)
+    # plot_jacobian(dj_dm)
+    # plt.show()
+
+    time_end = time.time()
+    logger.info("Total time: {:.2f} seconds".format(time_end - time_start))
 
 if __name__ == '__main__':
-    main()
+    # main()
     # main_steady()
     # main_rotating()
+    main_with_ssc()

@@ -31,12 +31,15 @@ wind_farm:
     - 0.0
 
   farm_controller:
-    type: fixed
+#    type: fixed
+    type: external
+    port: 1649
+    control_discretisation: 2.
 #    type: series
 #    yaw_series: # [time, yaw_0, ... , yaw_n]
 #      - [0., 0.3, 0.,]
 #      - [59., -0.3, 0.,]
-    control_discretisation: 10.
+#    control_discretisation: 10.
 
 turbine:
   axial_induction: 0.33
