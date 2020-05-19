@@ -7,6 +7,7 @@ from controlmodel.controller import Controller
 import logging
 logger = logging.getLogger("cm.windfarm")
 
+
 class WindFarm:
 
     def __init__(self):
@@ -30,3 +31,6 @@ class WindFarm:
 
     def get_controls(self):
         return self._controller.get_controls()
+
+    def clear_controls(self):
+        self._controller.clear_controls()

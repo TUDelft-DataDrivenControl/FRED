@@ -1,8 +1,12 @@
+from fenics import *
+import controlmodel.conf as conf
+if conf.with_adjoint:
+    from fenics_adjoint import *
 import numpy as np
 from controlmodel.windfarm import WindFarm
 from controlmodel.flowproblem import DynamicFlowProblem
 from controlmodel.flowsolver import DynamicFlowSolver
-import controlmodel.conf as conf
+
 
 from controlmodel.zmqserver import ZmqServer
 import logging
@@ -64,7 +68,19 @@ class SuperController:
         self._dynamic_flow_solver.save_checkpoint()
         self._dynamic_flow_solver.solve_segment(time_horizon)
         self._dynamic_flow_solver.reset_checkpoint()
-        # controls = self._wind_farm.get_controls()
-        # functional = self._dynamic_flow_solver.get_power_functional_list()
+
+        # Get the relevant controls and power series over the time segment of the forward simulation
+        controls = self._wind_farm.get_controls()
+        power = self._dynamic_flow_solver.get_power_functional_list()
+
+        logger.debug("Controls: {}".format(len(controls)))
+        logger.debug("Functional: {}".format(len(power)))
+
+        total_power = sum([sum(x) for x in power])
+        m = [Control(x[0]) for x in controls]
+
+        gradient = compute_gradient(total_power, m)
+        logger.info("Computed gradient: {}".format([float(x) for x in gradient]))
         # compute_gradient()
         # self._yaw_reference = ...
+

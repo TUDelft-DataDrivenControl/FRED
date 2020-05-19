@@ -117,10 +117,12 @@ class DynamicFlowSolver(FlowSolver):
     def solve_segment(self, time_horizon):
         logger.info("Starting dynamic flow solution from t={:.2f} to t={:.2f}"
                     .format(self._simulation_time, self._simulation_time+time_horizon))
-        num_steps = int(time_horizon // conf.par.simulation.time_step + 1)
+        num_steps = int(time_horizon // conf.par.simulation.time_step)
 
         self._functional_list = []
         self._time_start = time.time()
+        self._flow_problem.get_wind_farm().clear_controls()
+
         for n in range(num_steps):
             self._solve_step()
             # append individual turbine power

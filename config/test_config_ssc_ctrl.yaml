@@ -19,7 +19,7 @@ simulation:
   total_time: -1 # s
   time_step: 0.5 # s
   dimensions: 2 # -
-  save_logs: True
+  save_logs: False
   write_time_step: 10.0
 
 flow:

@@ -81,3 +81,6 @@ class Controller:
 
     def get_controls(self):
         return self._yaw_ref
+
+    def clear_controls(self):
+        self._yaw_ref = []
