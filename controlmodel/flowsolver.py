@@ -2,7 +2,7 @@ from fenics import *
 import controlmodel.conf as conf
 if conf.with_adjoint:
     from fenics_adjoint import *
-
+import numpy as np
 import time
 import os
 import logging
@@ -157,7 +157,7 @@ class DynamicFlowSolver(FlowSolver):
             log.write("{:.6f}".format(self._simulation_time))
             # for idx in range(num_turbines):
             for wt in self._flow_problem.get_wind_farm().get_turbines():
-                log.write(",{:.6f}".format(float(wt.get_yaw())))
+                log.write(",{:.6f}".format(np.rad2deg(float(wt.get_yaw()))))
                 force = wt.get_force()
                 log.write(",{:.6f}".format(force[0]))
                 log.write(",{:.6f}".format(force[1]))
