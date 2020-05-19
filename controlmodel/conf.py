@@ -48,7 +48,7 @@ class ControlModelParameters:
             self.size = config_dict["size"]
             self.cells = config_dict["cells"]
             self.positions = config_dict["positions"]
-            self.yaw_angles = config_dict["yaw_angles"]
+            self.yaw_angles = np.deg2rad(config_dict["yaw_angles"])
             # self.yaw_angles = [np.array(x) for x in self.yaw_angles]
             self.do_refine_turbines = config_dict["do_refine_turbines"]
             if self.do_refine_turbines:
@@ -63,6 +63,7 @@ class ControlModelParameters:
                 self.control_discretisation = config_dict["control_discretisation"]
                 if self.type == "series":
                     self.yaw_series = np.array(config_dict["yaw_series"])
+                    self.yaw_series[:, 1:] = np.deg2rad(self.yaw_series[:, 1:])
                 if self.type == "external":
                     self.port = config_dict["port"]
 
@@ -109,8 +110,7 @@ class ControlModelParameters:
             self.control_discretisation = config_dict["control_discretisation"]
             if self.type == "series":
                 self.yaw_series = np.array(config_dict["yaw_series"])
-            if self.type == "external":
-                self.port = config_dict["port"]
+                self.yaw_series[:,1:] = np.deg2rad(self.yaw_series[:,1:])
 
 
 par = ControlModelParameters()

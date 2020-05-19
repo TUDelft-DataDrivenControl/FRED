@@ -66,7 +66,7 @@ class Controller:
         json_data = message.split(b'\x00', 1)[0].decode()
         received_data = np.loadtxt(StringIO(json_data), delimiter=' ')
         logger.info("Received controls: {}".format(json_data))
-        new_ref = [np.deg2rad(x) for x in received_data[0::2]]
+        new_ref = received_data[0::2]
 
         return new_ref
 

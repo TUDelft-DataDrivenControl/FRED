@@ -31,16 +31,16 @@ wind_farm:
   positions: # [x, y] m
     - [400,500]
     - [1300,500]
-  yaw_angles: # [gamma] rad
-    - 0.1
+  yaw_angles: # [gamma] deg
+    - 20.
     - 0.0
 
   farm_controller:
     type: fixed
 #    type: series
 #    yaw_series: # [time, yaw_0, ... , yaw_n]
-#      - [0., 0.3, 0.,]
-#      - [59., -0.3, 0.,]
+#      - [0., 20., 0.,]
+#      - [59., -20., 0.,]
     control_discretisation: 10.
 
 turbine:

@@ -27,8 +27,8 @@ wind_farm:
     - [400,500]
     - [1300,500]
   yaw_angles: # [gamma] deg
-    - 290.
-    - 270.
+    - 20.
+    - 0.
 
   farm_controller:
 #    type: fixed
@@ -46,3 +46,15 @@ turbine:
   diameter: 178.4 # m
   thickness: 17.8 # m
   hub_height: 119.6 # m
+
+ssc:
+  control_discretisation: 2.
+#  type: fixed
+#  yaw_angles:
+#    - 20.
+#    - -20.
+  type: series
+  yaw_series:
+      - [0., 20, 0.,]
+      - [59., -20, 0.,]
+
