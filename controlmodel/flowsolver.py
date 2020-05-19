@@ -166,4 +166,13 @@ class DynamicFlowSolver(FlowSolver):
                 project(self._forcing, self._force_space,
                         annotate=False))
 
+    def save_checkpoint(self):
+        time = self._simulation_time
+        up_prev = self._up_prev(deepcopy=True)
+        up_prev2 = self._up_prev2.copy(deepcopy=True)
+        return (time, up_prev, up_prev2)
+
+    def reset_checkpoint(self, checkpoint):
+
+
 
