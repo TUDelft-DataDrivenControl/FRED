@@ -42,8 +42,14 @@ class ControlModelParameters:
             self.turbine = self.Turbine(self._config["turbine"])
             self.simulation = self.Simulation(self._config["simulation"])
             self.flow = self.Flow(self._config["flow"])
+
         if self._config["mode"] == "supercontroller":
             self.ssc = self.SSC(self._config["ssc"])
+            if self.ssc.type == "gradient_step":
+                self.wind_farm = self.WindFarm(self._config["wind_farm"])
+                self.turbine = self.Turbine(self._config["turbine"])
+                self.simulation = self.Simulation(self._config["simulation"])
+                self.flow = self.Flow(self._config["flow"])
 
     class WindFarm:
         def __init__(self, config_dict):
@@ -117,6 +123,8 @@ class ControlModelParameters:
                 self.yaw_series = np.array(config_dict["yaw_series"])
                 self.yaw_series[:,1:] = np.deg2rad(self.yaw_series[:,1:])
                 self.yaw_angles = self.yaw_series[0, 1:]
+            if self.type == "gradient_step":
+                self.yaw_angles = np.deg2rad(config_dict["yaw_angles"])
 
 
 par = ControlModelParameters()

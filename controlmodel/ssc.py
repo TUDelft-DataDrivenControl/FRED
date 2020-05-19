@@ -1,4 +1,7 @@
 import numpy as np
+from controlmodel.windfarm import WindFarm
+from controlmodel.flowproblem import DynamicFlowProblem
+from controlmodel.flowsolver import DynamicFlowSolver
 import controlmodel.conf as conf
 
 from controlmodel.zmqserver import ZmqServer
@@ -20,6 +23,11 @@ class SuperController:
             self._time_series = conf.par.ssc.yaw_series[:, 0]
             self._yaw_series = conf.par.ssc.yaw_series[:, 1:]
 
+        if self._control_type == "gradient_step":
+            self._wind_farm = WindFarm()
+            self._dynamic_flow_problem = DynamicFlowProblem(self._wind_farm)
+            self._dynamic_flow_solver = DynamicFlowSolver(self._dynamic_flow_problem)
+
     def start(self):
         self._server = ZmqServer(conf.par.ssc.port)
         logger.info("SSC started")
@@ -34,7 +42,8 @@ class SuperController:
     def _set_yaw_reference(self, simulation_time):
         switcher = {
             "fixed": self._fixed_reference,
-            "series": self._time_series_reference
+            "series": self._time_series_reference,
+            "gradient_step": self._gradient_step_reference
         }
         control_function = switcher[self._control_type]
         control_function(simulation_time)
@@ -45,3 +54,17 @@ class SuperController:
     def _time_series_reference(self, simulation_time):
         for idx in range(len(self._yaw_reference)):
             self._yaw_reference[idx] = np.interp(simulation_time, self._time_series, self._yaw_series[:, idx])
+
+    def _gradient_step_reference(self, simulation_time):
+        # t0 = simulation_time
+        # todo: define time horizon in configuration
+        # todo: store history up_prev etc...
+        time_horizon = 10.
+        logger.info("Forward simulation over time horizon {:.2f}s".format(time_horizon))
+        self._dynamic_flow_solver.save_checkpoint()
+        self._dynamic_flow_solver.solve_segment(time_horizon)
+        self._dynamic_flow_solver.reset_checkpoint()
+        # controls = self._wind_farm.get_controls()
+        # functional = self._dynamic_flow_solver.get_power_functional_list()
+        # compute_gradient()
+        # self._yaw_reference = ...

@@ -4,58 +4,50 @@ ssc:
   port: 1649
   control_discretisation: 2.
 #  type: fixed
-#  yaw_angles:
-#    - 290.
-#    - 250.
-  type: series
-  yaw_series:
-      - [0., 290, 270.,]
-      - [59., 250, 270.,]
-#
-#simulation:
-#  name: ssc_ctrl
-#  is_dynamic: True
-#  total_time: 59. # s
-#  time_step: 0.5 # s
-#  dimensions: 2 # -
-#  save_logs: True
-#  write_time_step: 10.0
-#
-#flow:
-#  type: "steady"
-#  inflow_velocity: [8., 270.]  # [|U|, theta]
-#  kinematic_viscosity: 0.000015 # kg.m^-1.s^-1
-#  tuning_viscosity: 1. # kg.m^-1.s^-1
-#  mixing_length: 20. #30. #20 # m
-#  density: 1.2 # kg.m^-3
-#
-#wind_farm:
-#  size: [2000,1000]
-#  cells: [20, 10]
-#  do_refine_turbines: 0
-#  refine_radius: 100.
-#  positions: # [x, y] m
-#    - [400,500]
-#    - [1300,500]
-#  yaw_angles: # [gamma] deg
-#    - 290.
-#    - 270.
-#
-#  farm_controller:
-##    type: fixed
-#    type: external
-#    port: 1649
-#    control_discretisation: 2.
-##    type: series
-##    yaw_series: # [time, yaw_0, ... , yaw_n]
-##      - [0., 0.3, 0.,]
-##      - [59., -0.3, 0.,]
-##    control_discretisation: 10.
-#
-#turbine:
-#  axial_induction: 0.33
-#  diameter: 178.4 # m
-#  thickness: 17.8 # m
-#  hub_height: 119.6 # m
-#
-#
+  yaw_angles:
+    - 290.
+    - 250.
+#  type: series
+#  yaw_series:
+#      - [0., 290, 270.]
+#      - [59., 250, 270.]
+  type: gradient_step
+
+simulation:
+  name: ssc_ctrl
+  is_dynamic: True
+  total_time: -1 # s
+  time_step: 0.5 # s
+  dimensions: 2 # -
+  save_logs: True
+  write_time_step: 10.0
+
+flow:
+  type: "steady"
+  inflow_velocity: [8., 270.]  # [|U|, theta]
+  kinematic_viscosity: 0.000015 # kg.m^-1.s^-1
+  tuning_viscosity: 1. # kg.m^-1.s^-1
+  mixing_length: 20. #30. #20 # m
+  density: 1.2 # kg.m^-3
+
+wind_farm:
+  size: [2000,1000]
+  cells: [20, 10]
+  do_refine_turbines: 0
+  refine_radius: 100.
+  positions: # [x, y] m
+    - [400,500]
+    - [1300,500]
+  yaw_angles: # [gamma] deg
+    - 290.
+    - 270.
+
+  farm_controller:
+    type: fixed
+    control_discretisation: 10.
+
+turbine:
+  axial_induction: 0.33
+  diameter: 178.4 # m
+  thickness: 17.8 # m
+  hub_height: 119.6 # m

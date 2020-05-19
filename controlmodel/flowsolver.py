@@ -98,6 +98,10 @@ class DynamicFlowSolver(FlowSolver):
         self._simulation_time = 0.0
         self._time_start = 0.
 
+        self._simulation_time_checkpoint = None
+        self._up_prev_checkpoint = None
+        self._up_prev2_checkpoint = None
+
     def solve(self):
         logger.info("Starting dynamic flow solution")
         num_steps = int(conf.par.simulation.total_time // conf.par.simulation.time_step + 1)
@@ -110,19 +114,20 @@ class DynamicFlowSolver(FlowSolver):
             self._functional_list.append([wt.get_power() for wt in self._flow_problem.get_wind_farm().get_turbines()])
         logger.info("Ran dynamic flow solution until t={:.2f}".format(self._simulation_time))
 
-    def solve_segment(self,time_horizon):
+    def solve_segment(self, time_horizon):
         logger.info("Starting dynamic flow solution from t={:.2f} to t={:.2f}"
                     .format(self._simulation_time, self._simulation_time+time_horizon))
         num_steps = int(time_horizon // conf.par.simulation.time_step + 1)
 
         self._functional_list = []
+        self._time_start = time.time()
         for n in range(num_steps):
             self._solve_step()
             # append individual turbine power
             self._functional_list.append([wt.get_power() for wt in self._flow_problem.get_wind_farm().get_turbines()])
 
-        logger.info("Finished dynamic flow solution from t={:.2f} to t={:.2f}"
-                    .format(self._simulation_time, self._simulation_time+time_horizon))
+        logger.info("Finished segment dynamic flow solution to t={:.2f}"
+                    .format(self._simulation_time))
 
     def _solve_step(self):
         self._simulation_time += conf.par.simulation.time_step
@@ -137,7 +142,7 @@ class DynamicFlowSolver(FlowSolver):
         solve(A, x, b,
               self._solver, self._preconditioner)
 
-        print(
+        logger.info(
             "{:.2f} seconds sim-time in {:.2f} seconds real-time".format(self._simulation_time,
                                                                          time.time() - self._time_start))
         self._up_prev2.assign(self._up_prev)
@@ -167,12 +172,15 @@ class DynamicFlowSolver(FlowSolver):
                         annotate=False))
 
     def save_checkpoint(self):
-        time = self._simulation_time
-        up_prev = self._up_prev(deepcopy=True)
-        up_prev2 = self._up_prev2.copy(deepcopy=True)
-        return (time, up_prev, up_prev2)
+        logger.info("Saving checkpoint at t={:.2f}".format(self._simulation_time))
+        self._simulation_time_checkpoint = self._simulation_time
+        self._up_prev_checkpoint = self._up_prev.copy(deepcopy=True)
+        self._up_prev2_checkpoint = self._up_prev2.copy(deepcopy=True)
 
-    def reset_checkpoint(self, checkpoint):
-
+    def reset_checkpoint(self):
+        logger.info("Restoring state to checkpoint at t={:.2f}".format(self._simulation_time_checkpoint))
+        self._simulation_time = self._simulation_time_checkpoint
+        self._up_prev.assign(self._up_prev_checkpoint)
+        self._up_prev2.assign(self._up_prev2_checkpoint)
 
 
