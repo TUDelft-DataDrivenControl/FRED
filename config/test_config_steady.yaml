@@ -27,8 +27,8 @@ wind_farm:
     - [400,500]
     - [1300,500]
   yaw_angles: # [gamma] rad
-    - 20.
-    - -15.
+    - 290.
+    - 255.
 
   farm_controller:
     type: fixed

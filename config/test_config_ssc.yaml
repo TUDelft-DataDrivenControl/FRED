@@ -27,8 +27,8 @@ wind_farm:
     - [400,500]
     - [1300,500]
   yaw_angles: # [gamma] deg
-    - 20.
-    - 0.
+    - 290.
+    - 270.
 
   farm_controller:
 #    type: fixed
@@ -51,10 +51,10 @@ ssc:
   control_discretisation: 2.
 #  type: fixed
 #  yaw_angles:
-#    - 20.
-#    - -20.
+#    - 290.
+#    - 250.
   type: series
   yaw_series:
-      - [0., 20, 0.,]
-      - [59., -20, 0.,]
+      - [0., 290, 0.,]
+      - [59., 250, 0.,]
 

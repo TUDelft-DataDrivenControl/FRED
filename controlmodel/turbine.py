@@ -55,7 +55,7 @@ class Turbine:
             """
 
         force = 0.5 * self._area * self._thrust_coefficient_prime
-        ud = u[0] * cos(self._yaw) + u[1] * sin(self._yaw)
+        ud = u[0] * - sin(self._yaw) + u[1] * - cos(self._yaw)
 
         x = SpatialCoordinate(u)
         # turbine position
@@ -65,8 +65,8 @@ class Turbine:
         xs = x[0] - xt
         ys = x[1] - yt
         # rotate spatial coordinate
-        xr = cos(self._yaw) * xs + sin(self._yaw) * ys
-        yr = -sin(self._yaw) * xs + cos(self._yaw) * ys
+        xr = -sin(self._yaw) * xs - cos(self._yaw) * ys
+        yr = -cos(self._yaw) * xs - sin(self._yaw) * ys
         # formulate forcing kernel
         # 1.85544, 2.91452 are magic numbers that make kernel integrate to 1.
         r = self._radius
@@ -75,7 +75,7 @@ class Turbine:
         kernel = exp(-1 * pow(xr / w, gamma)) / (1.85544 * w) \
                  * exp(-1 * pow(pow(yr / r, 2), gamma)) / (2.91452 * pow(r, 2))
         # compute forcing function with kernel
-        forcing = -1 * force * kernel * as_vector((cos(self._yaw), sin(self._yaw))) * ud ** 2
+        forcing = -1 * force * kernel * as_vector((-sin(self._yaw), -cos(self._yaw))) * ud ** 2
 
         # The above computation yields a two-dimensional body force.
         # This is scaled to a 3D equivalent for output.

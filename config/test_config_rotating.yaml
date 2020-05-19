@@ -32,7 +32,7 @@ wind_farm:
     - [400,500]
     - [1300,500]
   yaw_angles: # [gamma] deg
-    - 20.
+    - 290.
     - 0.0
 
   farm_controller:
