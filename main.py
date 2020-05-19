@@ -92,7 +92,7 @@ def main_rotating():
 
 def main_with_ssc():
     time_start = time.time()
-    conf.par.load("./config/test_config.yaml")
+    conf.par.load("./config/test_config_ssc.yaml")
 
     def run_sim():
         wind_farm = WindFarm()

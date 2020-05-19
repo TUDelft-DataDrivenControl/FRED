@@ -16,6 +16,7 @@ class ControlModelParameters:
         self.turbine = None
         self.simulation = None
         self.flow = None
+        self.ssc = None
 
     def load(self, file):
         logger.info("Loading configuration from: {}".format(file))
@@ -40,6 +41,7 @@ class ControlModelParameters:
         self.turbine = self.Turbine(self._config["turbine"])
         self.simulation = self.Simulation(self._config["simulation"])
         self.flow = self.Flow(self._config["flow"])
+        self.ssc = self.SSC(self._config["ssc"])
 
     class WindFarm:
         def __init__(self, config_dict):
@@ -100,6 +102,15 @@ class ControlModelParameters:
             elif self.type == "series":
                 self.inflow_velocity_series = np.array(config_dict["inflow_velocity_series"])
                 self.inflow_velocity = self.inflow_velocity_series[0, 1:3]
+
+    class SSC:
+        def __init__(self, config_dict):
+            self.type = config_dict["type"]
+            self.control_discretisation = config_dict["control_discretisation"]
+            if self.type == "series":
+                self.yaw_series = np.array(config_dict["yaw_series"])
+            if self.type == "external":
+                self.port = config_dict["port"]
 
 
 par = ControlModelParameters()
