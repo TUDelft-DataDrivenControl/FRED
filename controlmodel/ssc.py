@@ -64,7 +64,7 @@ class SuperController:
         # todo: define time horizon in configuration
         # todo: store history up_prev etc...
         time_horizon = 10.
-        logger.info("Forward simulation over time horizon {:.2f}s".format(time_horizon))
+        logger.info("Forward simulation over time horizon {:.2f}".format(time_horizon))
         self._dynamic_flow_solver.save_checkpoint()
         self._dynamic_flow_solver.solve_segment(time_horizon)
         self._dynamic_flow_solver.reset_checkpoint()
@@ -77,10 +77,18 @@ class SuperController:
         logger.debug("Functional: {}".format(len(power)))
 
         total_power = sum([sum(x) for x in power])
+        average_power = total_power / len(power)
+        # average power does not affect scaling if horizon is changed
         m = [Control(x[0]) for x in controls]
-
-        gradient = compute_gradient(total_power, m)
+        gradient = compute_gradient(average_power, m)
         logger.info("Computed gradient: {}".format([float(x) for x in gradient]))
-        # compute_gradient()
-        # self._yaw_reference = ...
+
+        scale = 1e-8
+        gradient = float(gradient[0])
+        step_magnitude = np.abs(scale*gradient)
+        step = -1 * np.sign(gradient) * np.min((step_magnitude, 0.1))
+        logger.info("Step magnitude: {:.2f}, applied step: {:.2f}".format(step_magnitude, step))
+        self._yaw_reference[0] += step
+        conf.par.wind_farm.yaw_angles = self._yaw_reference.copy()
+        # todo: pass yaw reference to the local controller
 

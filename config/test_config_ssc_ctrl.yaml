@@ -2,11 +2,11 @@ mode: supercontroller
 
 ssc:
   port: 1649
-  control_discretisation: 2.
+  control_discretisation: 5.
 #  type: fixed
   yaw_angles:
     - 290.
-    - 250.
+    - 270.
 #  type: series
 #  yaw_series:
 #      - [0., 290, 270.]

@@ -93,6 +93,7 @@ def main_rotating():
 
 
 def main_with_ssc():
+    logger.setLevel(logging.DEBUG)
     time_start = time.time()
 
     def run_sim():

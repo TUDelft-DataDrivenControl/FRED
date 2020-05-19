@@ -31,7 +31,7 @@ wind_farm:
   farm_controller:
     type: external
     port: 1649
-    control_discretisation: 2.
+    control_discretisation: 5.
 
 turbine:
   axial_induction: 0.33

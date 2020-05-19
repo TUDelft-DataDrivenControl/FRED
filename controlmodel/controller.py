@@ -17,6 +17,7 @@ class Controller:
         self._wind_farm = wind_farm
         self._turbines = wind_farm.get_turbines()
         self._yaw_ref = []
+        self._time_last_updated = 0
 
         if self._control_type == "series":
             self._time_series = conf.par.wind_farm.controller.yaw_series[:, 0]
@@ -31,7 +32,8 @@ class Controller:
             logger.info("Connected to: {}".format(address))
 
     def control_yaw(self, simulation_time):
-        if simulation_time % conf.par.wind_farm.controller.control_discretisation < conf.par.simulation.time_step:
+        if (simulation_time - self._time_last_updated > conf.par.wind_farm.controller.control_discretisation)\
+                or self._yaw_ref == []:
             switcher = {
                 "fixed": self._fixed_yaw,
                 "series": self._fixed_time_series,
@@ -40,6 +42,7 @@ class Controller:
             controller_function = switcher.get(self._control_type)
             new_ref = controller_function(simulation_time)
             self._update_yaw(new_ref)
+            self._time_last_updated = simulation_time
 
     def _fixed_yaw(self, simulation_time):
         new_ref = conf.par.wind_farm.yaw_angles.copy()
