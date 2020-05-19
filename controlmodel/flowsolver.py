@@ -110,6 +110,20 @@ class DynamicFlowSolver(FlowSolver):
             self._functional_list.append([wt.get_power() for wt in self._flow_problem.get_wind_farm().get_turbines()])
         logger.info("Ran dynamic flow solution until t={:.2f}".format(self._simulation_time))
 
+    def solve_segment(self,time_horizon):
+        logger.info("Starting dynamic flow solution from t={:.2f} to t={:.2f}"
+                    .format(self._simulation_time, self._simulation_time+time_horizon))
+        num_steps = int(time_horizon // conf.par.simulation.time_step + 1)
+
+        self._functional_list = []
+        for n in range(num_steps):
+            self._solve_step()
+            # append individual turbine power
+            self._functional_list.append([wt.get_power() for wt in self._flow_problem.get_wind_farm().get_turbines()])
+
+        logger.info("Finished dynamic flow solution from t={:.2f} to t={:.2f}"
+                    .format(self._simulation_time, self._simulation_time+time_horizon))
+
     def _solve_step(self):
         self._simulation_time += conf.par.simulation.time_step
         self._flow_problem.update_inflow(self._simulation_time)
