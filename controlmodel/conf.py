@@ -37,11 +37,13 @@ class ControlModelParameters:
         print(yaml.dump(self._config))
 
     def _assign_configuration(self):
-        self.wind_farm = self.WindFarm(self._config["wind_farm"])
-        self.turbine = self.Turbine(self._config["turbine"])
-        self.simulation = self.Simulation(self._config["simulation"])
-        self.flow = self.Flow(self._config["flow"])
-        self.ssc = self.SSC(self._config["ssc"])
+        if self._config["mode"] == "simulation":
+            self.wind_farm = self.WindFarm(self._config["wind_farm"])
+            self.turbine = self.Turbine(self._config["turbine"])
+            self.simulation = self.Simulation(self._config["simulation"])
+            self.flow = self.Flow(self._config["flow"])
+        if self._config["mode"] == "supercontroller":
+            self.ssc = self.SSC(self._config["ssc"])
 
     class WindFarm:
         def __init__(self, config_dict):
@@ -106,11 +108,15 @@ class ControlModelParameters:
 
     class SSC:
         def __init__(self, config_dict):
+            self.port = config_dict["port"]
             self.type = config_dict["type"]
             self.control_discretisation = config_dict["control_discretisation"]
+            if self.type == "fixed":
+                self.yaw_angles = np.deg2rad(config_dict["yaw_angles"])
             if self.type == "series":
                 self.yaw_series = np.array(config_dict["yaw_series"])
                 self.yaw_series[:,1:] = np.deg2rad(self.yaw_series[:,1:])
+                self.yaw_angles = self.yaw_series[0, 1:]
 
 
 par = ControlModelParameters()

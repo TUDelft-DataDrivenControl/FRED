@@ -10,8 +10,8 @@ class SuperController:
 
     def __init__(self):
         self._control_type = conf.par.ssc.type
-        self._server = None  # ZmqServer(conf.par.wind_farm.controller.port)
-        self._yaw_reference = conf.par.wind_farm.yaw_angles.copy()
+        self._server = None
+        self._yaw_reference = conf.par.ssc.yaw_angles.copy()
         # todo: pitch reference may be useful later for work with SOWFA
         self._pitch_reference = np.zeros_like(self._yaw_reference)
         logger.info("SSC initialised")
@@ -21,13 +21,13 @@ class SuperController:
             self._yaw_series = conf.par.ssc.yaw_series[:, 1:]
 
     def start(self):
-        self._server = ZmqServer(conf.par.wind_farm.controller.port)
+        self._server = ZmqServer(conf.par.ssc.port)
         logger.info("SSC started")
 
         while True:
             sim_time, measurements = self._server.receive()
-            if sim_time % conf.par.ssc.control_discretisation < conf.par.simulation.time_step:
-                self._set_yaw_reference(simulation_time=sim_time)
+            # if sim_time % conf.par.ssc.control_discretisation < conf.par.simulation.time_step:
+            self._set_yaw_reference(simulation_time=sim_time)
             self._server.send(self._yaw_reference, self._pitch_reference)
             logger.info("Sent control signals for time: {:.2f}".format(sim_time))
 

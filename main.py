@@ -28,6 +28,7 @@ parameters["form_compiler"]["optimize"] = True
 
 # parameters["reorder_dofs_serial"] = False
 
+
 def main():
     time_start = time.time()
     conf.par.load("./config/test_config.yaml")
@@ -90,17 +91,19 @@ def main_rotating():
     time_end = time.time()
     logger.info("Total time: {:.2f} seconds".format(time_end - time_start))
 
+
 def main_with_ssc():
     time_start = time.time()
-    conf.par.load("./config/test_config_ssc.yaml")
 
     def run_sim():
+        conf.par.load("./config/test_config_ssc_sim.yaml")
         wind_farm = WindFarm()
         dfp = DynamicFlowProblem(wind_farm)
         dfs = DynamicFlowSolver(dfp)
         dfs.solve()
 
     def run_ssc():
+        conf.par.load("./config/test_config_ssc_ctrl.yaml")
         ssc = SuperController()
         ssc.start()
 
