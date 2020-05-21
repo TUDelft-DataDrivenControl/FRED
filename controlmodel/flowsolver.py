@@ -48,6 +48,9 @@ class FlowSolver:
                 log.write(",force_x_{0:03n}".format(idx))
                 log.write(",force_y_{0:03n}".format(idx))
                 log.write(",power_{0:03n}".format(idx))
+                log.write(",velocity_x_{0:03n}".format(idx))
+                log.write(",velocity_y_{0:03n}".format(idx))
+                log.write(",ud_{0:03n}".format(idx))
             log.write("\r\n")
 
     def get_power_functional_list(self):
@@ -157,12 +160,18 @@ class DynamicFlowSolver(FlowSolver):
             log.write("{:.6f}".format(self._simulation_time))
             # for idx in range(num_turbines):
             for wt in self._flow_problem.get_wind_farm().get_turbines():
-                log.write(",{:.6f}".format(np.rad2deg(float(wt.get_yaw()))))
+                yaw = float(wt.get_yaw())
+                log.write(",{:.6f}".format(np.rad2deg(yaw)))
                 force = wt.get_force()
                 log.write(",{:.6f}".format(force[0]))
                 log.write(",{:.6f}".format(force[1]))
                 power = wt.get_power()
                 log.write(",{:.6f}".format(power))
+                velocity = wt.get_velocity()
+                log.write(",{:.6f}".format(velocity[0]))
+                log.write(",{:.6f}".format(velocity[1]))
+                ud = velocity[0] * - sin(yaw) + velocity[1] * - cos(yaw)
+                log.write(",{:.6f}".format(ud))
             log.write("\r\n")
 
         if self._simulation_time % conf.par.simulation.write_time_step <= DOLFIN_EPS_LARGE:

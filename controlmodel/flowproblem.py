@@ -57,7 +57,7 @@ class FlowProblem:
         self._mesh = RectangleMesh(southwest_corner, northeast_corner, cells[0], cells[1], diagonal='crossed')
         #  diagonal = “left”, “right”, “left/right”, “crossed”
 
-    def _refine_mesh(self,step):
+    def _refine_mesh(self, step):
         #
         cell_markers = MeshFunction("bool", self._mesh, 2)
         cell_markers.set_all(False)
