@@ -24,6 +24,7 @@ class Turbine:
 
         self._force = None
         self._power = None
+        self._velocity = None
 
     def _compute_ct_prime(self, a):
         ct = 4 * a * (1 - a)
@@ -65,7 +66,7 @@ class Turbine:
         xs = x[0] - xt
         ys = x[1] - yt
         # rotate spatial coordinate
-        xr = -sin(self._yaw) * xs - cos(self._yaw) * ys
+        xr = -sin(self._yaw) * xs + cos(self._yaw) * ys
         yr = -cos(self._yaw) * xs - sin(self._yaw) * ys
         # formulate forcing kernel
         # 1.85544, 2.91452 are magic numbers that make kernel integrate to 1.
@@ -76,12 +77,16 @@ class Turbine:
                  * exp(-1 * pow(pow(yr / r, 2), gamma)) / (2.91452 * pow(r, 2))
         # compute forcing function with kernel
         forcing = -1 * force * kernel * as_vector((-sin(self._yaw), -cos(self._yaw))) * ud ** 2
+        # todo: check this
+        power = force * kernel * ud ** 3
 
         # The above computation yields a two-dimensional body force.
         # This is scaled to a 3D equivalent for output.
         fscale = pi * 0.5 * self._radius
         self._force = forcing * fscale
-        self._power = -dot(self._force, u)
+        self._power = power * fscale
+        # self._power = - self._force*ud #dot(self._force, u)
+        self._velocity = [kernel, kernel]
 
         return forcing
 
@@ -93,3 +98,7 @@ class Turbine:
 
     def get_power(self):
         return assemble(self._power * dx)
+
+    def get_velocity(self):
+        # return [assemble(self._velocity * dx),-1]
+        return [assemble(self._velocity[0] * dx), assemble(self._velocity[1] * dx)]
