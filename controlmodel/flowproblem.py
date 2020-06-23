@@ -258,7 +258,7 @@ class DynamicFlowProblem(FlowProblem):
                 length = conf.par.flow.wake_mixing_length * diameter
                 offset = conf.par.flow.wake_mixing_offset * diameter
                 width = conf.par.flow.wake_mixing_width * diameter
-                ml_max = conf.par.wake_mixing_ml_max
+                ml_max = conf.par.flow.wake_mixing_ml_max
                 xr = -np.sin(theta) * xs - np.cos(theta) * ys - offset
                 yr = np.cos(theta) * xs - np.sin(theta) * ys
 

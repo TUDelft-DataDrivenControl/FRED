@@ -85,6 +85,8 @@ class ControlModelParameters:
             self.radius = self.diameter / 2
             self.thickness = config_dict["thickness"]
             self.hub_height = config_dict["hub_height"]
+            self.kernel = config_dict["kernel"]
+            self.deflection_scale = config_dict["deflection_scale"]
 
     class Simulation:
         def __init__(self, config_dict):

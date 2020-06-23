@@ -58,3 +58,5 @@ turbine:
   diameter: 178.4 # m
   thickness: 17.8 # m
   hub_height: 119.6 # m
+  kernel: gaussian # king, gaussian
+  deflection_scale: 3. #

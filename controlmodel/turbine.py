@@ -74,10 +74,24 @@ class Turbine:
         r = self._radius
         w = self._thickness
         gamma = 6
-        kernel = exp(-1 * pow(xr / w, gamma)) / (1.85544 * w) \
-                 * exp(-1 * pow(pow(yr / r, 2), gamma)) / (2.91452 * pow(r, 2))
+        if conf.par.turbine.kernel == "king":
+            logger.info("Turbine forcing kernel as in work by R. King (2017)")
+            kernel = exp(-1 * pow(xr / w, gamma)) / (1.85544 * w) * \
+                     exp(-1 * pow(pow(yr / r, 2), gamma)) / (2.91452 * pow(r, 2))
+        elif conf.par.turbine.kernel == "gaussian":
+            logger.info("Turbine forcing with gaussian distribution")
+            r = self._radius * 0.6
+            w = self._thickness
+            zr = 0
+            kernel = (exp(-1.0 * pow(xr / w, 6)) / (w * 1.85544)) * \
+                     (exp(-0.5 * pow(yr / r, 2)) / (r * sqrt(2 * pi))) * \
+                     (exp(-0.5 * pow(zr / r, 2)) / (r * sqrt(2 * pi)))
+
+
         # compute forcing function with kernel
-        forcing = -1 * force * kernel * as_vector((-sin(self._yaw), -cos(self._yaw))) * ud ** 2
+        scale = conf.par.turbine.deflection_scale
+        logger.info("Scaling force for wake deflection by factor {:.1f}".format(scale))
+        forcing = -1 * force * kernel * as_vector((-sin(self._yaw), -scale*cos(self._yaw))) * ud ** 2
         # todo: check this
         power = force * kernel * ud ** 3
 
