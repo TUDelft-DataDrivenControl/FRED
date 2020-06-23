@@ -22,7 +22,7 @@ def get_slice(x, u, xloc=None, yloc=None, domain=None):
         y_coords = np.linspace(0, domain[1], domain[1])
 
     grid_x, grid_y = np.meshgrid(x_coords, y_coords)
-    grid_u = griddata(x[:, 0:2], u[:, :], (grid_x, grid_y), method='linear')
+    grid_u = griddata(x[:, 0:2], u[:, :], (grid_x, grid_y), method='cubic')
     if xloc is None and yloc is not None:
         x_slice = grid_y[:,int(yloc)]
         u_slice = grid_u[:,int(yloc),:]
@@ -56,16 +56,22 @@ def plot_contours(x, u, ax=None, levels=None,domain=None,type='velocity'):
 
 
 def rot(yaw):
-    cy = np.cos(yaw)
-    sy = np.sin(yaw)
-    rot = np.array([[cy, -sy], [sy, cy]])
+    # cy = np.cos(yaw)
+    # sy = np.sin(yaw)
+    # rot = np.array([[cy, -sy], [sy, cy]])
+    rot = np.array([
+        [-np.sin(yaw), np.cos(yaw)],
+        [-np.cos(yaw), -np.sin(yaw)]
+        ])
     return rot
 
 
 def plot_turbines(pos,radius,yaw,ax):
-    for idx in range(len(pos)):
-        blade = radius * np.dot(rot(yaw[idx]),np.array([0,1]))
+    yaw = np.deg2rad(yaw)
 
+    for idx in range(len(pos)):
+        blade = radius * rot(yaw[idx]).dot(np.array([0,1]).transpose())
+        # pos = np.
         tip_0 = pos[idx] + blade
         tip_1 = pos[idx] - blade
 
