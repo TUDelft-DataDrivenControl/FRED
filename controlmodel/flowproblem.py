@@ -254,16 +254,15 @@ class DynamicFlowProblem(FlowProblem):
                 # todo: get wind direction from constants
                 theta = np.deg2rad(270)
 
-                # todo: move to config
-
-                width = 1.5 * conf.par.turbine.diameter
-                offset = 3.0 * conf.par.turbine.diameter
-                diameter = 0.6 *conf.par.turbine.diameter
-                ml_max = 25
+                diameter = conf.par.turbine.diameter
+                length = conf.par.flow.wake_mixing_length * diameter
+                offset = conf.par.flow.wake_mixing_offset * diameter
+                width = conf.par.flow.wake_mixing_width * diameter
+                ml_max = conf.par.wake_mixing_ml_max
                 xr = -np.sin(theta) * xs - np.cos(theta) * ys - offset
                 yr = np.cos(theta) * xs - np.sin(theta) * ys
 
-                ml.append(ml_max * exp( - pow(xr / width, 2) - pow(yr / diameter, 4)))
+                ml.append(ml_max * exp(- pow(xr / length, 2) - pow(yr / width, 4)))
             return sum(ml)
 
         if conf.par.flow.mixing_length > 1e-14:

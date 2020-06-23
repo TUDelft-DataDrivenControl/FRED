@@ -1,10 +1,12 @@
 #  turbine optimization config
 # DTU10MWRef
 
+mode: simulation
+
 simulation:
   name: two_turbine_test
   is_dynamic: True
-  total_time: 59. # s
+  total_time: 150. # s
   time_step: 0.5 # s
   dimensions: 2 # -
   save_logs: True
@@ -12,33 +14,42 @@ simulation:
 
 flow:
   type: "steady"
-  inflow_velocity: [8., 270.]  # [|U|, theta]
+  inflow_velocity: [9., 270.]  # [|U|, theta]
   kinematic_viscosity: 0.000015 # kg.m^-1.s^-1
-  tuning_viscosity: 1. # kg.m^-1.s^-1
-  mixing_length: 20. #30. #20 # m
+  tuning_viscosity: 0. # kg.m^-1.s^-1
+  mixing_length: 10. #30. #20 # m
+  wake_mixing_length: 1.5 # D
+  wake_mixing_width: 0.6  # D
+  wake_mixing_offset: 3.0 # D
+  wake_mixing_ml_max: 25. # m
   density: 1.2 # kg.m^-3
 
 wind_farm:
   size: [2000,1000]
   cells: [20, 10]
-  do_refine_turbines: True
-  refine_radius: 100.
+  do_refine_turbines: 1
+  refine_radius: 150.
   positions: # [x, y] m
     - [400,500]
     - [1300,500]
   yaw_angles: # [gamma] deg
-    - 290.
+    - 280.
     - 270.
 
   farm_controller:
+    control_discretisation: 1.
 #    type: fixed
-    type: external
-    port: 1649
-    control_discretisation: 2.
-#    type: series
-#    yaw_series: # [time, yaw_0, ... , yaw_n]
-#      - [0., 0.3, 0.,]
-#      - [59., -0.3, 0.,]
+#    type: external
+#    port: 1649
+#    control_discretisation: 2.
+    type: series
+    yaw_series: # [time, yaw_0, ... , yaw_n]
+      - [  0., 270., 270.]
+      - [299.9,270., 270.]
+      - [300., 290., 270.]
+#      - [499.9,290., 270.]
+#      - [500., 270., 270.]
+      - [700., 290., 270.]
 #    control_discretisation: 10.
 
 turbine:
