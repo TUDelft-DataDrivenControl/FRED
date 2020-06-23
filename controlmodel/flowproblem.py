@@ -253,7 +253,7 @@ class DynamicFlowProblem(FlowProblem):
                 # rotate space
                 # todo: get wind direction from constants
                 theta = np.deg2rad(270)
-
+                logger.warning("Gaussian mixing length variation assumes fixed West wind")
                 diameter = conf.par.turbine.diameter
                 length = conf.par.flow.wake_mixing_length * diameter
                 offset = conf.par.flow.wake_mixing_offset * diameter
@@ -282,12 +282,20 @@ class DynamicFlowProblem(FlowProblem):
         convective_term = 0.5 * (inner(dot(u_tilde, nabla_grad(u_bar)), v)
                                  + inner(div(outer(u_tilde, u_bar)), v))
 
+        if conf.par.flow.continuity_correction == "wfsim":
+            logger.info("Applying WFSim continuity correction, valid for West-East flow")
+            # attempt to modify relaxation according to Boersma2018 WFSim
+            continuity_correction = 1 * u[1].dx(1)
+        else:
+            logger.info("Applying no continuity correction")
+            continuity_correction = 0
+
         variational_form = inner(u - u_prev, v) * dx \
                            + dt * (nu + nu_tuning + nu_turbulent) * inner(nabla_grad(u_bar), nabla_grad(v)) * dx \
                            + dt * convective_term * dx \
                            - dt * inner(f, v) * dx \
                            - dt * inner(div(v), p) * dx \
-                           + inner(div(u), q) * dx
+                           + inner(div(u) + continuity_correction, q) * dx
 
         self._variational_form = variational_form
 

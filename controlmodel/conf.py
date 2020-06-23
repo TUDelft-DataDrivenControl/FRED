@@ -109,6 +109,7 @@ class ControlModelParameters:
             self.wake_mixing_width = config_dict["wake_mixing_width"]
             self.wake_mixing_offset = config_dict["wake_mixing_offset"]
             self.wake_mixing_ml_max = config_dict["wake_mixing_ml_max"]
+            self.continuity_correction = config_dict["continuity_correction"]
             self.type = config_dict["type"]
             if self.type == "steady":
                 self.inflow_velocity = config_dict["inflow_velocity"]
