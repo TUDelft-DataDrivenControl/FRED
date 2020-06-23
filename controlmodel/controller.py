@@ -32,7 +32,7 @@ class Controller:
             logger.info("Connected to: {}".format(address))
 
     def control_yaw(self, simulation_time):
-        if (simulation_time - self._time_last_updated > conf.par.wind_farm.controller.control_discretisation)\
+        if (simulation_time - self._time_last_updated >= conf.par.wind_farm.controller.control_discretisation)\
                 or self._yaw_ref == []:
             switcher = {
                 "fixed": self._fixed_yaw,
