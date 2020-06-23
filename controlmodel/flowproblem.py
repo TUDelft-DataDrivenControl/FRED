@@ -244,7 +244,26 @@ class DynamicFlowProblem(FlowProblem):
 
         # Turbulence modelling with a mixing length model.
         def mixing_length(u):
+            x = SpatialCoordinate(u)
             ml = [Constant(conf.par.flow.mixing_length)]
+            for pos in conf.par.wind_farm.positions:
+                # shift space
+                xs = x[0] - pos[0]
+                ys = x[1] - pos[1]
+                # rotate space
+                # todo: get wind direction from constants
+                theta = np.deg2rad(270)
+
+                # todo: move to config
+
+                width = 1.5 * conf.par.turbine.diameter
+                offset = 3.0 * conf.par.turbine.diameter
+                diameter = 0.6 *conf.par.turbine.diameter
+                ml_max = 25
+                xr = -np.sin(theta) * xs - np.cos(theta) * ys - offset
+                yr = np.cos(theta) * xs - np.sin(theta) * ys
+
+                ml.append(ml_max * exp( - pow(xr / width, 2) - pow(yr / diameter, 4)))
             return sum(ml)
 
         if conf.par.flow.mixing_length > 1e-14:
