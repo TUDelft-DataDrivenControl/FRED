@@ -34,17 +34,25 @@ def main():
     conf.par.load("./config/test_config.yaml")
 
     # this is where parameter adjustments are possible
-    #
+    # #
     wind_farm = WindFarm()
     dfp = DynamicFlowProblem(wind_farm)
     dfs = DynamicFlowSolver(dfp)
-    #
-    dfs.solve()
-    #
-    # analysis.construct_jacobian_matrix(dfs, turbine_idx=1)
-
-    # dj_dm = load_jacobian(turbine_idx=0)
+    # # #
+    # dfs.solve()
+    # dfs.solve_segment(300)
+    # dfs.solve_segment(360)
+    dfs.solve_segment(600)
+    # #
+    # # # analysis.construct_jacobian_matrix(dfs, turbine_idx=0)
+    # analysis.construct_lti_jacobian_matrix(dfs, turbine_idx=0)
+    # dj_dm = load_lti_jacobian(turbine_idx=0)
+    # # # np.fill_diagonal(dj_dm,0.)
     # plot_jacobian(dj_dm)
+    # # # plt.figure()
+    # # plt.plot(dj_dm[:,0])
+    # # p = np.trapz(dj_dm[-1,:],dx=np.deg2rad(10))
+    # # print(p)
     # plt.show()
 
     time_end = time.time()
@@ -123,8 +131,34 @@ def main_with_ssc():
     time_end = time.time()
     logger.info("Total time: {:.2f} seconds".format(time_end - time_start))
 
+
+def main_power_yaw():
+    time_start = time.time()
+    conf.par.load("./config/test_config_power_yaw.yaml")
+
+    # this is where parameter adjustments are possible
+    yaw_series = np.zeros((28, 2))
+    yaw_series[0:2, :] = [[0, 300], [299.9, 300]]
+    for idx in range(13):
+        yaw_series[2 * (idx + 1), :] = [300 + 30 * idx, 300 - 5 * idx]
+        yaw_series[2 * (idx + 1) + 1, :] = [300 + 30 * idx + 29.9, 300 - 5 * idx]
+    yaw_series[:,1] = np.deg2rad(yaw_series[:,1])
+    conf.par.wind_farm.controller.yaw_series = yaw_series
+
+    wind_farm = WindFarm()
+    dfp = DynamicFlowProblem(wind_farm)
+    dfs = DynamicFlowSolver(dfp)
+
+    dfs.solve_segment(800)
+
+    time_end = time.time()
+    logger.info("Total time: {:.2f} seconds".format(time_end - time_start))
+
+
 if __name__ == '__main__':
+    print("smth")
     # main()
+    # main_power_yaw()
     # main_steady()
     # main_rotating()
-    main_with_ssc()
+    # main_with_ssc()
