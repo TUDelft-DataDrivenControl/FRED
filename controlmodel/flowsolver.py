@@ -51,6 +51,7 @@ class FlowSolver:
                 log.write(",velocity_x_{0:03n}".format(idx))
                 log.write(",velocity_y_{0:03n}".format(idx))
                 log.write(",ud_{0:03n}".format(idx))
+                log.write(",kernel_{0:03n}".format(idx))
             log.write("\r\n")
 
     def get_power_functional_list(self):
@@ -163,8 +164,10 @@ class DynamicFlowSolver(FlowSolver):
                 yaw = float(wt.get_yaw())
                 log.write(",{:.6f}".format(np.rad2deg(yaw)))
                 force = wt.get_force()
-                log.write(",{:.6f}".format(force[0]))
-                log.write(",{:.6f}".format(force[1]))
+                # log.write(",{:.6f}".format(force[0]))
+                # log.write(",{:.6f}".format(force[1]))
+                log.write(",{:.6f}".format(np.sqrt(force[0]**2+force[1]**2)))
+                log.write(",{:.6f}".format(np.rad2deg(np.arctan2(force[0], force[1])) % 360.))
                 power = wt.get_power()
                 log.write(",{:.6f}".format(power))
                 velocity = wt.get_velocity()
@@ -172,6 +175,8 @@ class DynamicFlowSolver(FlowSolver):
                 log.write(",{:.6f}".format(velocity[1]))
                 ud = velocity[0] * - sin(yaw) + velocity[1] * - cos(yaw)
                 log.write(",{:.6f}".format(ud))
+                kernel = wt.get_kernel()
+                log.write(",{:.6f}".format(kernel))
             log.write("\r\n")
 
         if self._simulation_time % conf.par.simulation.write_time_step <= DOLFIN_EPS_LARGE:
