@@ -243,13 +243,18 @@ class DynamicFlowProblem(FlowProblem):
         self._forcing = f
 
         # Turbulence modelling with a mixing length model.
+        def mixing_length(u):
+            ml = [Constant(conf.par.flow.mixing_length)]
+            return sum(ml)
+
         if conf.par.flow.mixing_length > 1e-14:
-            ml = Constant(conf.par.flow.mixing_length)
+            ml = mixing_length(u_prev)
             grad_u = grad(u_prev)
             b = grad_u + grad_u.T
             s = sqrt(0.5 * inner(b, b))
             nu_turbulent = ml ** 2 * s
         else:
+            logger.warning("Not using a mixing length model.")
             nu_turbulent = Constant(0.)
 
         # Tuning viscosity may be used instead of a mixing length model

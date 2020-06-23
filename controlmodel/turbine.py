@@ -71,45 +71,22 @@ class Turbine:
         yr = cos(self._yaw) * xs - sin(self._yaw) * ys
         # formulate forcing kernel
         # 1.85544, 2.91452 are magic numbers that make kernel integrate to 1.
-        r = self._radius  # / sqrt(2)
-
+        r = self._radius
         w = self._thickness
         gamma = 6
-        # kernel = exp(-1 * pow(xr / w, gamma)) / (1.85544 * w) \
-        #          * exp(-1 * pow(pow(yr / r, 2), gamma)) / (2.91452 * pow(r, 2))
-
-        # # logger.warning("currently adjusting kernel diameter by sqrt(2) for 3D-2D correction")
-        # kernel = exp(-1 * pow(xr / w, gamma)) / (1.85544 * w) \
-        #          * exp(-1 * pow(pow(yr / r, 2), gamma)) / (2.91452 * pow(r, 2))
-
-        # logger.warning("using new kernel")
-        # gamma_x = 6
-        # gamma_y = 1
-        # kernel = exp(-1 * pow(xr / w, gamma_x)) / (1.85544 * w) \
-        #          * exp(-1 * pow(pow(yr / r, 2), gamma_y)) / (3.14105 * pow(r, 2))
-
-        logger.warning("Using standard gaussian kernel")
-        r = self._radius*0.6
-        w = self._thickness
-        zr = 0
-        # kernel = (exp(-1.0* pow(xr / w, 6)) / (w * 1.85544)) * \
-        #          (exp(-0.5 * pow(yr / r, 2)) / (r * sqrt(2*pi))) * \
-        #          (exp(-0.5 * pow(zr / r, 2)) / (r * sqrt(2*pi)))
-        kernel = (exp(-1.0 * pow(xr / w, 6)) / (w * 1.85544)) * \
-                 (exp(-0.5 * pow(yr / r, 2)) / (r * sqrt(2 * pi))) * \
-                 (exp(-0.5 * pow(zr / r, 2)) / (r * sqrt(2 * pi)))
-
+        kernel = exp(-1 * pow(xr / w, gamma)) / (1.85544 * w) \
+                 * exp(-1 * pow(pow(yr / r, 2), gamma)) / (2.91452 * pow(r, 2))
         # compute forcing function with kernel
-        logger.warning("put scaling factor into forcing...")
-        forcing = -1 * force * kernel * as_vector((-sin(self._yaw), -3*cos(self._yaw))) * ud ** 2
+        forcing = -1 * force * kernel * as_vector((-sin(self._yaw), -cos(self._yaw))) * ud ** 2
         # todo: check this
         power = force * kernel * ud ** 3
 
         # The above computation yields a two-dimensional body force.
         # This is scaled to a 3D equivalent for output.
         fscale = pi * 0.5 * self._radius
+        # todo: compute accurate 3D scaling factor
         self._force = forcing * fscale
-        self._power = power * fscale  # * sqrt(2)
+        self._power = power * fscale
         # self._power = - self._force*ud #dot(self._force, u)
         self._kernel = kernel * fscale
         self._velocity = u * kernel * fscale
