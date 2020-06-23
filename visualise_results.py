@@ -19,14 +19,14 @@ def main_contours():
 def main_slice():
     fig,ax = plt.subplots(1,1, figsize=(5,3))
     fig.subplots_adjust(bottom=0.15,top=0.9)
-    vtk_file_u = "./results/two_U000058.vtu"
+    vtk_file_u = "./results/two_turbine_test/U000029.vtu"
     x, u, tri = read_vtk_unstructured(vtk_file_u)
-    xs, us = get_slice(x,u,xloc=500)
+    xs, us = get_slice(x,u,xloc=499)
 
-    u_inf = 8.
+    u_inf = 9.
     wi = 0.33 # ???
     radius = 89.
-    xt = xs - 600.
+    xt = xs - 400.
     u_theory = u_inf * (1. - (2/np.pi)*wi*((np.pi/2) + np.arctan(xt/radius)))
     c = get_colours(2)
     ax.plot(xs,us[:,0],c=c[0],label="actual")
@@ -118,9 +118,9 @@ def show_jacobian(djdm):
 
 if __name__ == '__main__':
     # main_contours()
-    # main_slice()
+    main_slice()
     # two_turbine_step()
     # show_jacobian()
     # single_turbine_grad_control()
-    two_turbine_grad_control()
+    # two_turbine_grad_control()
     plt.show()
