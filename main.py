@@ -47,13 +47,13 @@ def main():
     # # # analysis.construct_jacobian_matrix(dfs, turbine_idx=0)
     # analysis.construct_lti_jacobian_matrix(dfs, turbine_idx=0)
     # dj_dm = load_lti_jacobian(turbine_idx=0)
-    # # # np.fill_diagonal(dj_dm,0.)
+    # np.fill_diagonal(dj_dm,0.)
     # plot_jacobian(dj_dm)
     # # # plt.figure()
-    # # plt.plot(dj_dm[:,0])
+    # plt.plot(dj_dm[:,0])
     # # p = np.trapz(dj_dm[-1,:],dx=np.deg2rad(10))
     # # print(p)
-    # plt.show()
+    plt.show()
 
     time_end = time.time()
     logger.info("Total time: {:.2f} seconds".format(time_end - time_start))
@@ -156,9 +156,8 @@ def main_power_yaw():
 
 
 if __name__ == '__main__':
-    print("smth")
     # main()
     # main_power_yaw()
     # main_steady()
     # main_rotating()
-    # main_with_ssc()
+    main_with_ssc()

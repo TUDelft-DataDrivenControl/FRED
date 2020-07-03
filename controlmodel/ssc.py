@@ -63,7 +63,7 @@ class SuperController:
         # t0 = simulation_time
         # todo: define time horizon in configuration
         # todo: store history up_prev etc...
-        time_horizon = 300.
+        time_horizon = 150.
         logger.info("Forward simulation over time horizon {:.2f}".format(time_horizon))
         self._dynamic_flow_solver.save_checkpoint()
         self._dynamic_flow_solver.solve_segment(time_horizon)
@@ -77,14 +77,25 @@ class SuperController:
         logger.debug("Controls: {}".format(len(controls)))
         logger.debug("Functional: {}".format(len(power)))
 
-        total_power = sum([sum(x) for x in power[240:]])
-        average_power = total_power / len(power)
-        # average power does not affect scaling if horizon is changed
-        m = [Control(x[0]) for x in controls]
-        gradient = compute_gradient(average_power, m)
+        if conf.par.ssc.objective == "maximization":
+            total_power = sum([sum(x) for x in power[240:]])
+            average_power = total_power / len(power)
+            # average power does not affect scaling if horizon is changed
+            m = [Control(x[0]) for x in controls]
+            gradient = compute_gradient(average_power, m)
+        elif conf.par.ssc.objective == "tracking":
+            total_power = [sum(x) for x in power]
+            time = np.arange(simulation_time, simulation_time + time_horizon, conf.par.simulation.time_step)
+            t_ref_array = conf.par.ssc.power_reference[:,0]
+            p_ref_array = conf.par.ssc.power_reference[:,1]
+            p_ref = np.interp(time,t_ref_array, p_ref_array)
+            power_difference_squared = [(p-pr)*(p-pr) for p,pr in zip(total_power, p_ref)]
+            tracking_functional = sum(power_difference_squared)
+            m = [Control(x[0]) for x in controls]
+            gradient = compute_gradient(tracking_functional, m)
+
 
         logger.info("Computed gradient: {}".format([float(x) for x in gradient]))
-
         scale = 1e-7
         gradient = float(gradient[0])
         step_magnitude = np.abs(scale*gradient)
