@@ -13,9 +13,9 @@ ssc:
 #      - [59., 250, 270.]
   type: gradient_step
   objective: tracking
-    power_reference:
-      - [  0., 6e6]
-      - [999., 7e6]
+    power_reference: #MW
+      - [  0., 6.1]
+      - [999., 7.1]
 
 simulation:
   name: ssc_ctrl

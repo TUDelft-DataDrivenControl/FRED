@@ -135,6 +135,7 @@ class ControlModelParameters:
             self.objective = config_dict["objective"]
             if self.objective == "tracking":
                 self.power_reference = np.array(config_dict["power_reference"])
+                self.power_reference[:,1] *= 1e6
 
 
 par = ControlModelParameters()
