@@ -63,11 +63,12 @@ class SuperController:
         # t0 = simulation_time
         # todo: define time horizon in configuration
         # todo: store history up_prev etc...
-        time_horizon = 10.
+        time_horizon = 300.
         logger.info("Forward simulation over time horizon {:.2f}".format(time_horizon))
         self._dynamic_flow_solver.save_checkpoint()
         self._dynamic_flow_solver.solve_segment(time_horizon)
-        self._dynamic_flow_solver.reset_checkpoint()
+
+
 
         # Get the relevant controls and power series over the time segment of the forward simulation
         controls = self._wind_farm.get_controls()
@@ -76,19 +77,22 @@ class SuperController:
         logger.debug("Controls: {}".format(len(controls)))
         logger.debug("Functional: {}".format(len(power)))
 
-        total_power = sum([sum(x) for x in power])
+        total_power = sum([sum(x) for x in power[240:]])
         average_power = total_power / len(power)
         # average power does not affect scaling if horizon is changed
         m = [Control(x[0]) for x in controls]
         gradient = compute_gradient(average_power, m)
+
         logger.info("Computed gradient: {}".format([float(x) for x in gradient]))
 
-        scale = 1e-8
+        scale = 1e-7
         gradient = float(gradient[0])
         step_magnitude = np.abs(scale*gradient)
-        step = -1 * np.sign(gradient) * np.min((step_magnitude, 0.1))
+        step = 1 * np.sign(gradient) * np.min((step_magnitude, 0.1))
         logger.info("Step magnitude: {:.2f}, applied step: {:.2f}".format(step_magnitude, step))
         self._yaw_reference[0] += step
         conf.par.wind_farm.yaw_angles = self._yaw_reference.copy()
         # todo: pass yaw reference to the local controller
 
+        self._dynamic_flow_solver.reset_checkpoint()
+        self._dynamic_flow_solver.solve_segment(60.)

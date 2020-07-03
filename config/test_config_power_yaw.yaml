@@ -4,13 +4,13 @@
 mode: simulation
 
 simulation:
-  name: two_turbine_test
+  name: power_yaw
   is_dynamic: True
   total_time: 150. # s
-  time_step: 1. # s
+  time_step: 0.5 # s
   dimensions: 2 # -
   save_logs: True
-  write_time_step: 10.0
+  write_time_step: 30.0
 
 flow:
   type: "steady"
@@ -18,12 +18,7 @@ flow:
   kinematic_viscosity: 0.000015 # kg.m^-1.s^-1
   tuning_viscosity: 0. # kg.m^-1.s^-1
   mixing_length: 10. #30. #20 # m
-  wake_mixing_length: 1.5 # D
-  wake_mixing_width: 0.6  # D
-  wake_mixing_offset: 3.0 # D
-  wake_mixing_ml_max: 25. # m
   density: 1.2 # kg.m^-3
-  continuity_correction: wfsim # none, wfsim, (general)
 
 wind_farm:
   size: [2000,1000]
@@ -32,10 +27,10 @@ wind_farm:
   refine_radius: 150.
   positions: # [x, y] m
     - [400,500]
-    - [1300,500]
+#    - [1300,500]
   yaw_angles: # [gamma] deg
     - 280.
-    - 270.
+#    - 270.
 
   farm_controller:
     control_discretisation: 1.
@@ -45,12 +40,12 @@ wind_farm:
 #    control_discretisation: 2.
     type: series
     yaw_series: # [time, yaw_0, ... , yaw_n]
-      - [  0., 270., 270.]
-      - [299.9,270., 270.]
-      - [300., 290., 270.]
+      - [  0., 270.]
+      - [299.9,270.]
+      - [300., 290.]
 #      - [499.9,290., 270.]
 #      - [500., 270., 270.]
-      - [700., 290., 270.]
+      - [700., 290.]
 #    control_discretisation: 10.
 
 turbine:
@@ -58,5 +53,3 @@ turbine:
   diameter: 178.4 # m
   thickness: 17.8 # m
   hub_height: 119.6 # m
-  kernel: gaussian # king, gaussian
-  deflection_scale: 3. #

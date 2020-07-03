@@ -2,16 +2,20 @@ mode: supercontroller
 
 ssc:
   port: 1649
-  control_discretisation: 5.
+  control_discretisation: 300.
 #  type: fixed
   yaw_angles:
-    - 290.
+    - 280.
     - 270.
 #  type: series
 #  yaw_series:
 #      - [0., 290, 270.]
 #      - [59., 250, 270.]
   type: gradient_step
+  objective: tracking
+    power_reference:
+      - [  0., 6e6]
+      - [999., 7e6]
 
 simulation:
   name: ssc_ctrl
@@ -26,14 +30,19 @@ flow:
   type: "steady"
   inflow_velocity: [8., 270.]  # [|U|, theta]
   kinematic_viscosity: 0.000015 # kg.m^-1.s^-1
-  tuning_viscosity: 1. # kg.m^-1.s^-1
-  mixing_length: 20. #30. #20 # m
+  tuning_viscosity: 0. # kg.m^-1.s^-1
+  mixing_length: 10. #30. #20 # m
+  wake_mixing_length: 1.5 # D
+  wake_mixing_width: 0.6  # D
+  wake_mixing_offset: 3.0 # D
+  wake_mixing_ml_max: 25. # m
   density: 1.2 # kg.m^-3
+  continuity_correction: wfsim # none, wfsim, (general)
 
 wind_farm:
   size: [2000,1000]
   cells: [20, 10]
-  do_refine_turbines: 0
+  do_refine_turbines: 1
   refine_radius: 100.
   positions: # [x, y] m
     - [400,500]
@@ -44,10 +53,12 @@ wind_farm:
 
   farm_controller:
     type: fixed
-    control_discretisation: 10.
+    control_discretisation: 300.
 
 turbine:
   axial_induction: 0.33
   diameter: 178.4 # m
   thickness: 17.8 # m
   hub_height: 119.6 # m
+  kernel: gaussian # king, gaussian
+  deflection_scale: 3. #

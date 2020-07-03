@@ -132,6 +132,9 @@ class ControlModelParameters:
                 self.yaw_angles = self.yaw_series[0, 1:]
             if self.type == "gradient_step":
                 self.yaw_angles = np.deg2rad(config_dict["yaw_angles"])
+            self.objective = config_dict["objective"]
+            if self.objective == "tracking":
+                self.power_reference = np.array(config_dict["power_reference"])
 
 
 par = ControlModelParameters()

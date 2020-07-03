@@ -3,7 +3,7 @@ mode: simulation
 simulation:
   name: ssc_sim
   is_dynamic: True
-  total_time: 59. # s
+  total_time: 599. # s
   time_step: 0.5 # s
   dimensions: 2 # -
   save_logs: True
@@ -13,14 +13,19 @@ flow:
   type: "steady"
   inflow_velocity: [8., 270.]  # [|U|, theta]
   kinematic_viscosity: 0.000015 # kg.m^-1.s^-1
-  tuning_viscosity: 1. # kg.m^-1.s^-1
-  mixing_length: 20. #30. #20 # m
+  tuning_viscosity: 0. # kg.m^-1.s^-1
+  mixing_length: 10. #30. #20 # m
+  wake_mixing_length: 1.5 # D
+  wake_mixing_width: 0.6  # D
+  wake_mixing_offset: 3.0 # D
+  wake_mixing_ml_max: 25. # m
   density: 1.2 # kg.m^-3
+  continuity_correction: wfsim # none, wfsim, (general)
 
 wind_farm:
   size: [2000,1000]
   cells: [20, 10]
-  do_refine_turbines: 2
+  do_refine_turbines: 1
   refine_radius: 100.
   positions: # [x, y] m
     - [400,500]
@@ -31,10 +36,12 @@ wind_farm:
   farm_controller:
     type: external
     port: 1649
-    control_discretisation: 5.
+    control_discretisation: 60.
 
 turbine:
   axial_induction: 0.33
   diameter: 178.4 # m
   thickness: 17.8 # m
   hub_height: 119.6 # m
+  kernel: gaussian # king, gaussian
+  deflection_scale: 3. #
