@@ -10,7 +10,7 @@ logger = logging.getLogger("cm.flowsolver")
 
 class FlowSolver:
 
-    def __init__(self, flow_problem):
+    def __init__(self, flow_problem, ssc=None):
         self._flow_problem = flow_problem
 
         self._left, self._right = self._flow_problem.get_linear_system()
@@ -26,9 +26,11 @@ class FlowSolver:
         self._vtk_file_f = None
         self._data_file = None
 
+        self._supercontroller = ssc
         self._setup_output_files()
 
         self._functional_list = []
+
 
     def _setup_output_files(self):
 
@@ -52,6 +54,8 @@ class FlowSolver:
                 log.write(",velocity_y_{0:03n}".format(idx))
                 log.write(",ud_{0:03n}".format(idx))
                 log.write(",kernel_{0:03n}".format(idx))
+            if self._supercontroller is not None:
+                log.write(",power_ref")
             log.write("\r\n")
 
     def get_power_functional_list(self):
@@ -95,9 +99,9 @@ class SteadyFlowSolver(FlowSolver):
 
 class DynamicFlowSolver(FlowSolver):
 
-    def __init__(self, flow_problem):
+    def __init__(self, flow_problem, ssc=None):
         logger.info("Starting dynamic flow solver")
-        FlowSolver.__init__(self, flow_problem)
+        FlowSolver.__init__(self, flow_problem, ssc)
 
         self._simulation_time = 0.0
         self._time_start = 0.
@@ -105,6 +109,8 @@ class DynamicFlowSolver(FlowSolver):
         self._simulation_time_checkpoint = None
         self._up_prev_checkpoint = None
         self._up_prev2_checkpoint = None
+
+        # self._supercontroller = ssc
 
     def solve(self):
         logger.info("Starting dynamic flow solution")
@@ -177,6 +183,8 @@ class DynamicFlowSolver(FlowSolver):
                 log.write(",{:.6f}".format(ud))
                 kernel = wt.get_kernel()
                 log.write(",{:.6f}".format(kernel))
+            if self._supercontroller is not None:
+                log.write(",{:.6f}".format(self._supercontroller.get_power_reference(self._simulation_time)))
             log.write("\r\n")
 
         if self._simulation_time % conf.par.simulation.write_time_step <= DOLFIN_EPS_LARGE:

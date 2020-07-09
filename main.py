@@ -113,6 +113,12 @@ def main_with_ssc():
 
     def run_ssc():
         conf.par.load("./config/test_config_ssc_ctrl.yaml")
+        t = np.arange(0,1000.,1.)
+        pr = 5.0e6 + 0.7e6 *np.round(np.cos(t/10))
+        power_reference = np.zeros((len(t),2))
+        power_reference[:,0] = t
+        power_reference[:,1] = pr
+        conf.par.ssc.power_reference = power_reference
         ssc = SuperController()
         ssc.start()
 
@@ -155,9 +161,66 @@ def main_power_yaw():
     logger.info("Total time: {:.2f} seconds".format(time_end - time_start))
 
 
+def main_step_series():
+    time_start = time.time()
+    for step in [0, 5, 10, 15, 20]:
+        conf.par.load("./config/two.01.step.yaml")
+        yaw_series = np.array([[0., 270., 270.],
+                               [299.9, 270., 270.],
+                               [300.0, 270. + step, 270.],
+                               [1000.0, 270. + step, 270]])
+        yaw_series[:,1:] = np.deg2rad(yaw_series[:,1:])
+        conf.par.wind_farm.controller.yaw_series = yaw_series
+        conf.par.simulation.name = "two.01.step.{:02d}".format(step)
+        print("Starting: " + conf.par.simulation.name)
+        wind_farm = WindFarm()
+        dfp = DynamicFlowProblem(wind_farm)
+        dfs = DynamicFlowSolver(dfp)
+        dfs.solve()
+    time_end = time.time()
+    logger.info("Total time: {:.2f} seconds".format(time_end - time_start))
+
+def main_yaw_sweep():
+    time_start = time.time()
+    conf.par.load("./config/two.01.step.yaml")
+    t = np.linspace(0, 13400, 13401)
+
+    yaw_angle_output = 270. * np.ones((13401, 2))
+    idx = 0
+
+    angle_start = 310.
+    angle_sweep = 80.
+    step_length = 300.
+    step_size = 2.
+    time_start_sweep = 600.
+    time_end_sweep = time_start_sweep + ((angle_sweep / step_size) + 1) * step_length
+    for current_time in t:
+        if time_start_sweep <= current_time < time_end_sweep:
+            yaw_angle_output[idx, 0] = angle_start - step_size * (
+                        ((step_size / step_length) * (current_time - time_start_sweep)) // step_size)
+
+        idx += 1
+
+    yaw_series = np.hstack((np.array([t]).transpose(), yaw_angle_output))
+    yaw_series[:, 1:] = np.deg2rad(yaw_series[:, 1:])
+    conf.par.wind_farm.controller.yaw_series = yaw_series
+    conf.par.simulation.name = "two.02.sweep"
+    conf.par.simulation.total_time = 13400.
+    print("Starting: " + conf.par.simulation.name)
+    wind_farm = WindFarm()
+    dfp = DynamicFlowProblem(wind_farm)
+    dfs = DynamicFlowSolver(dfp)
+    dfs.solve()
+
+
+    time_end = time.time()
+    logger.info("Total time: {:.2f} seconds".format(time_end - time_start))
+
 if __name__ == '__main__':
     # main()
     # main_power_yaw()
     # main_steady()
     # main_rotating()
     main_with_ssc()
+    # main_step_series()
+    # main_yaw_sweep()

@@ -4,7 +4,7 @@ simulation:
   name: ssc_sim
   is_dynamic: True
   total_time: 599. # s
-  time_step: 0.5 # s
+  time_step: 1. # s
   dimensions: 2 # -
   save_logs: True
   write_time_step: 10.0
@@ -23,20 +23,20 @@ flow:
   continuity_correction: wfsim # none, wfsim, (general)
 
 wind_farm:
-  size: [2000,1000]
+  size: [1000,1000]
   cells: [20, 10]
   do_refine_turbines: 1
   refine_radius: 100.
   positions: # [x, y] m
     - [400,500]
-    - [1300,500]
+#    - [1300,500]
   yaw_angles: # [gamma] deg
     - 270.
-    - 270.
+#    - 270.
   farm_controller:
     type: external
     port: 1649
-    control_discretisation: 60.
+    control_discretisation: 1.
 
 turbine:
   axial_induction: 0.33

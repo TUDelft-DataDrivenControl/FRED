@@ -49,6 +49,8 @@ class Controller:
         return new_ref
 
     def _fixed_time_series(self, simulation_time):
+        self._time_series = conf.par.wind_farm.controller.yaw_series[:, 0]
+        self._yaw_series = conf.par.wind_farm.controller.yaw_series[:, 1:]
         new_ref = conf.par.wind_farm.yaw_angles.copy()
         for idx in range(len(self._turbines)):
             new_ref[idx] = np.interp(simulation_time, self._time_series, self._yaw_series[:,idx])

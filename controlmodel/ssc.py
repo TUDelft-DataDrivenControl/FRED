@@ -30,7 +30,13 @@ class SuperController:
         if self._control_type == "gradient_step":
             self._wind_farm = WindFarm()
             self._dynamic_flow_problem = DynamicFlowProblem(self._wind_farm)
-            self._dynamic_flow_solver = DynamicFlowSolver(self._dynamic_flow_problem)
+            self._dynamic_flow_solver = DynamicFlowSolver(self._dynamic_flow_problem, ssc=self)
+            self._time_last_optimised = -1.
+            self._time_reference_series = np.arange(0, conf.par.ssc.prediction_horizon, conf.par.ssc.control_discretisation)
+            self._yaw_reference_series = np.ones((len(self._time_reference_series), len(conf.par.ssc.yaw_angles)+1))
+            self._yaw_reference_series[:, 0] = self._time_reference_series
+            self._yaw_reference_series[:, 1:] = self._yaw_reference * self._yaw_reference_series[:,1:]
+
 
     def start(self):
         self._server = ZmqServer(conf.par.ssc.port)
@@ -61,49 +67,88 @@ class SuperController:
 
     def _gradient_step_reference(self, simulation_time):
         # t0 = simulation_time
-        # todo: define time horizon in configuration
+
         # todo: store history up_prev etc...
-        time_horizon = 150.
-        logger.info("Forward simulation over time horizon {:.2f}".format(time_horizon))
-        self._dynamic_flow_solver.save_checkpoint()
-        self._dynamic_flow_solver.solve_segment(time_horizon)
+        if (simulation_time - self._time_last_optimised >= conf.par.ssc.control_horizon)\
+            or (self._time_last_optimised < 0):
+            # run forward simulation and gradient sensitivity
+            if self._time_last_optimised >= 0:
+                ch_idx = int(conf.par.ssc.control_horizon // conf.par.ssc.control_discretisation)
+                # end_idx = len(conf.par.ssc.prediction_horizon // conf.par.ssc.control_discretisation)
+                new_time_reference = np.arange(self._yaw_reference_series[ch_idx,0],
+                                               self._yaw_reference_series[ch_idx,0]+conf.par.ssc.prediction_horizon,
+                                               conf.par.ssc.control_discretisation)
+                for idx in range(len(self._yaw_reference)):
+                    self._yaw_reference_series[:,idx+1] = np.interp(new_time_reference,self._yaw_reference_series[:,0], self._yaw_reference_series[:,idx+1]) #, right=conf.par.ssc.yaw_angles[idx])
+                self._yaw_reference_series[:,0] = new_time_reference
+            logger.debug("Yaw ref series {}".format(self._yaw_reference_series))
+            self._time_last_optimised = simulation_time
+
+            time_horizon = conf.par.ssc.prediction_horizon
+            logger.info("Forward simulation over time horizon {:.2f}".format(time_horizon))
+            self._dynamic_flow_solver.save_checkpoint()
+            self._dynamic_flow_solver.solve_segment(time_horizon)
+            # set yaw reference series in conf
+            conf.par.wind_farm.controller.yaw_series = self._yaw_reference_series
 
 
+            # Get the relevant controls and power series over the time segment of the forward simulation
+            controls = self._wind_farm.get_controls()
+            power = self._dynamic_flow_solver.get_power_functional_list()
 
-        # Get the relevant controls and power series over the time segment of the forward simulation
-        controls = self._wind_farm.get_controls()
-        power = self._dynamic_flow_solver.get_power_functional_list()
+            logger.debug("Controls: {}".format(len(controls)))
+            logger.debug("Functional: {}".format(len(power)))
 
-        logger.debug("Controls: {}".format(len(controls)))
-        logger.debug("Functional: {}".format(len(power)))
+            if conf.par.ssc.objective == "maximization":
+                total_power = sum([sum(x) for x in power[240:]])
+                average_power = total_power / len(power)
+                # average power does not affect scaling if horizon is changed
+                m = [Control(x[0]) for x in controls]
+                gradient = compute_gradient(average_power, m)
+                scale = 1e-7
+            elif conf.par.ssc.objective == "tracking":
+                total_power = [sum(x)*1e-6 for x in power]
+                time = np.arange(simulation_time, simulation_time + time_horizon, conf.par.simulation.time_step)
+                t_ref_array = conf.par.ssc.power_reference[:,0]
+                p_ref_array = conf.par.ssc.power_reference[:,1] * 1e-6
+                p_ref = np.interp(time,t_ref_array, p_ref_array)
+                logger.info("power reference: {}".format(p_ref))
+                power_difference_squared = [(p-pr)*(p-pr) for p,pr in zip(total_power, p_ref)]
+                tracking_functional = sum(power_difference_squared)
+                m = [Control(x[0]) for x in controls]
+                gradient = compute_gradient(tracking_functional, m)
+                scale = 1.
 
-        if conf.par.ssc.objective == "maximization":
-            total_power = sum([sum(x) for x in power[240:]])
-            average_power = total_power / len(power)
-            # average power does not affect scaling if horizon is changed
-            m = [Control(x[0]) for x in controls]
-            gradient = compute_gradient(average_power, m)
-        elif conf.par.ssc.objective == "tracking":
-            total_power = [sum(x) for x in power]
-            time = np.arange(simulation_time, simulation_time + time_horizon, conf.par.simulation.time_step)
-            t_ref_array = conf.par.ssc.power_reference[:,0]
-            p_ref_array = conf.par.ssc.power_reference[:,1]
-            p_ref = np.interp(time,t_ref_array, p_ref_array)
-            power_difference_squared = [(p-pr)*(p-pr) for p,pr in zip(total_power, p_ref)]
-            tracking_functional = sum(power_difference_squared)
-            m = [Control(x[0]) for x in controls]
-            gradient = compute_gradient(tracking_functional, m)
+            gradient = np.array([scale*float(g) for g in gradient])
+            logger.info("Computed gradient: {}".format(gradient))
+            # step_magnitude = np.abs(scale*gradient)
+            max_step = np.deg2rad(5.)
+            # step = np.sign(gradient) * np.min((np.abs(gradient), max_step*np.ones_like(gradient)),0)
+            logger.info("Functional: {:.2e}".format(tracking_functional))
+            tracking_functional_array = np.array(power_difference_squared)
+            scale = np.linspace(0.001,0.3,len(gradient))**2
+            # scale = 0.1 * np.ones_like(gradient)
+            step = -1 * scale * (conf.par.simulation.time_step / conf.par.ssc.control_discretisation) * \
+                   len(tracking_functional_array) * \
+                   (tracking_functional_array / gradient)
+            logger.info("Step: {}".format(step))
+            step = np.sign(step) * np.min((np.abs(step), max_step*np.ones_like(gradient)), 0)
+
+            logger.info("Applied step: {}".format(step))
+            self._yaw_reference_series[:, 1] += step
+
+            conf.par.wind_farm.controller.yaw_series = self._yaw_reference_series
+            self._dynamic_flow_solver.reset_checkpoint()
+            self._dynamic_flow_solver.solve_segment(conf.par.ssc.control_horizon)
+
+        # else:
+        # send saved signal
+        reference_index = int(simulation_time % conf.par.ssc.control_horizon // conf.par.ssc.control_discretisation)
+        logger.debug("Sending reference_index: {:5d}".format(reference_index))
+        self._yaw_reference = self._yaw_reference_series[reference_index, 1:]
 
 
-        logger.info("Computed gradient: {}".format([float(x) for x in gradient]))
-        scale = 1e-7
-        gradient = float(gradient[0])
-        step_magnitude = np.abs(scale*gradient)
-        step = 1 * np.sign(gradient) * np.min((step_magnitude, 0.1))
-        logger.info("Step magnitude: {:.2f}, applied step: {:.2f}".format(step_magnitude, step))
-        self._yaw_reference[0] += step
-        conf.par.wind_farm.yaw_angles = self._yaw_reference.copy()
-        # todo: pass yaw reference to the local controller
-
-        self._dynamic_flow_solver.reset_checkpoint()
-        self._dynamic_flow_solver.solve_segment(60.)
+    def get_power_reference(self, simulation_time):
+        t_ref_array = conf.par.ssc.power_reference[:, 0]
+        p_ref_array = conf.par.ssc.power_reference[:, 1] * 1e-6
+        return np.interp(simulation_time, t_ref_array, p_ref_array)
