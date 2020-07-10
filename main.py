@@ -137,6 +137,34 @@ def main_with_ssc():
     time_end = time.time()
     logger.info("Total time: {:.2f} seconds".format(time_end - time_start))
 
+def main_with_ssc_two():
+    logger.setLevel(logging.DEBUG)
+    time_start = time.time()
+
+    def run_sim():
+        conf.par.load("./config/two.ssc.sim.yaml")
+        wind_farm = WindFarm()
+        dfp = DynamicFlowProblem(wind_farm)
+        dfs = DynamicFlowSolver(dfp)
+        dfs.solve()
+
+    def run_ssc():
+        conf.par.load("./config/two.ssc.ctrl.yaml")
+        t = np.arange(0,1000.,1.)
+        pr = 6.0e6 + 0.7e6 *np.round(np.cos(t/10))
+        power_reference = np.zeros((len(t),2))
+        power_reference[:,0] = t
+        power_reference[:,1] = pr
+        conf.par.ssc.power_reference = power_reference
+        ssc = SuperController()
+        ssc.start()
+
+    Process(target=run_sim).start()
+    Process(target=run_ssc).start()
+    time_end = time.time()
+    logger.info("Total time: {:.2f} seconds".format(time_end - time_start))
+
+
 
 def main_power_yaw():
     time_start = time.time()
@@ -221,6 +249,7 @@ if __name__ == '__main__':
     # main_power_yaw()
     # main_steady()
     # main_rotating()
-    main_with_ssc()
+    # main_with_ssc()
+    main_with_ssc_two()
     # main_step_series()
     # main_yaw_sweep()

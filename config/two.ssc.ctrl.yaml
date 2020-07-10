@@ -13,7 +13,7 @@ ssc:
 #      - [59., 250, 270.]
   type: gradient_step
   prediction_horizon: 240
-  control_horizon: 10.
+  control_horizon: 30.
   objective: tracking
   power_reference:  #MW
     - [  0., 6.1]
