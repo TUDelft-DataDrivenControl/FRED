@@ -17,6 +17,7 @@ class ControlModelParameters:
         self.simulation = None
         self.flow = None
         self.ssc = None
+        self.mode = None
 
     def load(self, file):
         logger.info("Loading configuration from: {}".format(file))
@@ -37,13 +38,14 @@ class ControlModelParameters:
         print(yaml.dump(self._config))
 
     def _assign_configuration(self):
-        if self._config["mode"] == "simulation":
+        self.mode = self._config["mode"]
+        if self.mode == "simulation":
             self.wind_farm = self.WindFarm(self._config["wind_farm"])
             self.turbine = self.Turbine(self._config["turbine"])
             self.simulation = self.Simulation(self._config["simulation"])
             self.flow = self.Flow(self._config["flow"])
 
-        if self._config["mode"] == "supercontroller":
+        if self.mode == "supercontroller":
             self.ssc = self.SSC(self._config["ssc"])
             if self.ssc.type == "gradient_step":
                 self.wind_farm = self.WindFarm(self._config["wind_farm"])
