@@ -1,17 +1,17 @@
 mode: simulation
 
 simulation:
-  name: two.ssc.sim
+  name: one.00.steady
   is_dynamic: True
-  total_time: 599. # s
+  total_time: 120. # s
   time_step: 1. # s
   dimensions: 2 # -
-  save_logs: False
+  save_logs: True
   write_time_step: 10.0
 
 flow:
   type: "steady"
-  inflow_velocity: [9., 270.]  # [|U|, theta]
+  inflow_velocity: [8., 270.]  # [|U|, theta]
   kinematic_viscosity: 0.000015 # kg.m^-1.s^-1
   tuning_viscosity: 0. # kg.m^-1.s^-1
   mixing_length: 10. #30. #20 # m
@@ -23,19 +23,18 @@ flow:
   continuity_correction: wfsim # none, wfsim, (general)
 
 wind_farm:
-  size: [2000,1000]
-  cells: [20, 10]
+  size: [1000,1000]
+  cells: [10, 10]
   do_refine_turbines: 1
   refine_radius: 100.
   positions: # [x, y] m
     - [400,500]
-    - [1300,500]
+#    - [1300,500]
   yaw_angles: # [gamma] deg
     - 270.
-    - 270.
+#    - 270.
   farm_controller:
-    type: external
-    port: 1651
+    type: fixed
     control_discretisation: 1.
 
 turbine:

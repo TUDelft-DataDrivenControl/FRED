@@ -71,6 +71,7 @@ class SuperController:
         # todo: store history up_prev etc...
         if (simulation_time - self._time_last_optimised >= conf.par.ssc.control_horizon)\
                 or (self._time_last_optimised < 0):
+
             # run forward simulation and gradient sensitivity
             if self._time_last_optimised >= 0:
                 ch_idx = int(conf.par.ssc.control_horizon // conf.par.ssc.control_discretisation)
@@ -84,7 +85,8 @@ class SuperController:
             logger.debug("Yaw ref series {}".format(self._yaw_reference_series))
             self._time_last_optimised = simulation_time
             self._dynamic_flow_solver.save_checkpoint()
-            if simulation_time > -1:
+
+            if simulation_time > 20:
                 time_horizon = conf.par.ssc.prediction_horizon
                 logger.info("Forward simulation over time horizon {:.2f}".format(time_horizon))
                 self._dynamic_flow_solver.solve_segment(time_horizon)
@@ -106,6 +108,7 @@ class SuperController:
                     m = [Control(x[0]) for x in controls]
                     gradient = compute_gradient(average_power, m)
                     scale = 1e-7
+
                 elif conf.par.ssc.objective == "tracking":
                     total_power = [sum(x)*1e-6 for x in power]
                     time = np.arange(simulation_time, simulation_time + time_horizon, conf.par.simulation.time_step)
@@ -114,12 +117,12 @@ class SuperController:
                     p_ref = np.interp(time,t_ref_array, p_ref_array)
                     logger.info("power reference: {}".format(p_ref))
                     power_difference_squared = [(p-pr)*(p-pr) for p,pr in zip(total_power, p_ref)]
-                    control_difference_squared = [1e2 * assemble((c1[0]-c0[0]) * (c1[0]-c0[0])*dx(UnitIntervalMesh(1)))  for c0,c1 in zip(controls[:-1],controls[1:])]
+                    control_difference_squared = [1e5 * assemble((c1[0]-c0[0]) * (c1[0]-c0[0])*dx(UnitIntervalMesh(1)))  for c0,c1 in zip(controls[:-1],controls[1:])]
                     # print(control_difference_squared)
                     logger.info("Power cost:   {:.2e}".format(sum(power_difference_squared)))
                     logger.info("Control cost: {:.2e}".format(sum(control_difference_squared)))
-                    tracking_functional = sum(power_difference_squared)  #+ \
-                                          # sum(control_difference_squared)
+                    tracking_functional = sum(power_difference_squared)  + \
+                                          sum(control_difference_squared)
                     m = [Control(x[0]) for x in controls]
                     gradient = compute_gradient(tracking_functional, m)
                     scale = 1.
@@ -130,13 +133,15 @@ class SuperController:
                 max_step = np.deg2rad(5.)
                 # step = np.sign(gradient) * np.min((np.abs(gradient), max_step*np.ones_like(gradient)),0)
                 logger.info("Functional: {:.2e}".format(tracking_functional))
-                cds = np.zeros_like(power_difference_squared)
-                cds[:-1] = np.array(control_difference_squared)
+                # cds = np.zeros_like(power_difference_squared)
+                # cds[:-1] = np.array(control_difference_squared)
                 tracking_functional_array = np.array(power_difference_squared) # + cds
-                scale = 0.1 * np.ones_like(gradient)
-                scale = np.linspace(0.01,0.2,len(gradient))
+                scale = 1e0 * np.ones_like(gradient)
+                # scale = np.linspace(0.01,0.2,len(gradient))
+                # step = -1 * scale * (conf.par.simulation.time_step / conf.par.ssc.control_discretisation) * \
+                #        len(tracking_functional_array) * \
+                #        (tracking_functional_array / gradient)
                 step = -1 * scale * (conf.par.simulation.time_step / conf.par.ssc.control_discretisation) * \
-                       len(tracking_functional_array) * \
                        (tracking_functional_array / gradient)
                 logger.info("Step: {}".format(step))
                 step = np.sign(step) * np.min((np.abs(step), max_step*np.ones_like(gradient)), 0)

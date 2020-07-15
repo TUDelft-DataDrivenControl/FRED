@@ -31,7 +31,7 @@ parameters["form_compiler"]["optimize"] = True
 
 def main():
     time_start = time.time()
-    conf.par.load("./config/test_config.yaml")
+    # conf.par.load("./config/test_config.yaml")
 
     # this is where parameter adjustments are possible
     # #
@@ -39,10 +39,10 @@ def main():
     dfp = DynamicFlowProblem(wind_farm)
     dfs = DynamicFlowSolver(dfp)
     # # #
-    # dfs.solve()
+    dfs.solve()
     # dfs.solve_segment(300)
     # dfs.solve_segment(360)
-    dfs.solve_segment(600)
+    # dfs.solve_segment(600)
     # #
     # # # analysis.construct_jacobian_matrix(dfs, turbine_idx=0)
     # analysis.construct_lti_jacobian_matrix(dfs, turbine_idx=0)
@@ -53,7 +53,7 @@ def main():
     # plt.plot(dj_dm[:,0])
     # # p = np.trapz(dj_dm[-1,:],dx=np.deg2rad(10))
     # # print(p)
-    plt.show()
+    # plt.show()
 
     time_end = time.time()
     logger.info("Total time: {:.2f} seconds".format(time_end - time_start))
@@ -105,16 +105,16 @@ def main_with_ssc():
     time_start = time.time()
 
     def run_sim():
-        conf.par.load("./config/test_config_ssc_sim.yaml")
+        conf.par.load("./config/one.ssc.sim.yaml")
         wind_farm = WindFarm()
         dfp = DynamicFlowProblem(wind_farm)
         dfs = DynamicFlowSolver(dfp)
         dfs.solve()
 
     def run_ssc():
-        conf.par.load("./config/test_config_ssc_ctrl.yaml")
+        conf.par.load("./config/one.ssc.ctrl.yaml")
         t = np.arange(0,1000.,1.)
-        pr = 5.0e6 + 0.7e6 *np.round(np.cos(t/10))
+        pr = 10.0e6 + 0.7e6 *np.round(np.cos(t/10))
         power_reference = np.zeros((len(t),2))
         power_reference[:,0] = t
         power_reference[:,1] = pr
@@ -124,15 +124,6 @@ def main_with_ssc():
 
     Process(target=run_sim).start()
     Process(target=run_ssc).start()
-
-    # ssc.start()
-    # dfs.solve()
-    #
-    # analysis.construct_jacobian_matrix(dfs, turbine_idx=1)
-
-    # dj_dm = load_jacobian(turbine_idx=0)
-    # plot_jacobian(dj_dm)
-    # plt.show()
 
     time_end = time.time()
     logger.info("Total time: {:.2f} seconds".format(time_end - time_start))
@@ -151,7 +142,7 @@ def main_with_ssc_two():
     def run_ssc():
         conf.par.load("./config/two.ssc.ctrl.yaml")
         t = np.arange(0,1000.,1.)
-        pr = 6.0e6 + 0.7e6 *np.round(np.cos(t/10))
+        pr = 8.0e6 + 0.7e6 *np.round(np.cos(t/10))
         power_reference = np.zeros((len(t),2))
         power_reference[:,0] = t
         power_reference[:,1] = pr
@@ -249,7 +240,10 @@ if __name__ == '__main__':
     # main_power_yaw()
     # main_steady()
     # main_rotating()
-    # main_with_ssc()
-    main_with_ssc_two()
+    main_with_ssc()
+    # main_with_ssc_two()
     # main_step_series()
     # main_yaw_sweep()
+    # conf.par.load("./config/one.00.steady.yaml")
+    # main()
+    # main_with_ssc()

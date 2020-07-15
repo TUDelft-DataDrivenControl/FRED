@@ -1,9 +1,22 @@
-mode: simulation
+mode: supercontroller
+
+ssc:
+  port: 1638
+  control_discretisation: 1.
+  yaw_angles:
+    - 290.
+  type: gradient_step
+  prediction_horizon: 10.
+  control_horizon: 1.
+  objective: tracking
+  power_reference:  #MW
+    - [  0., 6.1]
+    - [999., 7.1]
 
 simulation:
-  name: two.ssc.sim
+  name: one.ssc.ctrl
   is_dynamic: True
-  total_time: 599. # s
+  total_time: -1 # s
   time_step: 1. # s
   dimensions: 2 # -
   save_logs: False
@@ -23,20 +36,22 @@ flow:
   continuity_correction: wfsim # none, wfsim, (general)
 
 wind_farm:
-  size: [2000,1000]
-  cells: [20, 10]
+  size: [1000,1000]
+  cells: [10, 10]
   do_refine_turbines: 1
   refine_radius: 100.
   positions: # [x, y] m
     - [400,500]
-    - [1300,500]
   yaw_angles: # [gamma] deg
-    - 270.
-    - 270.
+    - 290.
+
   farm_controller:
-    type: external
-    port: 1651
+#    type: fixed
     control_discretisation: 1.
+    type: series
+    yaw_series:
+      - [0, 290.]
+      - [0, 270.]
 
 turbine:
   axial_induction: 0.33

@@ -187,7 +187,8 @@ class DynamicFlowSolver(FlowSolver):
                 log.write(",{:.6f}".format(self._supercontroller.get_power_reference(self._simulation_time)))
             log.write("\r\n")
 
-        if self._simulation_time % conf.par.simulation.write_time_step <= DOLFIN_EPS_LARGE:
+        if (self._simulation_time % conf.par.simulation.write_time_step <= DOLFIN_EPS_LARGE)\
+                and conf.par.simulation.save_logs:
             u_sol, p_sol = self._up_next.split()
             self._vtk_file_u.write(u_sol)
             self._vtk_file_p.write(p_sol)
@@ -200,11 +201,13 @@ class DynamicFlowSolver(FlowSolver):
         self._simulation_time_checkpoint = self._simulation_time
         self._up_prev_checkpoint = self._up_prev.copy(deepcopy=True)
         self._up_prev2_checkpoint = self._up_prev2.copy(deepcopy=True)
+        set_working_tape(Tape())
 
     def reset_checkpoint(self):
         logger.info("Restoring state to checkpoint at t={:.2f}".format(self._simulation_time_checkpoint))
         self._simulation_time = self._simulation_time_checkpoint
         self._up_prev.assign(self._up_prev_checkpoint)
         self._up_prev2.assign(self._up_prev2_checkpoint)
+        set_working_tape(Tape())
 
 
