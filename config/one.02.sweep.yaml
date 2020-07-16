@@ -1,39 +1,19 @@
-mode: supercontroller
-
-ssc:
-  port: 1652
-  control_discretisation: 1.
-#  type: fixed
-  yaw_angles:
-    - 290.
-    - 270.
-#  type: series
-#  yaw_series:
-#      - [0., 290, 270.]
-#      - [59., 250, 270.]
-  type: gradient_step
-  prediction_horizon: 240.
-  control_horizon: 10.
-#  objective: tracking
-  objective: maximisation
-  power_reference:  #MW
-    - [  0., 6.1]
-    - [999., 7.1]
+mode: simulation
 
 simulation:
-  name: two.ssc.ctrl
+  name: one.02.sweep
   is_dynamic: True
-  total_time: -1 # s
+  total_time: 600. # s
   time_step: 1. # s
   dimensions: 2 # -
-  save_logs: False
+  save_logs: True
   write_time_step: 10.0
 
 flow:
   type: "steady"
-  inflow_velocity: [9., 270.]  # [|U|, theta]
+  inflow_velocity: [8., 270.]  # [|U|, theta]
   kinematic_viscosity: 0.000015 # kg.m^-1.s^-1
-  tuning_viscosity: 0. # kg.m^-1.s^-1
+  tuning_viscosity: 0 # kg.m^-1.s^-1
   mixing_length: 10. #30. #20 # m
   wake_mixing_length: 1.5 # D
   wake_mixing_width: 0.6  # D
@@ -43,29 +23,29 @@ flow:
   continuity_correction: wfsim # none, wfsim, (general)
 
 wind_farm:
-  size: [2000,1000]
-  cells: [20, 10]
+  size: [1000,1000]
+  cells: [10, 10]
   do_refine_turbines: 1
   refine_radius: 100.
   positions: # [x, y] m
     - [400,500]
-    - [1300,500]
+#    - [1300,500]
   yaw_angles: # [gamma] deg
-    - 290.
     - 270.
-
+#    - 270.
   farm_controller:
-#    type: fixed
-    control_discretisation: 1.
     type: series
+    control_discretisation: 30.
     yaw_series:
-      - [0, 290., 270.]
-      - [0, 270., 270.]
+      - [0., 270.]
+      - [59., 270.]
+      - [59.5, 290.]
+      - [600., 250]
 
 turbine:
   axial_induction: 0.33
   diameter: 178.4 # m
-  thickness: 17.8 # m
+  thickness: 25. # m
   hub_height: 119.6 # m
   kernel: gaussian # king, gaussian
   deflection_scale: 3. #

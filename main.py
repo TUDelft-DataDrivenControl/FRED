@@ -114,7 +114,7 @@ def main_with_ssc():
     def run_ssc():
         conf.par.load("./config/one.ssc.ctrl.yaml")
         t = np.arange(0,1000.,1.)
-        pr = 10.0e6 + 0.7e6 *np.round(np.cos(t/10))
+        pr = 6.0e6 + 0.7e6 *np.round(np.cos(t/10))
         power_reference = np.zeros((len(t),2))
         power_reference[:,0] = t
         power_reference[:,1] = pr
@@ -142,7 +142,7 @@ def main_with_ssc_two():
     def run_ssc():
         conf.par.load("./config/two.ssc.ctrl.yaml")
         t = np.arange(0,1000.,1.)
-        pr = 8.0e6 + 0.7e6 *np.round(np.cos(t/10))
+        pr = 20.0e6 + 0.7e6 *np.round(np.cos(t/10))
         power_reference = np.zeros((len(t),2))
         power_reference[:,0] = t
         power_reference[:,1] = pr
@@ -240,10 +240,11 @@ if __name__ == '__main__':
     # main_power_yaw()
     # main_steady()
     # main_rotating()
-    main_with_ssc()
+    # main_with_ssc()
     # main_with_ssc_two()
     # main_step_series()
     # main_yaw_sweep()
     # conf.par.load("./config/one.00.steady.yaml")
-    # main()
+    conf.par.load("./config/one.02.sweep.yaml")
+    main()
     # main_with_ssc()
