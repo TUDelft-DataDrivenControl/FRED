@@ -25,7 +25,7 @@ class Turbine:
         self._thickness = conf.par.turbine.thickness
         self._hub_height = conf.par.turbine.hub_height
 
-        self._axial_induction = conf.par.turbine.axial_induction
+        self._axial_induction = Constant(conf.par.turbine.axial_induction)
         self._thrust_coefficient_prime = self._compute_ct_prime(self._axial_induction)
 
         self._force = None
@@ -35,7 +35,7 @@ class Turbine:
 
     def _compute_ct_prime(self, a):
         ct = 4 * a * (1 - a)
-        ctp = ct / (1 - a)**2
+        ctp = ct / pow((1 - a), 2)
         return ctp
 
     def set_yaw_ref(self, new_yaw_ref):
@@ -128,3 +128,9 @@ class Turbine:
 
     def get_kernel(self):
         return assemble(self._kernel * dx)
+
+    def get_axial_induction(self):
+        return self._axial_induction
+
+    def set_axial_induction(self, new_axial_induction):
+        self._axial_induction.assign(new_axial_induction)
