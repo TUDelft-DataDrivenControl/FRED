@@ -47,6 +47,7 @@ class FlowSolver:
             log.write("time")
             for idx in range(len(self._flow_problem.get_wind_farm().get_turbines())):
                 log.write(",yaw_{0:03n}".format(idx))
+                log.write(",induction_{0:03n}".format(idx))
                 log.write(",force_x_{0:03n}".format(idx))
                 log.write(",force_y_{0:03n}".format(idx))
                 log.write(",power_{0:03n}".format(idx))
@@ -169,6 +170,8 @@ class DynamicFlowSolver(FlowSolver):
             for wt in self._flow_problem.get_wind_farm().get_turbines():
                 yaw = float(wt.get_yaw())
                 log.write(",{:.6f}".format(np.rad2deg(yaw)))
+                a = float(wt.get_axial_induction())
+                log.write(",{:.6f}".format(a))
                 force = wt.get_force()
                 # log.write(",{:.6f}".format(force[0]))
                 # log.write(",{:.6f}".format(force[1]))

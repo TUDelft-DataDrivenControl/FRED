@@ -1,0 +1,58 @@
+mode: simulation
+
+simulation:
+  name: one.02.sweep.induction
+  is_dynamic: True
+  total_time: 1200. # s
+  time_step: 1. # s
+  dimensions: 2 # -
+  save_logs: True
+  write_time_step: 10.0
+
+flow:
+  type: "steady"
+  inflow_velocity: [8., 270.]  # [|U|, theta]
+  kinematic_viscosity: 0.000015 # kg.m^-1.s^-1
+  tuning_viscosity: 0 # kg.m^-1.s^-1
+  mixing_length: 10. #30. #20 # m
+  wake_mixing_length: 1.5 # D
+  wake_mixing_width: 0.6  # D
+  wake_mixing_offset: 3.0 # D
+  wake_mixing_ml_max: 25. # m
+  density: 1.2 # kg.m^-3
+  continuity_correction: wfsim # none, wfsim, (general)
+
+wind_farm:
+  size: [1000,1000]
+  cells: [10, 10]
+  do_refine_turbines: 1
+  refine_radius: 100.
+  positions: # [x, y] m
+    - [400,500]
+#    - [1300,500]
+  yaw_angles: # [gamma] deg
+    - 270.
+#    - 270.
+  farm_controller:
+    yaw_control_type: fixed
+    control_discretisation: 30.
+    axial_induction_control_type: series
+    axial_induction_series:
+      - [0., 0.33]
+      - [59., 0.33]
+      - [59.3, 0.]
+      - [1200.,1.]
+#    yaw_series:
+#      - [0., 290.]
+##      - [59., 270.]
+##      - [59.5, 290.]
+#      - [1200., 250]
+
+turbine:
+  axial_induction: 0.33
+  diameter: 178.4 # m
+  thickness: 25. # m
+  hub_height: 119.6 # m
+  kernel: gaussian # king, gaussian
+  deflection_scale: 3. #
+  yaw_rate_limit: 0.3 # deg.s^-1
