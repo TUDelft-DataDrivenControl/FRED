@@ -30,7 +30,7 @@ wind_farm:
   positions: # [x, y] m
     - [400,500]
   yaw_angles: # [gamma] deg
-    - 270.
+    - 290.
   farm_controller:
     type: external
     port: 1638
@@ -43,3 +43,4 @@ turbine:
   hub_height: 119.6 # m
   kernel: gaussian # king, gaussian
   deflection_scale: 3. #
+  yaw_rate_limit: 0.3

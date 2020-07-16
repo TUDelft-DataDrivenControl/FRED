@@ -3,7 +3,7 @@ mode: simulation
 simulation:
   name: one.02.sweep
   is_dynamic: True
-  total_time: 1200. # s
+  total_time: 600. # s
   time_step: 1. # s
   dimensions: 2 # -
   save_logs: True
@@ -37,9 +37,9 @@ wind_farm:
     type: series
     control_discretisation: 30.
     yaw_series:
-      - [0., 270.]
-      - [59., 270.]
-      - [59.5, 290.]
+      - [0., 290.]
+#      - [59., 270.]
+#      - [59.5, 290.]
       - [1200., 250]
 
 turbine:
@@ -49,4 +49,4 @@ turbine:
   hub_height: 119.6 # m
   kernel: gaussian # king, gaussian
   deflection_scale: 3. #
-  yaw_rate_limit: 1. # deg.s^-1
+  yaw_rate_limit: 0.3 # deg.s^-1

@@ -76,13 +76,30 @@ class Controller:
         return new_ref
 
     def _update_yaw(self, new_ref):
+
         if len(new_ref) != len(self._turbines):
             raise ValueError(
                 "Computed yaw reference (length {:d}) does not match {:d} turbines in farm."
                 .format(len(new_ref), len(self._turbines)))
 
+        new_ref = self._apply_yaw_rate_limit(new_ref)
+
         self._yaw_ref.append([Constant(y) for y in new_ref])
-        [wt.set_yaw(y) for (wt, y) in zip(self._turbines, self._yaw_ref[-1])]
+        [wt.set_yaw_ref(y) for (wt, y) in zip(self._turbines, self._yaw_ref[-1])]
+
+    def _apply_yaw_rate_limit(self, new_ref):
+        if len(self._yaw_ref)>0:
+            yaw_rate_limit = conf.par.turbine.yaw_rate_limit
+            time_step = conf.par.simulation.time_step
+            new_ref = np.array(new_ref)
+            prev_ref = np.array([float(y) for y in self._yaw_ref[-1]])
+            delta_ref = new_ref - prev_ref
+            if yaw_rate_limit > 0:
+                delta_ref = np.min((yaw_rate_limit * time_step * np.ones_like(new_ref), delta_ref),0)
+                delta_ref = np.max((-yaw_rate_limit * time_step * np.ones_like(new_ref), delta_ref),0)
+            new_ref = prev_ref + delta_ref
+        return new_ref
+
 
     def get_controls(self):
         return self._yaw_ref

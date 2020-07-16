@@ -77,7 +77,7 @@ def main_steady():
     Jhat = ReducedFunctional(-J,m)
     m_opt = minimize(Jhat, bounds=([-0.5,-0.5], [0.5,0.5]))
     [print(float(x)) for x in m_opt]
-    [wt.set_yaw(y) for (wt,y) in zip(wind_farm.get_turbines(), m_opt)]
+    [wt.set_yaw_ref(y) for (wt, y) in zip(wind_farm.get_turbines(), m_opt)]
     sfs.solve()
 
     time_end = time.time()
@@ -245,6 +245,6 @@ if __name__ == '__main__':
     # main_step_series()
     # main_yaw_sweep()
     # conf.par.load("./config/one.00.steady.yaml")
-    conf.par.load("./config/one.02.sweep.yaml")
-    main()
-    # main_with_ssc()
+    # conf.par.load("./config/one.02.sweep.yaml")
+    # main()
+    main_with_ssc()

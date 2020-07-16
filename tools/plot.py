@@ -116,8 +116,9 @@ labels = {
     "x": "$x$ (m)",
     "P": "$P$ (MW)",
     "t": "$t$ (s)",
-    "yaw": "$\psi$ (rad)",
-    "yaw_d": r"$\psi$ ($\degree$)"
+    "yaw_rad": "$\psi$ (rad)",
+    "yaw": r"$\psi$ ($\degree$)"
+    # u"\N{DEGREE SIGN}"
 }
 
 if __name__ == '__main__':

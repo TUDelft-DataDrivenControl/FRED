@@ -154,7 +154,10 @@ class SuperController:
                     gradient = np.array([scale*float(g) for g in gradient])
                     logger.info("Computed gradient: {}".format(gradient))
                     # step_magnitude = np.abs(scale*gradient)
-                    max_step = np.deg2rad(5.)
+                    if conf.par.turbine.yaw_rate_limit < 0:
+                        max_step = np.deg2rad(5.)
+                    else:
+                        max_step = conf.par.turbine.yaw_rate_limit * conf.par.ssc.control_discretisation
                     # step = np.sign(gradient) * np.min((np.abs(gradient), max_step*np.ones_like(gradient)),0)
                     logger.info("Functional: {:.2e}".format(tracking_functional))
                     # cds = np.zeros_like(power_difference_squared)
@@ -170,7 +173,19 @@ class SuperController:
                 step = np.zeros_like(self._yaw_reference_series[:,1])
             logger.info("Applied step: {}".format(step))
 
+            if conf.par.turbine.yaw_rate_limit > 0:
+                step[0] = 0.
             self._yaw_reference_series[:, 1] += step
+
+            if conf.par.turbine.yaw_rate_limit > 0:
+                yaw_rate_limit = conf.par.turbine.yaw_rate_limit
+                for idx in range(len(self._yaw_reference_series)-1):
+                    dyaw = self._yaw_reference_series[idx+1,1]-self._yaw_reference_series[idx,1]
+                    dt = self._yaw_reference_series[idx+1,0]-self._yaw_reference_series[idx,0]
+                    dmax= yaw_rate_limit*dt
+                    dyaw = np.max((-dmax, np.min((dmax,dyaw))))
+                    self._yaw_reference_series[idx+1,1] = self._yaw_reference_series[idx,1]+dyaw
+
 
             conf.par.wind_farm.controller.yaw_series = self._yaw_reference_series
             self._dynamic_flow_solver.reset_checkpoint()
@@ -186,5 +201,5 @@ class SuperController:
 
     def get_power_reference(self, simulation_time):
         t_ref_array = conf.par.ssc.power_reference[:, 0]
-        p_ref_array = conf.par.ssc.power_reference[:, 1] * 1e-6
+        p_ref_array = conf.par.ssc.power_reference[:, 1]
         return np.interp(simulation_time, t_ref_array, p_ref_array)

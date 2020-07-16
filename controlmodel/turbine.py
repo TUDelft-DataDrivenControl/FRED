@@ -11,7 +11,13 @@ class Turbine:
     def __init__(self, position, yaw):
         logger.info("Initialising turbine at ({:5.0f}, {:5.0f})".format(position[0], position[1]))
         self._position = position
-        self._yaw = Constant(yaw)
+        self._yaw_ref = Constant(yaw)
+        if conf.par.turbine.yaw_rate_limit > 0:
+            self._yaw_rate_limit = Constant(conf.par.turbine.yaw_rate_limit)
+        else:
+            logger.info("Turbine has no rate limit.")
+            self._yaw_rate_limit = None
+        self._yaw = self._yaw_ref
 
         self._radius = conf.par.turbine.radius
         self._diameter = conf.par.turbine.diameter
@@ -32,8 +38,8 @@ class Turbine:
         ctp = ct / (1 - a)**2
         return ctp
 
-    def set_yaw(self,new_yaw):
-        self._yaw.assign(new_yaw)
+    def set_yaw_ref(self, new_yaw_ref):
+        self._yaw_ref.assign(new_yaw_ref)
 
     def compute_forcing(self, u):
         if conf.par.simulation.dimensions == 2:
