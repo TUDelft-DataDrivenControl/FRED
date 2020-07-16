@@ -34,7 +34,7 @@ wind_farm:
     - 270.
 #    - 270.
   farm_controller:
-    type: fixed
+    yaw_control_type: fixed
     control_discretisation: 1.
 
 turbine:

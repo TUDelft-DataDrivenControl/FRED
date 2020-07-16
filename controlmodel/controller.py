@@ -12,18 +12,21 @@ logger = logging.getLogger("cm.controller")
 class Controller:
 
     def __init__(self, wind_farm):
-        self._control_type = conf.par.wind_farm.controller.type
-        logger.info("Setting up controller of type: {}".format(self._control_type))
+        self._yaw_control_type = conf.par.wind_farm.controller.yaw_control_type
+        logger.info("Setting up controller of type: {}".format(self._yaw_control_type))
         self._wind_farm = wind_farm
         self._turbines = wind_farm.get_turbines()
+
         self._yaw_ref = []
+        self._axial_induction_ref = []
+
         self._time_last_updated = 0
 
-        if self._control_type == "series":
+        if self._yaw_control_type == "series":
             self._time_series = conf.par.wind_farm.controller.yaw_series[:, 0]
             self._yaw_series = conf.par.wind_farm.controller.yaw_series[:, 1:]
 
-        if self._control_type == "external":
+        if self._yaw_control_type == "external":
             logger.info("Initialising ZMQ communication")
             self._context = zmq.Context()
             self._socket = self._context.socket(zmq.REQ)
@@ -39,8 +42,8 @@ class Controller:
                 "series": self._fixed_time_series,
                 "external": self._external_controller
             }
-            controller_function = switcher.get(self._control_type)
-            new_ref = controller_function(simulation_time)
+            yaw_controller_function = switcher.get(self._yaw_control_type)
+            new_ref = yaw_controller_function(simulation_time)
             self._update_yaw(new_ref)
             self._time_last_updated = simulation_time
 

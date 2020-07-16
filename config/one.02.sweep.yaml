@@ -34,7 +34,7 @@ wind_farm:
     - 270.
 #    - 270.
   farm_controller:
-    type: series
+    yaw_control_type: series
     control_discretisation: 30.
     yaw_series:
       - [0., 290.]

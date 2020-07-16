@@ -34,7 +34,7 @@ wind_farm:
     - 270.
     - 270.
   farm_controller:
-    type: external
+    yaw_control_type: external
     port: 1652
     control_discretisation: 1.
 

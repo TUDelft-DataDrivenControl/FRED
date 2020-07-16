@@ -43,7 +43,7 @@ wind_farm:
 #    type: external
 #    port: 1649
 #    control_discretisation: 2.
-    type: series
+    yaw_control_type: series
     yaw_series: # [time, yaw_0, ... , yaw_n]
       - [  0., 270., 270.]
       - [299.9,270., 270.]

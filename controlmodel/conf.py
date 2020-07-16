@@ -69,13 +69,18 @@ class ControlModelParameters:
 
         class FarmController:
             def __init__(self, config_dict):
-                self.type = config_dict["type"]
+                self.yaw_control_type = config_dict["yaw_control_type"]
                 self.control_discretisation = config_dict["control_discretisation"]
-                if self.type == "series":
+                if self.yaw_control_type == "series":
                     self.yaw_series = np.array(config_dict["yaw_series"])
                     self.yaw_series[:, 1:] = np.deg2rad(self.yaw_series[:, 1:])
-                if self.type == "external":
+                if self.yaw_control_type == "external":
                     self.port = config_dict["port"]
+
+                self.axial_induction_control_type = config_dict.get("axial_induction_control_type", "fixed")
+                if self.axial_induction_control_type == "series":
+                    self.axial_induction_series = np.array(config_dict["axial_induction_series"])
+
 
     class Turbine:
         """

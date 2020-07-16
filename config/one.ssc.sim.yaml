@@ -32,7 +32,7 @@ wind_farm:
   yaw_angles: # [gamma] deg
     - 290.
   farm_controller:
-    type: external
+    yaw_control_type: external
     port: 1638
     control_discretisation: 1.
 
