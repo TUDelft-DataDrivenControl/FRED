@@ -136,10 +136,11 @@ class ControlModelParameters:
                 self.yaw_angles = np.deg2rad(config_dict["yaw_angles"])
                 self.prediction_horizon = config_dict["prediction_horizon"]
                 self.control_horizon = config_dict["control_horizon"]
-            self.objective = config_dict["objective"]
-            if self.objective == "tracking":
-                self.power_reference = np.array(config_dict["power_reference"])
-                self.power_reference[:, 1] *= 1e6
+                self.transient_time = config_dict.get("transient_time",-1)
+                self.objective = config_dict["objective"]
+                if self.objective == "tracking":
+                    self.power_reference = np.array(config_dict["power_reference"])
+                    self.power_reference[:, 1] *= 1e6
 
 
 par = ControlModelParameters()

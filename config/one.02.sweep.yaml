@@ -3,7 +3,7 @@ mode: simulation
 simulation:
   name: one.02.sweep
   is_dynamic: True
-  total_time: 600. # s
+  total_time: 1200. # s
   time_step: 1. # s
   dimensions: 2 # -
   save_logs: True
@@ -40,7 +40,7 @@ wind_farm:
       - [0., 270.]
       - [59., 270.]
       - [59.5, 290.]
-      - [600., 250]
+      - [1200., 250]
 
 turbine:
   axial_induction: 0.33
