@@ -86,7 +86,7 @@ class SuperController:
             self._time_last_optimised = simulation_time
             self._dynamic_flow_solver.save_checkpoint()
 
-            if simulation_time > 20:
+            if simulation_time > -1:
                 time_horizon = conf.par.ssc.prediction_horizon
                 logger.info("Forward simulation over time horizon {:.2f}".format(time_horizon))
                 self._dynamic_flow_solver.solve_segment(time_horizon)
@@ -101,13 +101,43 @@ class SuperController:
                 logger.debug("Controls: {}".format(len(controls)))
                 logger.debug("Functional: {}".format(len(power)))
 
-                if conf.par.ssc.objective == "maximization":
-                    total_power = sum([sum(x) for x in power[240:]])
-                    average_power = total_power / len(power)
-                    # average power does not affect scaling if horizon is changed
+                if conf.par.ssc.objective == "maximisation":
+                    total_power = [sum(x) for x in power]
+                    time = np.arange(simulation_time, simulation_time + time_horizon, conf.par.simulation.time_step)
+                    t_ref_array = conf.par.ssc.power_reference[:,0]
+                    p_ref_array = conf.par.ssc.power_reference[:,1]
+                    p_ref = np.interp(time,t_ref_array, p_ref_array)
+                    logger.info("power reference: {}".format(p_ref))
+                    power_difference_squared = [(p-pr)*(p-pr) for p,pr in zip(total_power, p_ref)]
+                    control_difference_squared = [1e1 * assemble((c1[0]-c0[0]) * (c1[0]-c0[0])*dx(UnitIntervalMesh(1)))  for c0,c1 in zip(controls[:-1],controls[1:])]
+                    # print(control_difference_squared)
+                    logger.info("Power cost:   {:.2e}".format(sum(power_difference_squared)))
+                    logger.info("Control cost: {:.2e}".format(sum(control_difference_squared)))
+                    tracking_functional = sum(power_difference_squared)  + \
+                                          sum(control_difference_squared)
                     m = [Control(x[0]) for x in controls]
-                    gradient = compute_gradient(average_power, m)
-                    scale = 1e-7
+                    gradient = compute_gradient(tracking_functional, m)
+                    # mdot = [x.get_derivative() for x in m]
+                    mdot = [Constant(1.) for x in m]
+                    logger.info("mdot: {}".format([float(md) for md in mdot]))
+
+                    hessian = compute_hessian(tracking_functional, m, mdot)
+
+                    gradient = np.array([float(g) for g in gradient])
+                    logger.info("Computed gradient: {}".format(gradient))
+                    # [print(float(h)) for h in hessian]
+                    hessian = np.array([float(h) for h in hessian])
+                    logger.info("Computed Hessian {}".format(hessian))
+
+
+                    max_step = np.deg2rad(5.)
+                    logger.info("Functional: {:.2e}".format(tracking_functional))
+                    tracking_functional_array = np.array(power_difference_squared) # + cds
+                    scale = 1e0 * np.ones_like(gradient)
+                    step = -1 * scale * (conf.par.simulation.time_step / conf.par.ssc.control_discretisation) * \
+                           (gradient / hessian)
+                    logger.info("Step: {}".format(step))
+                    step = np.sign(step) * np.min((np.abs(step), max_step*np.ones_like(gradient)), 0)
 
                 elif conf.par.ssc.objective == "tracking":
                     total_power = [sum(x)*1e-6 for x in power]
@@ -117,7 +147,7 @@ class SuperController:
                     p_ref = np.interp(time,t_ref_array, p_ref_array)
                     logger.info("power reference: {}".format(p_ref))
                     power_difference_squared = [(p-pr)*(p-pr) for p,pr in zip(total_power, p_ref)]
-                    control_difference_squared = [1e5 * assemble((c1[0]-c0[0]) * (c1[0]-c0[0])*dx(UnitIntervalMesh(1)))  for c0,c1 in zip(controls[:-1],controls[1:])]
+                    control_difference_squared = [1e1 * assemble((c1[0]-c0[0]) * (c1[0]-c0[0])*dx(UnitIntervalMesh(1)))  for c0,c1 in zip(controls[:-1],controls[1:])]
                     # print(control_difference_squared)
                     logger.info("Power cost:   {:.2e}".format(sum(power_difference_squared)))
                     logger.info("Control cost: {:.2e}".format(sum(control_difference_squared)))
@@ -127,24 +157,20 @@ class SuperController:
                     gradient = compute_gradient(tracking_functional, m)
                     scale = 1.
 
-                gradient = np.array([scale*float(g) for g in gradient])
-                logger.info("Computed gradient: {}".format(gradient))
-                # step_magnitude = np.abs(scale*gradient)
-                max_step = np.deg2rad(5.)
-                # step = np.sign(gradient) * np.min((np.abs(gradient), max_step*np.ones_like(gradient)),0)
-                logger.info("Functional: {:.2e}".format(tracking_functional))
-                # cds = np.zeros_like(power_difference_squared)
-                # cds[:-1] = np.array(control_difference_squared)
-                tracking_functional_array = np.array(power_difference_squared) # + cds
-                scale = 1e0 * np.ones_like(gradient)
-                # scale = np.linspace(0.01,0.2,len(gradient))
-                # step = -1 * scale * (conf.par.simulation.time_step / conf.par.ssc.control_discretisation) * \
-                #        len(tracking_functional_array) * \
-                #        (tracking_functional_array / gradient)
-                step = -1 * scale * (conf.par.simulation.time_step / conf.par.ssc.control_discretisation) * \
-                       (tracking_functional_array / gradient)
-                logger.info("Step: {}".format(step))
-                step = np.sign(step) * np.min((np.abs(step), max_step*np.ones_like(gradient)), 0)
+                    gradient = np.array([scale*float(g) for g in gradient])
+                    logger.info("Computed gradient: {}".format(gradient))
+                    # step_magnitude = np.abs(scale*gradient)
+                    max_step = np.deg2rad(5.)
+                    # step = np.sign(gradient) * np.min((np.abs(gradient), max_step*np.ones_like(gradient)),0)
+                    logger.info("Functional: {:.2e}".format(tracking_functional))
+                    # cds = np.zeros_like(power_difference_squared)
+                    # cds[:-1] = np.array(control_difference_squared)
+                    tracking_functional_array = np.array(power_difference_squared) # + cds
+                    scale = 1e0 * np.ones_like(gradient)
+                    step = -1 * scale * (conf.par.simulation.time_step / conf.par.ssc.control_discretisation) * \
+                           (tracking_functional_array / gradient)
+                    logger.info("Step: {}".format(step))
+                    step = np.sign(step) * np.min((np.abs(step), max_step*np.ones_like(gradient)), 0)
 
             else:
                 step = np.zeros_like(self._yaw_reference_series[:,1])
@@ -158,7 +184,8 @@ class SuperController:
 
         # else:
         # send saved signal
-        reference_index = int(simulation_time % conf.par.ssc.control_horizon // conf.par.ssc.control_discretisation)
+        reference_index = int((simulation_time - conf.par.simulation.time_step)
+                              % conf.par.ssc.control_horizon // conf.par.ssc.control_discretisation)
         logger.debug("Sending reference_index: {:5d}".format(reference_index))
         self._yaw_reference = self._yaw_reference_series[reference_index, 1:]
 
