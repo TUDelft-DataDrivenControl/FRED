@@ -89,6 +89,7 @@ class ControlModelParameters:
             self.hub_height = config_dict["hub_height"]
             self.kernel = config_dict["kernel"]
             self.deflection_scale = config_dict["deflection_scale"]
+            self.yaw_rate_limit = np.deg2rad(config_dict.get("yaw_rate_limit",-1))
 
     class Simulation:
         def __init__(self, config_dict):

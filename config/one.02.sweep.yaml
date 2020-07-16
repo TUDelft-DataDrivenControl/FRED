@@ -49,3 +49,4 @@ turbine:
   hub_height: 119.6 # m
   kernel: gaussian # king, gaussian
   deflection_scale: 3. #
+  yaw_rate_limit: 1. # deg.s^-1
