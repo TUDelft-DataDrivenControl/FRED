@@ -113,8 +113,10 @@ labels = {
     "u": "$u$ (m s$^{-1}$)",
     "v": "$v$ (m s$^{-1}$)",
     "y": "$y$ (m)",
+    "induction": "$a$ (-)",
     "x": "$x$ (m)",
     "P": "$P$ (MW)",
+    "F": "$F$ (MN)",
     "t": "$t$ (s)",
     "yaw_rad": "$\psi$ (rad)",
     "yaw": r"$\psi$ ($\degree$)"

@@ -62,7 +62,7 @@ class Turbine:
             power - power scaled to three-d turbine
             """
 
-        force = 0.5 * self._area * self._thrust_coefficient_prime
+        force = 0.5 * conf.par.flow.density * self._area * self._thrust_coefficient_prime
         ud = u[0] * - sin(self._yaw) + u[1] * - cos(self._yaw)
 
         x = SpatialCoordinate(u)
@@ -99,7 +99,7 @@ class Turbine:
         logger.info("Scaling force for wake deflection by factor {:.1f}".format(scale))
         forcing = -1 * force * kernel * as_vector((-sin(self._yaw), -scale*cos(self._yaw))) * ud ** 2
         # todo: check this
-        power = force * kernel * ud ** 3
+        power = force * kernel * ud ** 3 * (1 - self._axial_induction)
 
         # The above computation yields a two-dimensional body force.
         # This is scaled to a 3D equivalent for output.
