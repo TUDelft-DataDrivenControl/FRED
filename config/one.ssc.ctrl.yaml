@@ -5,16 +5,25 @@ ssc:
   control_discretisation: 1.
   yaw_angles:
     - 290.
-  type: gradient_step
-  prediction_horizon: 30.
-  control_horizon: 1.
-  transient_time: 20.
-  objective: tracking
-#  objective: maximisation
-  power_reference:  #MW
-    - [  0., 6.1]
-    - [999., 7.1]
-  control_signal: absolute
+  type: series
+  yaw_series:
+    - [0., 290.]
+    - [300., 250]
+    - [600., 290]
+  axial_induction_series:
+    - [0., 0.1]
+    - [300., 0.4]
+    - [600., 0.1]
+#  type: gradient_step
+#  prediction_horizon: 30.
+#  control_horizon: 1.
+#  transient_time: 20.
+#  objective: tracking
+##  objective: maximisation
+#  power_reference:  #MW
+#    - [  0., 6.1]
+#    - [999., 7.1]
+#  control_signal: absolute
 #  control_signal: relative
 
 simulation:

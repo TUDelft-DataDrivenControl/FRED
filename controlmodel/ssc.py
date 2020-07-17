@@ -20,13 +20,14 @@ class SuperController:
         self._server = None
         self._yaw_reference = conf.par.ssc.yaw_angles.copy()
         # todo: pitch reference may be useful later for work with SOWFA
-        self._axial_induction_reference = 0.2 * np.ones_like(self._yaw_reference)
+        self._axial_induction_reference = conf.par.turbine.axial_induction * np.ones_like(self._yaw_reference)
         logger.info("SSC initialised")
 
         if self._control_type == "series":
-            self._time_series = conf.par.ssc.yaw_series[:, 0]
+            self._yaw_time_series = conf.par.ssc.yaw_series[:, 0]
             self._yaw_series = conf.par.ssc.yaw_series[:, 1:]
-
+            self._axial_induction_time_series = conf.par.ssc.axial_induction_series[:, 0]
+            self._axial_induction_series = conf.par.ssc.axial_induction_series[:, 1:]
         if self._control_type == "gradient_step":
             self._wind_farm = WindFarm()
             self._dynamic_flow_problem = DynamicFlowProblem(self._wind_farm)
@@ -59,11 +60,13 @@ class SuperController:
         control_function(simulation_time)
 
     def _fixed_reference(self, simulation_time):
-        return self._yaw_reference
+        return self._yaw_reference, self._axial_induction_reference
 
     def _time_series_reference(self, simulation_time):
         for idx in range(len(self._yaw_reference)):
-            self._yaw_reference[idx] = np.interp(simulation_time, self._time_series, self._yaw_series[:, idx])
+            self._yaw_reference[idx] = np.interp(simulation_time, self._yaw_time_series, self._yaw_series[:, idx])
+        for idx in range(len(self._axial_induction_reference)):
+            self._axial_induction_reference[idx] = np.interp(simulation_time, self._axial_induction_time_series, self._axial_induction_series[:, idx])
 
     def _gradient_step_reference(self, simulation_time):
         # t0 = simulation_time
