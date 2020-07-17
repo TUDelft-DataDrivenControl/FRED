@@ -20,7 +20,7 @@ class SuperController:
         self._server = None
         self._yaw_reference = conf.par.ssc.yaw_angles.copy()
         # todo: pitch reference may be useful later for work with SOWFA
-        self._pitch_reference = np.zeros_like(self._yaw_reference)
+        self._axial_induction_reference = 0.2 * np.ones_like(self._yaw_reference)
         logger.info("SSC initialised")
 
         if self._control_type == "series":
@@ -46,7 +46,7 @@ class SuperController:
             sim_time, measurements = self._server.receive()
             # if sim_time % conf.par.ssc.control_discretisation < conf.par.simulation.time_step:
             self._set_yaw_reference(simulation_time=sim_time)
-            self._server.send(self._yaw_reference, self._pitch_reference)
+            self._server.send(self._yaw_reference, self._axial_induction_reference)
             logger.info("Sent control signals for time: {:.2f}".format(sim_time))
 
     def _set_yaw_reference(self, simulation_time):

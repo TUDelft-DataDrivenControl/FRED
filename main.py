@@ -68,7 +68,7 @@ def main_steady():
     sfs.solve()
 
     functional_list = sfs.get_power_functional_list()
-    controls = sfs.get_flow_problem().get_wind_farm().get_controls()
+    controls = sfs.get_flow_problem().get_wind_farm().get_yaw_controls()
 
     J = sum(functional_list[0])
     # J = functional_list[0][1]
@@ -240,11 +240,12 @@ if __name__ == '__main__':
     # main_power_yaw()
     # main_steady()
     # main_rotating()
-    # main_with_ssc()
+    main_with_ssc()
     # main_with_ssc_two()
     # main_step_series()
     # main_yaw_sweep()
     # conf.par.load("./config/one.00.steady.yaml")
     # conf.par.load("./config/one.02.sweep.yaml")
+    # conf.par.load("./config/one.02.sweep.induction.yaml")
     # main()
-    main_with_ssc()
+    # main_with_ssc()

@@ -33,7 +33,7 @@ def construct_jacobian_matrix(dfs, turbine_idx, power_idx=None):
             binned_functional.append(
                 sum([x[power_idx] for x in functional_list][idx * n:(idx + 1) * n]) * conf.par.simulation.time_step)
 
-    controls = dfs.get_flow_problem().get_wind_farm().get_controls()
+    controls = dfs.get_flow_problem().get_wind_farm().get_yaw_controls()
 
     m = [Control(c[turbine_idx]) for c in controls]
 
@@ -69,7 +69,7 @@ def construct_lti_jacobian_matrix(dfs, turbine_idx):
         binned_functional.append(
            sum([sum(x) for x in functional_list][idx * n:(idx + 1) * n])/n)
 
-    controls = dfs.get_flow_problem().get_wind_farm().get_controls()
+    controls = dfs.get_flow_problem().get_wind_farm().get_yaw_controls()
 
     m = [Control(c[turbine_idx]) for c in controls]
 

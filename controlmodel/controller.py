@@ -36,6 +36,7 @@ class Controller:
             self._axial_induction_series = conf.par.wind_farm.controller.axial_induction_series[:,1:]
 
         if self._yaw_control_type == "external":
+            self._received_data = []
             logger.info("Initialising ZMQ communication")
             self._context = zmq.Context()
             self._socket = self._context.socket(zmq.REQ)
@@ -111,14 +112,16 @@ class Controller:
         # raw message contains a long useless tail with b'\x00' characters  (at least if from sowfa)
         # split off the tail before decoding into a Python unicode string
         json_data = message.split(b'\x00', 1)[0].decode()
-        received_data = np.loadtxt(StringIO(json_data), delimiter=' ')
+        self._received_data = np.loadtxt(StringIO(json_data), delimiter=' ')
         logger.info("Received controls: {}".format(json_data))
-        new_ref = received_data[0::2]
+        new_ref = self._received_data[0::2]
 
         return new_ref
 
     def _external_induction_controller(self, simulation_time):
-        logger.error("External axial induction control is not yet implemented!")
+        logger.warning("External induction controller only works if yaw controller implemented as well")
+        new_ref = self._received_data[1::2]
+        return new_ref
 
     def _update_yaw(self, new_ref):
         if len(new_ref) != len(self._turbines):
@@ -142,7 +145,6 @@ class Controller:
         [wt.set_axial_induction(a) for (wt, a) in zip(self._turbines, self._axial_induction_ref[-1])]
         logger.info("Set axial induction to {}".format(new_ref))
 
-
     def _apply_yaw_rate_limit(self, new_ref):
         if len(self._yaw_ref)>0:
             yaw_rate_limit = conf.par.turbine.yaw_rate_limit
@@ -156,9 +158,12 @@ class Controller:
             new_ref = prev_ref + delta_ref
         return new_ref
 
-
-    def get_controls(self):
+    def get_yaw_controls(self):
         return self._yaw_ref
+
+    def get_axial_induction_controls(self):
+        return self._axial_induction_ref
 
     def clear_controls(self):
         self._yaw_ref = []
+        self._axial_induction_ref = []

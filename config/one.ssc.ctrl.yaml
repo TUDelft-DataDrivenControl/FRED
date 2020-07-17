@@ -56,6 +56,10 @@ wind_farm:
     yaw_series:
       - [0, 290.]
       - [10, 270.]
+    axial_induction_control_type: series
+    axial_induction_series:
+      - [0., 0.33]
+      - [1., 0.33]
 
 turbine:
   axial_induction: 0.33
