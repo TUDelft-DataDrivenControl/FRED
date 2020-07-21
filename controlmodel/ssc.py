@@ -129,12 +129,15 @@ class SuperController:
                     total_power = [sum(x) for x in power]
                     power_squared = [(p-10e6)*(p-10e6) for p in total_power]
                     control_difference_squared = [1e1 * assemble((c1[0]-c0[0]) * (c1[0]-c0[0])*dx(UnitIntervalMesh(1)))  for c0,c1 in zip(yaw_controls[:-1],yaw_controls[1:])]
-                    # print(control_difference_squared)
+
+
                     logger.info("Power cost:   {:.2e}".format(sum(power_squared)))
                     logger.info("Control cost: {:.2e}".format(sum(control_difference_squared)))
                     tracking_functional = sum(power_squared) + \
                                           sum(control_difference_squared)
+
                     m = [Control(x[0]) for x in yaw_controls]
+                    m = m + [Control(x[0]) for x in axial_induction_controls]
                     gradient = compute_gradient(tracking_functional, m)
                     # mdot = [x.get_derivative() for x in m]
                     mdot = [Constant(1.) for x in m]
@@ -142,20 +145,36 @@ class SuperController:
                     hessian = compute_hessian(tracking_functional, m, mdot)
 
                     gradient = np.array([float(g) for g in gradient])
+                    yaw_gradient = gradient[:len(yaw_controls)]
+                    axial_induction_gradient = gradient[len(yaw_controls):]
                     logger.info("Computed gradient: {}".format(gradient))
-                    # [print(float(h)) for h in hessian]
+
                     hessian = np.array([float(h) for h in hessian])
+                    yaw_hessian = hessian[:len(yaw_controls)]
+                    axial_induction_hessian = hessian[len(yaw_controls):]
                     logger.info("Computed Hessian {}".format(hessian))
+
+                    if conf.par.turbine.yaw_rate_limit < 0:
+                        max_yaw_step = np.deg2rad(5.)
+                    else:
+                        max_yaw_step = conf.par.turbine.yaw_rate_limit * conf.par.ssc.control_horizon
+                    max_axial_induction_step = 0.1
+
 
 
                     max_yaw_step = np.deg2rad(5.)
                     logger.info("Functional: {:.2e}".format(tracking_functional))
                     # tracking_functional_array = np.array(power_squared)
-                    scale = 1e-1 * np.ones_like(gradient)
-                    step = -1 * scale * (conf.par.simulation.time_step / conf.par.ssc.control_discretisation) * \
-                           (gradient / hessian)
-                    logger.info("Step: {}".format(step))
-                    step = np.sign(step) * np.min((np.abs(step), max_yaw_step*np.ones_like(gradient)), 0)
+                    scale = 1e-1 * np.ones_like(yaw_gradient)
+                    yaw_step = -1 * scale * (conf.par.simulation.time_step / conf.par.ssc.control_discretisation) * \
+                           (yaw_gradient / yaw_hessian)
+                    axial_induction_step = -1 * scale * (conf.par.simulation.time_step / conf.par.ssc.control_discretisation) * \
+                           (axial_induction_gradient / axial_induction_hessian)
+
+                    logger.info("yaw_step: {}".format(yaw_step))
+                    yaw_step = np.sign(yaw_step) * np.min((np.abs(yaw_step), max_yaw_step*np.ones_like(yaw_gradient)), 0)
+                    axial_induction_step = np.sign(axial_induction_step) * np.min((np.abs(axial_induction_step), max_axial_induction_step * np.ones_like(axial_induction_gradient)), 0)
+
 
                 elif conf.par.ssc.objective == "tracking":
                     total_power = [sum(x)*1e-6 for x in power]
@@ -192,7 +211,7 @@ class SuperController:
                     max_axial_induction_step = 0.1
 
                     logger.info("Functional: {:.2e}".format(tracking_functional))
-                    tracking_functional_array = tracking_functional # np.array(power_difference_squared) # + cds
+                    tracking_functional_array = np.array(power_difference_squared) # + cds
                     scale = 1e0 * np.ones_like(yaw_gradient)
                     yaw_step = -1 * scale * (conf.par.simulation.time_step / conf.par.ssc.control_discretisation) * \
                            (tracking_functional_array / yaw_gradient)

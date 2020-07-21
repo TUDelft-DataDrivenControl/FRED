@@ -10,8 +10,8 @@ simulation:
   write_time_step: 10.0
 
 flow:
-  #  type: "steady"
-  #  inflow_velocity: [9., 270.]  # [|U|, theta]
+#  type: "steady"
+#  inflow_velocity: [9., 270.]  # [|U|, theta]
   type: series
   inflow_velocity_series: # [t, |U|, theta]
     - [0,   9., 270]

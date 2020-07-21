@@ -17,9 +17,9 @@ ssc:
   type: gradient_step
   prediction_horizon: 10.
   control_horizon: 1.
-  transient_time: 20.
-  objective: tracking
-#  objective: maximisation
+  transient_time: -1.
+#  objective: tracking
+  objective: maximisation
   power_reference:  #MW
     - [  0., 6.1]
     - [999., 7.1]
