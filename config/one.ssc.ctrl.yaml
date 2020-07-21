@@ -4,26 +4,26 @@ ssc:
   port: 1638
   control_discretisation: 1.
   yaw_angles:
-    - 290.
-  type: series
-  yaw_series:
-    - [0., 290.]
-    - [300., 250]
-    - [600., 290]
-  axial_induction_series:
-    - [0., 0.1]
-    - [300., 0.4]
-    - [600., 0.1]
-#  type: gradient_step
-#  prediction_horizon: 30.
-#  control_horizon: 1.
-#  transient_time: 20.
-#  objective: tracking
-##  objective: maximisation
-#  power_reference:  #MW
-#    - [  0., 6.1]
-#    - [999., 7.1]
-#  control_signal: absolute
+    - 270.
+#  type: series
+#  yaw_series:
+#    - [0., 290.]
+#    - [300., 250]
+#    - [600., 290]
+#  axial_induction_series:
+#    - [0., 0.1]
+#    - [300., 0.4]
+#    - [600., 0.1]
+  type: gradient_step
+  prediction_horizon: 10.
+  control_horizon: 1.
+  transient_time: 20.
+  objective: tracking
+#  objective: maximisation
+  power_reference:  #MW
+    - [  0., 6.1]
+    - [999., 7.1]
+  control_signal: absolute
 #  control_signal: relative
 
 simulation:
@@ -36,8 +36,15 @@ simulation:
   write_time_step: 10.0
 
 flow:
-  type: "steady"
-  inflow_velocity: [9., 270.]  # [|U|, theta]
+#  type: "steady"
+#  inflow_velocity: [9., 270.]  # [|U|, theta]
+  type: series
+  inflow_velocity_series: # [t, |U|, theta]
+    - [0,   9., 270]
+    - [60., 9., 290]
+    - [180., 9., 250]
+    - [300., 9., 290]
+    - [400., 9., 250]
   kinematic_viscosity: 0.000015 # kg.m^-1.s^-1
   tuning_viscosity: 0. # kg.m^-1.s^-1
   mixing_length: 10. #30. #20 # m
@@ -56,14 +63,14 @@ wind_farm:
   positions: # [x, y] m
     - [400,500]
   yaw_angles: # [gamma] deg
-    - 290.
+    - 270.
 
   farm_controller:
 #    type: fixed
     control_discretisation: 1.
     yaw_control_type: series
     yaw_series:
-      - [0, 290.]
+      - [0, 270.]
       - [10, 270.]
     axial_induction_control_type: series
     axial_induction_series:

@@ -12,10 +12,11 @@ ssc:
 #      - [0., 290, 270.]
 #      - [59., 250, 270.]
   type: gradient_step
-  prediction_horizon: 240.
-  control_horizon: 10.
-#  objective: tracking
-  objective: maximisation
+  prediction_horizon: 20.
+  control_horizon: 1.
+  transient_time: 120.
+  objective: tracking
+#  objective: maximisation
   power_reference:  #MW
     - [  0., 6.1]
     - [999., 7.1]
@@ -61,7 +62,10 @@ wind_farm:
     yaw_series:
       - [0, 290., 270.]
       - [0, 270., 270.]
-
+    axial_induction_control_type: series
+    axial_induction_series:
+      - [0., 0.33, 0.33]
+      - [1., 0.33, 0.33]
 turbine:
   axial_induction: 0.33
   diameter: 178.4 # m
@@ -69,3 +73,4 @@ turbine:
   hub_height: 119.6 # m
   kernel: gaussian # king, gaussian
   deflection_scale: 3. #
+  yaw_rate_limit: 0.3

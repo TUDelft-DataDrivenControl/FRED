@@ -114,7 +114,7 @@ def main_with_ssc():
     def run_ssc():
         conf.par.load("./config/one.ssc.ctrl.yaml")
         t = np.arange(0,1000.,1.)
-        pr = 6.0e6 + 0.7e6 *np.round(np.cos(t/10))
+        pr = 5.0e6 + 0.7e6 *np.round(np.cos(t/10))
         power_reference = np.zeros((len(t),2))
         power_reference[:,0] = t
         power_reference[:,1] = pr
@@ -142,7 +142,7 @@ def main_with_ssc_two():
     def run_ssc():
         conf.par.load("./config/two.ssc.ctrl.yaml")
         t = np.arange(0,1000.,1.)
-        pr = 20.0e6 + 0.7e6 *np.round(np.cos(t/10))
+        pr = 7.0e6 + 0.7e6 *np.round(np.cos(t/10))
         power_reference = np.zeros((len(t),2))
         power_reference[:,0] = t
         power_reference[:,1] = pr

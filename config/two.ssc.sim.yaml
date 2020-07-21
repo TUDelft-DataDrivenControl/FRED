@@ -35,6 +35,7 @@ wind_farm:
     - 270.
   farm_controller:
     yaw_control_type: external
+    axial_induction_control_type: external
     port: 1652
     control_discretisation: 1.
 
@@ -45,3 +46,4 @@ turbine:
   hub_height: 119.6 # m
   kernel: gaussian # king, gaussian
   deflection_scale: 3. #
+  yaw_rate_limit: 0.3

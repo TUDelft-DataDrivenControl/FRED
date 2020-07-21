@@ -11,7 +11,7 @@ simulation:
 
 flow:
   type: "steady"
-  inflow_velocity: [8., 270.]  # [|U|, theta]
+  inflow_velocity: [9., 270.]  # [|U|, theta]
   kinematic_viscosity: 0.000015 # kg.m^-1.s^-1
   tuning_viscosity: 0 # kg.m^-1.s^-1
   mixing_length: 10. #30. #20 # m
@@ -53,6 +53,6 @@ turbine:
   diameter: 178.4 # m
   thickness: 25. # m
   hub_height: 119.6 # m
-  kernel: king # king, gaussian
+  kernel: gaussian # king, gaussian
   deflection_scale: 3. #
   yaw_rate_limit: 0.3 # deg.s^-1
