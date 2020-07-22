@@ -9,6 +9,9 @@ logger = logging.getLogger("cm.windfarm")
 
 
 class WindFarm:
+    """Wind farm class with turbine objects and a farm controller.
+
+     """
 
     def __init__(self):
         logger.info("Setting up wind farm")
@@ -24,16 +27,36 @@ class WindFarm:
         logger.info("Added controller to farm")
 
     def get_turbines(self):
+        """Returns list of turbine objects in wind farm."""
         return self._turbines
 
     def apply_controller(self, simulation_time):
+        """Update wind farm controls for current time point in simulation
+
+        Args:
+            simulation_time (float): time instance in simulation
+
+        """
         self._controller.control(simulation_time)
 
     def get_yaw_controls(self):
+        """Get a list of yaw control signals from controller
+
+        Returns:
+            list: yaw controls over simulation time segment
+
+        """
         return self._controller.get_yaw_controls()
 
     def get_axial_induction_controls(self):
+        """Get a list of axial induction control signals from controller
+
+        Returns:
+            list: yaw controls over simulation time segment
+
+        """
         return self._controller.get_axial_induction_controls()
 
     def clear_controls(self):
+        """Clear the recorded list of control signals from the wind farm controller"""
         self._controller.clear_controls()

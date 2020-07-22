@@ -160,9 +160,6 @@ class SuperController:
                         max_yaw_step = conf.par.turbine.yaw_rate_limit * conf.par.ssc.control_horizon
                     max_axial_induction_step = 0.1
 
-
-
-                    max_yaw_step = np.deg2rad(5.)
                     logger.info("Functional: {:.2e}".format(tracking_functional))
                     # tracking_functional_array = np.array(power_squared)
                     scale = 1e-1 * np.ones_like(yaw_gradient)

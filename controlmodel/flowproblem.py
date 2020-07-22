@@ -307,3 +307,4 @@ class DynamicFlowProblem(FlowProblem):
             self._u_mag = np.interp(simulation_time, t, u_mag_series)
             self._theta = np.interp(simulation_time, t, theta_series)
             self._update_inflow_velocity()
+            logger.info("Inflow spec is: [{:.2f}, {:.2f}]".format(float(self._u_mag), float(self._theta)))
