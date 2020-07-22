@@ -80,7 +80,7 @@ class Controller:
         return new_ref
 
     def _fixed_induction(self, simulation_time):
-        new_ref = [float(wt.get_axial_induction()) for wt in self._wind_farm.get_turbines()]
+        new_ref = [wt.get_axial_induction() for wt in self._wind_farm.get_turbines()]
         return new_ref
 
     def _yaw_series_control(self, simulation_time):

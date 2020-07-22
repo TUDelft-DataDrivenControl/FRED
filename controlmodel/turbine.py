@@ -7,8 +7,16 @@ logger = logging.getLogger("cm.turbine")
 
 
 class Turbine:
+    """Wind turbine class"""
 
     def __init__(self, position, yaw):
+        """Initialise wind turbine
+
+        Args:
+            position (list of floats): [x, y] position of turbine in the wind farm (m)
+            yaw: initial turbine yaw angle (rad)
+
+        """
         logger.info("Initialising turbine at ({:5.0f}, {:5.0f})".format(position[0], position[1]))
         self._position = position
         self._yaw_ref = Constant(yaw)
@@ -39,9 +47,22 @@ class Turbine:
         return ctp
 
     def set_yaw_ref(self, new_yaw_ref):
+        """Set the turbine to  new yaw reference angle.
+
+        Assigns the specified values to the Dolfin `Constant` storing the yaw angle.
+
+        Args:
+            new_yaw_ref (float): new turbine yaw angle (rad)
+
+        """
         self._yaw_ref.assign(new_yaw_ref)
 
     def compute_forcing(self, u):
+        """Calculate the turbine forcing effect on the flow.
+
+        Args:
+            u (Function): vector velocity field
+        """
         if conf.par.simulation.dimensions == 2:
             return self._compute_turbine_forcing_two_dim(u)
         elif conf.par.simulation.dimensions == 3:
@@ -51,16 +72,18 @@ class Turbine:
             raise ValueError("Invalid dimension.")
 
     def _compute_turbine_forcing_two_dim(self, u):
-        """
-            Computes two-dimensional turbine forcing based on Actuator-Disk Model.
-            The force is distributed using a kernel similar to [King2017].
+        """Computes two-dimensional turbine forcing based on Actuator-Disk Model.
 
-            :param u: two-dimensional vector velocity field
-            :return: two-dimensional vector force field
-            forcing - flow forcing field
-            force - scaled force to three-d turbine
-            power - power scaled to three-d turbine
-            """
+        Depending on the specification in the configuration file, the force is distributed using a kernel similar to
+        the work by R. King (2017), or using a conventional Gaussian kernel.
+
+        Args:
+            u (Function): two-dimensional vectory velocity field
+
+        Returns:
+            Function: two-dimensional vector force field.
+
+        """
 
         force = 0.5 * conf.par.flow.density * self._area * self._thrust_coefficient_prime
         ud = u[0] * - sin(self._yaw) + u[1] * - cos(self._yaw)
@@ -114,12 +137,33 @@ class Turbine:
         return forcing
 
     def get_yaw(self):
-        return self._yaw
+        """Get turbine yaw angle.
+
+        Returns:
+            float: turbine yaw angle (rad)
+
+        """
+        return float(self._yaw)
 
     def get_force(self):
+        """Get current turbine force.
+
+        Performs integration of turbine forcing kernel over wind farm domain.
+
+        Returns:
+            list of floats: x and y component of turbine force (N)
+
+        """
         return [assemble(self._force[0] * dx), assemble(self._force[1] * dx)]
 
     def get_power(self):
+        """Get current turbine power.
+
+        Performs integration of power kernel over wind farm domain.
+
+        Returns:
+            float: turbine power (W)
+        """
         return assemble(self._power * dx)
 
     def get_velocity(self):
@@ -127,10 +171,28 @@ class Turbine:
         return [assemble(self._velocity[0] * dx), assemble(self._velocity[1] * dx)]
 
     def get_kernel(self):
+        """Get the integrated kernel value.
+
+        Perform integration of kernel over wind farm domain. Kernel should integrate to 1.
+
+        Returns:
+            float: kernel size (-)
+        """
         return assemble(self._kernel * dx)
 
     def get_axial_induction(self):
-        return self._axial_induction
+        """Get the axial induction factor.
+
+        Returns:
+            float: turbine axial induction factor (-)
+        """
+        return float(self._axial_induction)
 
     def set_axial_induction(self, new_axial_induction):
+        """Set the turbine to the new axial induction factor.
+
+        Args:
+            float: new axial induction factor (-)
+
+        """
         self._axial_induction.assign(new_axial_induction)
