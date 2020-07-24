@@ -4,7 +4,7 @@ import matplotlib as mpl
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from mpl_toolkits.axes_grid1 import AxesGrid
 from scipy.interpolate import griddata
-
+from mpl_toolkits.mplot3d import Axes3D
 
 def set_tex_fonts():
     plt.rcParams['text.usetex'] = True
@@ -108,6 +108,7 @@ def plot_jacobian(djdm):
 def get_colours(n):
     return plt.cm.viridis(np.linspace(0.1, 0.9, n))
 
+
 labels = {
     "umag": "$||\\mathbf{u}||$ (m s$^{-1}$)",
     "u": "$u$ (m s$^{-1}$)",
@@ -119,7 +120,11 @@ labels = {
     "F": "$F$ (MN)",
     "t": "$t$ (s)",
     "yaw_rad": "$\psi$ (rad)",
-    "yaw": r"$\psi$ ($\degree$)"
+    "yaw": r"$\psi$ ($\degree$)",
+    "pitch": r"$\beta$ ($\degree$)",
+    "tsr": r"$\lambda$ (-)",
+    "ct": r"$c_\mathrm{t}$ (-)",
+    "cp": r"$c_\mathrm{p}$ (-)"
     # u"\N{DEGREE SIGN}"
 }
 
