@@ -1,8 +1,12 @@
+from dolfin import *
+from dolfin_adjoint import *
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from PyFoam.RunDictionary.ParsedParameterFile import ParsedParameterFile
 from tools.plot import *
+import scipy.interpolate
+
 
 def calculate_coefficients(turbine_file, tip_speed_ratio, pitch_angle, wind_speed):
     f = ParsedParameterFile(turbine_file)
@@ -194,8 +198,59 @@ def read_rosco_curves():
         if "Torque coefficent" in datafile[idx]:
             cq_array = np.loadtxt(filename, skiprows=idx+2, max_rows=len(tsr_array))
 
-    pitch_grid,tsr_grid = np.meshgrid(pitch_array, tsr_array)
+    pitch_grid, tsr_grid = np.meshgrid(pitch_array, tsr_array)
     return pitch_grid, tsr_grid, ct_array, cp_array
+
+
+def lookup_field(pitch_grid, tsr_grid, ct_array, cp_array):
+    # construct function space
+    sw_corner = Point(np.min(pitch_grid), np.min(tsr_grid))
+    ne_corner = Point(np.max(pitch_grid), np.max(tsr_grid))
+    (n_tsr, n_pitch) = pitch_grid.shape
+    # set function in function space
+    m = RectangleMesh(sw_corner, ne_corner, n_pitch+1, n_tsr+1)
+    fe = FiniteElement("Lagrange", m.ufl_cell(), 1)
+    fs = FunctionSpace(m, fe)
+
+    # assign values to function
+    dof_coords = fs.tabulate_dof_coordinates()
+
+    ct = Function(fs)
+    ct_interp = scipy.interpolate.interp2d(pitch_grid[0,:], tsr_grid[:,0], ct_array, kind='linear')
+    ct_values = ct.vector().get_local()
+
+    cp = Function(fs)
+    cp_interp = scipy.interpolate.interp2d(pitch_grid[0,:], tsr_grid[:,0], cp_array, kind='linear')
+    cp_values = cp.vector().get_local()
+    for idx in range(len(dof_coords)):
+        pitch, tsr = dof_coords[idx]
+        ct_values[idx] = ct_interp(pitch, tsr)
+        cp_values[idx] = cp_interp(pitch, tsr)
+    ct.vector().set_local(ct_values)
+    cp.vector().set_local(cp_values)
+
+    ct_file = File("ct.pvd")
+    cp_file = File("cp.pvd")
+    ct_file.write(ct)
+    cp_file.write(cp)
+
+    return ct, cp
+
+
+def evaluate_ct_cp(ct, cp, pitch, tsr):
+    # pre-allocate numpy arrays for result storage
+    ct_val = np.array([0.]) # make sure this is a float array
+    cp_val = np.array([0.])
+    x = np.array([pitch, tsr])
+
+    # evaluate ct and cp for given pitch and tsr
+    ct.eval(ct_val, x)
+    cp.eval(cp_val, x)
+
+    return ct_val, cp_val
+
+
+
 
 if __name__ == '__main__':
     # ct, cp = calculate_coefficients(turbine_file = "./turbineProperties/DTU10MWRef",
@@ -212,4 +267,8 @@ if __name__ == '__main__':
     pitch_grid, tsr_grid, ct_array, cp_array = read_rosco_curves()
     save_results(pitch_grid, tsr_grid, ct_array, cp_array)
     plot_coefficient_surface(pitch_grid, tsr_grid, ct_array, cp_array)
-    plt.show()
+    # plt.show()
+
+    ct, cp = lookup_field(pitch_grid, tsr_grid, ct_array, cp_array)
+    ctv, cpv = evaluate_ct_cp(ct, cp, pitch=0., tsr=10.)
+    print("Ct: {:.2f}, Cp: {:.2f}".format(float(ctv), float(cpv)))
