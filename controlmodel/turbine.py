@@ -34,7 +34,16 @@ class Turbine:
         self._hub_height = conf.par.turbine.hub_height
 
         self._axial_induction = Constant(conf.par.turbine.axial_induction)
-        self._thrust_coefficient_prime = self._compute_ct_prime(self._axial_induction)
+
+        if conf.par.turbine.coefficients == "induction":
+            self._thrust_coefficient_prime = self._compute_ct_prime(self._axial_induction)
+        elif conf.par.turbine.coefficients == "lut":
+            self._pitch = Constant(0.) # todo: load from config file
+            self._torque = Constant(0.)
+            self._thrust_coefficient_prime = self._compute_ct_prime(self._axial_induction)
+            logger.warning("Setting turbine coefficients from LUT not yet fully implemented")
+        else:
+            raise KeyError("Invalid method for ct/cp calculations: {} is not defined".format(conf.par.turbine.coefficients))
 
         self._force = None
         self._power = None
@@ -42,6 +51,11 @@ class Turbine:
         self._kernel = None
 
     def _compute_ct_prime(self, a):
+        """Calculate thrust coefficient from axial induction.
+
+        Args:
+             a (float): axial induction factor (-)
+        """
         ct = 4 * a * (1 - a)
         ctp = ct / pow((1 - a), 2)
         return ctp

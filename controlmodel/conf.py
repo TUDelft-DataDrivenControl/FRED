@@ -81,6 +81,10 @@ class ControlModelParameters:
                 if self.axial_induction_control_type == "series":
                     self.axial_induction_series = np.array(config_dict["axial_induction_series"])
 
+                # todo: refine control settings
+                self.pitch_control_type = config_dict.get("pitch_control_type", "none")
+                self.torque_control_type = config_dict.get("torque_control_type", "none")
+
 
     class Turbine:
         """
@@ -95,6 +99,7 @@ class ControlModelParameters:
             self.kernel = config_dict["kernel"]
             self.deflection_scale = config_dict["deflection_scale"]
             self.yaw_rate_limit = np.deg2rad(config_dict.get("yaw_rate_limit",-1))
+            self.coefficients = config_dict.get("coefficients", "induction")
 
     class Simulation:
         def __init__(self, config_dict):

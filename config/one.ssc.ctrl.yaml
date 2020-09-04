@@ -67,6 +67,7 @@ wind_farm:
 
   farm_controller:
 #    type: fixed
+# this needs to be `series' for the ssc controller
     control_discretisation: 1.
     yaw_control_type: series
     yaw_series:

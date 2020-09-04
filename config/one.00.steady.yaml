@@ -34,8 +34,18 @@ wind_farm:
     - 270.
 #    - 270.
   farm_controller:
-    yaw_control_type: fixed
     control_discretisation: 1.
+    yaw_control_type: series
+    yaw_series:
+      - [0, 270.]
+      - [10, 270.]
+    axial_induction_control_type: series
+    axial_induction_series:
+      - [0., 0.33]
+      - [1., 0.33]
+    # if turbine:coefficients:lut, then need pitch and torque control
+    pitch_control_type: fixed
+    torque_control_type: fixed
 
 turbine:
   axial_induction: 0.33
@@ -44,3 +54,6 @@ turbine:
   hub_height: 119.6 # m
   kernel: gaussian # king, gaussian
   deflection_scale: 3. #
+  # type of coefficient calculation method [induction; lut]
+  coefficients: induction
+#  coefficients: lut
