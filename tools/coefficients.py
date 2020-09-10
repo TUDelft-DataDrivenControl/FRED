@@ -198,6 +198,7 @@ def read_rosco_curves():
         if "Torque coefficent" in datafile[idx]:
             cq_array = np.loadtxt(filename, skiprows=idx+2, max_rows=len(tsr_array))
 
+
     pitch_grid, tsr_grid = np.meshgrid(pitch_array, tsr_array)
     return pitch_grid, tsr_grid, ct_array, cp_array
 
@@ -224,8 +225,8 @@ def lookup_field(pitch_grid, tsr_grid, ct_array, cp_array):
     cp_values = cp.vector().get_local()
     for idx in range(len(dof_coords)):
         pitch, tsr = dof_coords[idx]
-        ct_values[idx] = ct_interp(pitch, tsr)
-        cp_values[idx] = cp_interp(pitch, tsr)
+        ct_values[idx] = np.min((np.max((ct_interp(pitch, tsr), 0.)), 1.))
+        cp_values[idx] = np.min((np.max((cp_interp(pitch, tsr), 0.)), 1.))
     ct.vector().set_local(ct_values)
     cp.vector().set_local(cp_values)
 
@@ -235,10 +236,10 @@ def lookup_field(pitch_grid, tsr_grid, ct_array, cp_array):
     # gct = project(grad(ct),fsv)
 
 
-    # ct_file = File("ct.pvd")
-    # cp_file = File("cp.pvd")
-    # ct_file.write(ct)
-    # cp_file.write(cp)
+    ct_file = File("ct.pvd")
+    cp_file = File("cp.pvd")
+    ct_file.write(ct)
+    cp_file.write(cp)
 
     return ct, cp
 
@@ -381,11 +382,11 @@ if __name__ == '__main__':
 
     pitch_grid, tsr_grid, ct_array, cp_array = read_rosco_curves()
     # save_results(pitch_grid, tsr_grid, ct_array, cp_array)
-    # plot_coefficient_surface(pitch_grid, tsr_grid, ct_array, cp_array)
-    # plt.show()
+    plot_coefficient_surface(pitch_grid, tsr_grid, ct_array, cp_array)
+    plt.show()
 
     ct, cp = lookup_field(pitch_grid, tsr_grid, ct_array, cp_array)
-    coefficient_gradient_trial(ct,cp)
+    # coefficient_gradient_trial(ct,cp)
     # point_eval_taylor_test(ct,cp)
     # ctv, cpv = evaluate_ct_cp(ct, cp, pitch=0., tsr=10.)
     # print("Ct: {:.2f}, Cp: {:.2f}".format(float(ctv), float(cpv)))

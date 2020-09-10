@@ -37,13 +37,18 @@ class Controller:
         self._time_last_updated_pitch = 0
         self._time_last_updated_torque = 0
 
+        # todo: create series controller class?
         if self._yaw_control_type == "series":
             self._yaw_time_series = conf.par.wind_farm.controller.yaw_series[:, 0]
             self._yaw_series = conf.par.wind_farm.controller.yaw_series[:, 1:]
 
         if self._axial_induction_control_type == "series":
             self._axial_induction_time_series = conf.par.wind_farm.controller.axial_induction_series[:, 0]
-            self._axial_induction_series = conf.par.wind_farm.controller.axial_induction_series[:,1:]
+            self._axial_induction_series = conf.par.wind_farm.controller.axial_induction_series[:, 1:]
+
+        if self._pitch_control_type == "series":
+            self._pitch_time_series = conf.par.wind_farm.controller.pitch_series[:, 0]
+            self._pitch_series = conf.par.wind_farm.controller.pitch_series[:, 1:]
 
         if self._yaw_control_type == "external":
             self._received_data = []
@@ -57,6 +62,7 @@ class Controller:
     def control(self, simulation_time):
         self.control_yaw(simulation_time)
         self.control_axial_induction(simulation_time)
+        self.control_pitch_and_torque(simulation_time)
 
     def control_yaw(self, simulation_time):
         if (simulation_time - self._time_last_updated_yaw >= conf.par.wind_farm.controller.control_discretisation)\
@@ -86,10 +92,11 @@ class Controller:
 
     def control_pitch_and_torque(self, simulation_time):
         if (simulation_time - self._time_last_updated_pitch >= conf.par.wind_farm.controller.control_discretisation)\
-            or self._pitch_ref == []:
+                or self._pitch_ref == []:
             switcher_pitch = {
-                "fixed": self._fixed_pitch
-                #todo: implement series control
+                "fixed": self._fixed_pitch,
+                "series": self._pitch_series_control
+                #todo: implement external
             }
             pitch_controller_function = switcher_pitch.get(self._pitch_control_type)
             new_pitch_ref = pitch_controller_function(simulation_time)
@@ -97,11 +104,13 @@ class Controller:
             switcher_torque = {
                 "fixed": self._fixed_torque
                 #todo: implement series control
+                #todo: implement external control
             }
             torque_controller_function = switcher_torque.get(self._torque_control_type)
             new_torque_ref = torque_controller_function(simulation_time)
 
             self._update_pitch_and_torque(new_pitch_ref, new_torque_ref)
+            self._time_last_updated_pitch = simulation_time
 
     def _fixed_yaw(self, simulation_time):
         new_ref = conf.par.wind_farm.yaw_angles.copy()
@@ -134,6 +143,17 @@ class Controller:
         for idx in range(len(self._turbines)):
             new_ref.append(np.interp(simulation_time, self._axial_induction_time_series, self._axial_induction_series[:, idx]))
         return new_ref
+
+    def _pitch_series_control(self, simulation_time):
+        self._pitch_time_series = conf.par.wind_farm.controller.pitch_series[:, 0]
+        self._pitch_series = conf.par.wind_farm.controller.pitch_series[:, 1:]
+        new_ref = []
+        for idx in range(len(self._turbines)):
+            new_ref.append(np.interp(simulation_time, self._pitch_time_series, self._pitch_series[:,idx]))
+        return new_ref
+
+    def _torque_series_control(self, simulation_time):
+        raise NotImplementedError("Torque series control not yet implemented")
 
     def _external_controller(self, simulation_time):
         # todo: measurements

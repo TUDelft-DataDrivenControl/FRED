@@ -44,7 +44,11 @@ wind_farm:
       - [0., 0.33]
       - [1., 0.33]
     # if turbine:coefficients:lut, then need pitch and torque control
-    pitch_control_type: fixed
+#    pitch_control_type: fixed
+    pitch_control_type: series
+    pitch_series:
+      - [0., 0.]
+      - [120.,20.]
     torque_control_type: fixed
 
 turbine:

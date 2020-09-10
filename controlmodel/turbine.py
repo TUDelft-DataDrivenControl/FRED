@@ -79,7 +79,9 @@ class Turbine:
     def _update_coefficients(self):
         ct = get_coefficient(self._ct_function, self._pitch, self._tip_speed_ratio)
         cp = get_coefficient(self._cp_function, self._pitch, self._tip_speed_ratio)
-        a = 0.5 - 0.5 * sqrt(ct)
+        a = 0.5 - 0.5 * sqrt(1-ct)
+        print(ct)
+        print(a)
         self.set_axial_induction(a)
         self._thrust_coefficient_prime.assign(ct / (1 - a))
         self._power_coefficient_prime.assign(cp / pow((1 - a), 2))
@@ -232,7 +234,7 @@ class Turbine:
         """Set the turbine to the new axial induction factor.
 
         Args:
-            float: new axial induction factor (-)
+            new_axial_induction (float): new axial induction factor (-)
 
         """
         self._axial_induction.assign(new_axial_induction)
@@ -242,7 +244,7 @@ class Turbine:
 
     def get_torque(self):
         return float(self._torque)
-    
+
     def set_pitch_and_torque(self, new_pitch=0., new_torque=0.):
         self._pitch.assign(new_pitch)
         self._torque.assign(new_torque)
@@ -300,8 +302,9 @@ def lookup_field(pitch_grid, tsr_grid, ct_array, cp_array):
     cp_values = cp.vector().get_local()
     for idx in range(len(dof_coords)):
         pitch, tsr = dof_coords[idx]
-        ct_values[idx] = ct_interp(pitch, tsr)
-        cp_values[idx] = cp_interp(pitch, tsr)
+        logger.warning("Limiting 0<=ct<=1 for axial induction calculations")
+        ct_values[idx] = np.min((np.max((ct_interp(pitch, tsr),0.)),1.))
+        cp_values[idx] = np.min((np.max((cp_interp(pitch, tsr),0.)),1.))
     ct.vector().set_local(ct_values)
     cp.vector().set_local(cp_values)
 

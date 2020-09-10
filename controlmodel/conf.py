@@ -83,6 +83,9 @@ class ControlModelParameters:
 
                 # todo: refine control settings
                 self.pitch_control_type = config_dict.get("pitch_control_type", "none")
+                if self.pitch_control_type == "series":
+                    self.pitch_series = np.array(config_dict["pitch_series"])
+                # todo: torque series
                 self.torque_control_type = config_dict.get("torque_control_type", "none")
 
 
