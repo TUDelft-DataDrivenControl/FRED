@@ -80,8 +80,6 @@ class Turbine:
         ct = get_coefficient(self._ct_function, self._pitch, self._tip_speed_ratio)
         cp = get_coefficient(self._cp_function, self._pitch, self._tip_speed_ratio)
         a = 0.5 - 0.5 * sqrt(1-ct)
-        print(ct)
-        print(a)
         self.set_axial_induction(a)
         self._thrust_coefficient_prime.assign(ct / (1 - a))
         self._power_coefficient_prime.assign(cp / pow((1 - a), 2))

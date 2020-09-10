@@ -50,6 +50,10 @@ class Controller:
             self._pitch_time_series = conf.par.wind_farm.controller.pitch_series[:, 0]
             self._pitch_series = conf.par.wind_farm.controller.pitch_series[:, 1:]
 
+        if self._torque_control_type == "series":
+            self._torque_time_series = conf.par.wind_farm.controller.torque_series[:, 0]
+            self._torque_series = conf.par.wind_farm.controller.torque_series[:, 1:]
+
         if self._yaw_control_type == "external":
             self._received_data = []
             logger.info("Initialising ZMQ communication")
@@ -102,8 +106,8 @@ class Controller:
             new_pitch_ref = pitch_controller_function(simulation_time)
 
             switcher_torque = {
-                "fixed": self._fixed_torque
-                #todo: implement series control
+                "fixed": self._fixed_torque,
+                "series": self._torque_series_control
                 #todo: implement external control
             }
             torque_controller_function = switcher_torque.get(self._torque_control_type)
@@ -153,7 +157,13 @@ class Controller:
         return new_ref
 
     def _torque_series_control(self, simulation_time):
-        raise NotImplementedError("Torque series control not yet implemented")
+        print("torque series")
+        self._torque_time_series = conf.par.wind_farm.controller.torque_series[:, 0]
+        self._torque_series = conf.par.wind_farm.controller.torque_series[:, 1:]
+        new_ref = []
+        for idx in range(len(self._turbines)):
+            new_ref.append(np.interp(simulation_time, self._torque_time_series, self._torque_series[:,idx]))
+        return new_ref
 
     def _external_controller(self, simulation_time):
         # todo: measurements
