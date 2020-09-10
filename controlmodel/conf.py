@@ -100,6 +100,8 @@ class ControlModelParameters:
             self.deflection_scale = config_dict["deflection_scale"]
             self.yaw_rate_limit = np.deg2rad(config_dict.get("yaw_rate_limit",-1))
             self.coefficients = config_dict.get("coefficients", "induction")
+            self.pitch = config_dict.get("pitch", 0.)
+            self.torque = config_dict.get("torque", 0.)
 
     class Simulation:
         def __init__(self, config_dict):

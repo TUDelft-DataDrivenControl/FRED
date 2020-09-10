@@ -57,3 +57,5 @@ turbine:
   # type of coefficient calculation method [induction; lut]
 #  coefficients: induction
   coefficients: lut
+  pitch: 1.
+  torque: 8. # currently linked to TSR directly

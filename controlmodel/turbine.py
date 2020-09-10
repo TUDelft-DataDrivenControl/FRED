@@ -46,16 +46,15 @@ class Turbine:
             self._thrust_coefficient_prime = self._compute_ct_prime(self._axial_induction)
             self._power_coefficient_prime = self._thrust_coefficient_prime * (1 - self._axial_induction)
         elif conf.par.turbine.coefficients == "lut":
-            self._pitch = Constant(0.)  # todo: load from config file
+            self._pitch = Constant(conf.par.turbine.pitch)  # todo: load from config file
             # todo: implement first order turbine model for torque to tipspeed ratio
-            self._torque = Constant(0.)
-            self._tip_speed_ratio = Constant(7.)
-            # todo: load ct and cp look-up table from file
+            self._torque = Constant(conf.par.turbine.torque)
+            self._tip_speed_ratio = Constant(conf.par.turbine.torque)
+            # load ct and cp look-up table from file
             pitch_grid, tsr_grid, ct_array, cp_array = read_rosco_curves()
             self._ct_function, self._cp_function = lookup_field(pitch_grid, tsr_grid, ct_array, cp_array)
             self._thrust_coefficient_prime = Constant(0.)
             self._power_coefficient_prime = Constant(0.)
-            # todo: cp from LUT
             self._update_coefficients()
             logger.warning("Setting turbine coefficients from LUT not yet fully implemented")
         else:
@@ -82,8 +81,8 @@ class Turbine:
         cp = get_coefficient(self._cp_function, self._pitch, self._tip_speed_ratio)
         a = 0.5 - 0.5 * sqrt(ct)
         self.set_axial_induction(a)
-        self._thrust_coefficient_prime = ct / (1 - a)
-        self._power_coefficient_prime = cp / pow((1 - a), 2)
+        self._thrust_coefficient_prime.assign(ct / (1 - a))
+        self._power_coefficient_prime.assign(cp / pow((1 - a), 2))
 
     def set_yaw_ref(self, new_yaw_ref):
         """Set the turbine to  new yaw reference angle.
@@ -244,6 +243,9 @@ class Turbine:
     def set_pitch_and_torque(self, new_pitch=0., new_torque=0.):
         self._pitch.assign(new_pitch)
         self._torque.assign(new_torque)
+        logger.warning("Linking torque control directly to TSR because turbine model not yet implemented")
+        #todo: implement first order turbine model
+        self._tip_speed_ratio.assign(new_torque)
         self._update_coefficients()
 
 

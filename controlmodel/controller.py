@@ -18,14 +18,24 @@ class Controller:
         self._axial_induction_control_type = conf.par.wind_farm.controller.axial_induction_control_type
         logger.info("Setting up induction controller of type: {}".format(self._axial_induction_control_type))
 
+        self._pitch_control_type = conf.par.wind_farm.controller.pitch_control_type
+        logger.info("Setting up pitch controller of type: {}".format(self._pitch_control_type))
+
+        self._torque_control_type = conf.par.wind_farm.controller.torque_control_type
+        logger.info("Setting up torque controller of type: {}".format(self._torque_control_type))
+
         self._wind_farm = wind_farm
         self._turbines = wind_farm.get_turbines()
 
         self._yaw_ref = []
         self._axial_induction_ref = []
+        self._pitch_ref = []
+        self._torque_ref = []
 
         self._time_last_updated_yaw = 0
         self._time_last_updated_induction = 0
+        self._time_last_updated_pitch = 0
+        self._time_last_updated_torque = 0
 
         if self._yaw_control_type == "series":
             self._yaw_time_series = conf.par.wind_farm.controller.yaw_series[:, 0]
@@ -74,12 +84,39 @@ class Controller:
             self._update_axial_induction(new_ref)
             self._time_last_updated_induction = simulation_time
 
+    def control_pitch_and_torque(self, simulation_time):
+        if (simulation_time - self._time_last_updated_pitch >= conf.par.wind_farm.controller.control_discretisation)\
+            or self._pitch_ref == []:
+            switcher_pitch = {
+                "fixed": self._fixed_pitch
+                #todo: implement series control
+            }
+            pitch_controller_function = switcher_pitch.get(self._pitch_control_type)
+            new_pitch_ref = pitch_controller_function(simulation_time)
+
+            switcher_torque = {
+                "fixed": self._fixed_torque
+                #todo: implement series control
+            }
+            torque_controller_function = switcher_torque.get(self._torque_control_type)
+            new_torque_ref = torque_controller_function(simulation_time)
+
+            self._update_pitch_and_torque(new_pitch_ref, new_torque_ref)
+
     def _fixed_yaw(self, simulation_time):
         new_ref = conf.par.wind_farm.yaw_angles.copy()
         return new_ref
 
     def _fixed_induction(self, simulation_time):
-        new_ref = [wt.get_axial_induction() for wt in self._wind_farm.get_turbines()]
+        new_ref = [wt.get_axial_induction() for wt in self._turbines]
+        return new_ref
+
+    def _fixed_pitch(self, simulation_time):
+        new_ref = [wt.get_pitch() for wt in self._turbines]
+        return new_ref
+
+    def _fixed_torque(self, simulation_time):
+        new_ref = [wt.get_torque() for wt in self._turbines]
         return new_ref
 
     def _yaw_series_control(self, simulation_time):
@@ -143,6 +180,19 @@ class Controller:
         self._axial_induction_ref.append([Constant(a) for a in new_ref])
         [wt.set_axial_induction(a) for (wt, a) in zip(self._turbines, self._axial_induction_ref[-1])]
         logger.info("Set axial induction to {}".format(new_ref))
+
+    def _update_pitch_and_torque(self, new_pitch_ref, new_torque_ref):
+        for ref in [new_pitch_ref, new_torque_ref]:
+            if len(ref) != len(self._turbines):
+                raise ValueError(
+                    "Computed reference (length {:d}) does not match {:d} turbines in farm."
+                    .format(len(ref), len(self._turbines)))
+
+        self._pitch_ref.append([Constant(b) for b in new_pitch_ref])
+        self._torque_ref.append([Constant(q) for q in new_torque_ref])
+        [wt.set_pitch_and_torque(b,q) for (wt, b, q) in zip(self._turbines, self._pitch_ref[-1], self._torque_ref[-1])]
+        logger.info("Set pitch to {}".format(new_pitch_ref))
+        logger.info("Set torque to {}".format(new_torque_ref))
 
     def _apply_yaw_rate_limit(self, new_ref):
         if len(self._yaw_ref)>0:
