@@ -17,17 +17,26 @@ class SuperController:
 
     def __init__(self):
         self._control_type = conf.par.ssc.type
+        self._control_mode = conf.par.ssc.mode
         self._server = None
         self._yaw_reference = conf.par.ssc.yaw_angles.copy()
         # todo: pitch reference may be useful later for work with SOWFA
         self._axial_induction_reference = conf.par.turbine.axial_induction * np.ones_like(self._yaw_reference)
+        self._pitch_reference = conf.par.turbine.pitch * np.ones_like(self._yaw_reference)
+        self._torque_reference = conf.par.turbine.torque * np.ones_like(self._yaw_reference)
         logger.info("SSC initialised")
 
         if self._control_type == "series":
             self._yaw_time_series = conf.par.ssc.yaw_series[:, 0]
             self._yaw_series = conf.par.ssc.yaw_series[:, 1:]
-            self._axial_induction_time_series = conf.par.ssc.axial_induction_series[:, 0]
-            self._axial_induction_series = conf.par.ssc.axial_induction_series[:, 1:]
+            if self._control_mode == "induction":
+                self._axial_induction_time_series = conf.par.ssc.axial_induction_series[:, 0]
+                self._axial_induction_series = conf.par.ssc.axial_induction_series[:, 1:]
+            elif self._control_mode == "pitch_torque":
+                self._pitch_time_series = conf.par.ssc.pitch_series[:, 0]
+                self._pitch_series = conf.par.ssc.pitch_series[:,1:]
+                self._torque_time_series = conf.par.ssc.torque_series[:, 0]
+                self._torque_series = conf.par.ssc.torque_series[:, 1:]
 
         if self._control_type == "gradient_step":
             self._wind_farm = WindFarm()
@@ -48,31 +57,56 @@ class SuperController:
     def start(self):
         self._server = ZmqServer(conf.par.ssc.port)
         logger.info("SSC started")
+        if self._control_mode == "induction":
+            self._run_yaw_induction_control()
+        elif self._control_mode == "pitch_torque":
+            self._run_yaw_pitch_torque_control()
 
+    def _run_yaw_induction_control(self):
         while True:
             sim_time, measurements = self._server.receive()
-            # if sim_time % conf.par.ssc.control_discretisation < conf.par.simulation.time_step:
-            self._set_yaw_reference(simulation_time=sim_time)
-            self._server.send(self._yaw_reference, self._axial_induction_reference)
-            logger.info("Sent control signals for time: {:.2f}".format(sim_time))
+            self._set_yaw_induction_reference(simulation_time=sim_time)
+            self._server.send_yaw_induction(self._yaw_reference, self._axial_induction_reference)
+            logger.info("Sent yaw and induction control signals for time: {:.2f}".format(sim_time))
 
-    def _set_yaw_reference(self, simulation_time):
+    def _run_yaw_pitch_torque_control(self):
+        while True:
+            sim_time, measurements = self._server.receive()
+            self._set_yaw_pitch_torque_reference(simulation_time=sim_time)
+            self._server.send(self._yaw_reference, self._pitch_reference, self._torque_reference)
+            logger.info("Sent yaw, pitch, torque control signals for time: {:.2f}".format(sim_time))
+
+    def _set_yaw_induction_reference(self, simulation_time):
         switcher = {
             "fixed": self._fixed_reference,
-            "series": self._time_series_reference,
+            "series": self._yaw_induction_time_series_reference,
             "gradient_step": self._gradient_step_reference
         }
         control_function = switcher[self._control_type]
         control_function(simulation_time)
 
-    def _fixed_reference(self, simulation_time):
-        return self._yaw_reference, self._axial_induction_reference
+    def _set_yaw_pitch_torque_reference(self, simulation_time):
+        switcher = {
+            "fixed": self._fixed_reference,
+            "series": self._yaw_pitch_torque_time_series_reference
+            #todo: "gradient_step": self._gradient_step_reference
+        }
+        control_function = switcher[self._control_type]
+        control_function(simulation_time)
 
-    def _time_series_reference(self, simulation_time):
+    def _fixed_reference(self, simulation_time):
+        return None
+
+    def _yaw_induction_time_series_reference(self, simulation_time):
         for idx in range(len(self._yaw_reference)):
             self._yaw_reference[idx] = np.interp(simulation_time, self._yaw_time_series, self._yaw_series[:, idx])
-        for idx in range(len(self._axial_induction_reference)):
             self._axial_induction_reference[idx] = np.interp(simulation_time, self._axial_induction_time_series, self._axial_induction_series[:, idx])
+
+    def _yaw_pitch_torque_time_series_reference(self, simulation_time):
+        for idx in range(len(self._yaw_reference)):
+            self._yaw_reference[idx] = np.interp(simulation_time, self._yaw_time_series, self._yaw_series[:, idx])
+            self._pitch_reference[idx] = np.interp(simulation_time, self._pitch_time_series, self._pitch_series[:, idx])
+            self._torque_reference[idx] = np.interp(simulation_time, self._torque_time_series, self._torque_series[:, idx])
 
     def _gradient_step_reference(self, simulation_time):
         # t0 = simulation_time

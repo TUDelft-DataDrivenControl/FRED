@@ -298,9 +298,9 @@ def lookup_field(pitch_grid, tsr_grid, ct_array, cp_array):
     cp = Function(fs)
     cp_interp = scipy.interpolate.interp2d(pitch_grid[0, :], tsr_grid[:, 0], cp_array, kind='linear')
     cp_values = cp.vector().get_local()
+    logger.warning("Limiting 0<=ct<=1 for axial induction calculations")
     for idx in range(len(dof_coords)):
         pitch, tsr = dof_coords[idx]
-        logger.warning("Limiting 0<=ct<=1 for axial induction calculations")
         ct_values[idx] = np.min((np.max((ct_interp(pitch, tsr),0.)),1.))
         cp_values[idx] = np.min((np.max((cp_interp(pitch, tsr),0.)),1.))
     ct.vector().set_local(ct_values)

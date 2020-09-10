@@ -65,7 +65,8 @@ class Controller:
 
     def control(self, simulation_time):
         self.control_yaw(simulation_time)
-        self.control_axial_induction(simulation_time)
+        if self._axial_induction_control_type != "none":
+            self.control_axial_induction(simulation_time)
         self.control_pitch_and_torque(simulation_time)
 
     def control_yaw(self, simulation_time):
@@ -99,16 +100,16 @@ class Controller:
                 or self._pitch_ref == []:
             switcher_pitch = {
                 "fixed": self._fixed_pitch,
-                "series": self._pitch_series_control
-                #todo: implement external
+                "series": self._pitch_series_control,
+                "external": self._external_pitch_controller
             }
             pitch_controller_function = switcher_pitch.get(self._pitch_control_type)
             new_pitch_ref = pitch_controller_function(simulation_time)
 
             switcher_torque = {
                 "fixed": self._fixed_torque,
-                "series": self._torque_series_control
-                #todo: implement external control
+                "series": self._torque_series_control,
+                "external": self._external_torque_controller
             }
             torque_controller_function = switcher_torque.get(self._torque_control_type)
             new_torque_ref = torque_controller_function(simulation_time)
@@ -157,7 +158,6 @@ class Controller:
         return new_ref
 
     def _torque_series_control(self, simulation_time):
-        print("torque series")
         self._torque_time_series = conf.par.wind_farm.controller.torque_series[:, 0]
         self._torque_series = conf.par.wind_farm.controller.torque_series[:, 1:]
         new_ref = []
@@ -180,13 +180,25 @@ class Controller:
         json_data = message.split(b'\x00', 1)[0].decode()
         self._received_data = np.loadtxt(StringIO(json_data), delimiter=' ')
         logger.info("Received controls: {}".format(json_data))
-        new_ref = self._received_data[0::2]
+        if self._axial_induction_control_type == "external":
+            new_ref = self._received_data[0::2]
+        else:
+            new_ref = self._received_data[0::3]
 
         return new_ref
 
     def _external_induction_controller(self, simulation_time):
         logger.warning("External induction controller only works if yaw controller implemented as well")
         new_ref = self._received_data[1::2]
+        return new_ref
+
+    def _external_pitch_controller(self, simulation_time):
+        logger.warning("External pitch_torque controller only works if yaw controller implemented as well")
+        new_ref = self._received_data[1::3]
+        return new_ref
+
+    def _external_torque_controller(self, simulation_time):
+        new_ref = self._received_data[2::3]
         return new_ref
 
     def _update_yaw(self, new_ref):

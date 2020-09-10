@@ -142,6 +142,7 @@ class ControlModelParameters:
         def __init__(self, config_dict):
             self.port = config_dict["port"]
             self.type = config_dict["type"]
+            self.mode = config_dict["mode"]
             self.control_discretisation = config_dict["control_discretisation"]
             if self.type == "fixed":
                 self.yaw_angles = np.deg2rad(config_dict["yaw_angles"])
@@ -149,7 +150,11 @@ class ControlModelParameters:
                 self.yaw_series = np.array(config_dict["yaw_series"])
                 self.yaw_series[:,1:] = np.deg2rad(self.yaw_series[:,1:])
                 self.yaw_angles = self.yaw_series[0, 1:]
-                self.axial_induction_series = np.array(config_dict["axial_induction_series"])
+                if self.mode == "induction":
+                    self.axial_induction_series = np.array(config_dict["axial_induction_series"])
+                elif self.mode == "pitch_torque":
+                    self.pitch_series = np.array(config_dict["pitch_series"])
+                    self.torque_series = np.array(config_dict["torque_series"])
             if self.type == "gradient_step":
                 self.yaw_angles = np.deg2rad(config_dict["yaw_angles"])
                 self.prediction_horizon = config_dict["prediction_horizon"]
@@ -159,6 +164,8 @@ class ControlModelParameters:
                 if self.objective == "tracking":
                     self.power_reference = np.array(config_dict["power_reference"])
                     self.power_reference[:, 1] *= 1e6
+                if self.mode == "pitch_torque":
+                    raise NotImplementedError("gradient step pitch torque control not implemented.")
 
 
 par = ControlModelParameters()

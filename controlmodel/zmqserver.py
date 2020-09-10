@@ -61,8 +61,15 @@ class ZmqServer:
         measurements = received_data[1:]
         return current_time, measurements
 
-    def send(self, yaw_ref, pitch_ref):
-        data_send = np.array([[yaw, pitch] for yaw, pitch in zip(yaw_ref, pitch_ref)]).ravel()
+    def send_yaw_induction(self, yaw_ref, induction_ref):
+        data_send = np.array([[yaw, induction] for yaw, induction in zip(yaw_ref, induction_ref)]).ravel()
+        self._send_data(data_send)
+
+    def send(self, yaw_ref, pitch_ref, torque_ref):
+        data_send = np.array([[yaw, pitch, torque] for yaw, pitch,torque in zip(yaw_ref, pitch_ref, torque_ref)]).ravel()
+        self._send_data(data_send)
+
+    def _send_data(self, data_send):
         string_data = ["{:.6f}".format(d) for d in data_send]
         string_send = " ".join(string_data)
 
