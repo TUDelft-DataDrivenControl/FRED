@@ -55,5 +55,5 @@ turbine:
   kernel: gaussian # king, gaussian
   deflection_scale: 3. #
   # type of coefficient calculation method [induction; lut]
-  coefficients: induction
-#  coefficients: lut
+#  coefficients: induction
+  coefficients: lut

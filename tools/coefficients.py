@@ -229,10 +229,16 @@ def lookup_field(pitch_grid, tsr_grid, ct_array, cp_array):
     ct.vector().set_local(ct_values)
     cp.vector().set_local(cp_values)
 
-    ct_file = File("ct.pvd")
-    cp_file = File("cp.pvd")
-    ct_file.write(ct)
-    cp_file.write(cp)
+    # fv = VectorElement("Lagrange", m.ufl_cell(), 1)
+    # fsv = FunctionSpace(m, fv)
+    #
+    # gct = project(grad(ct),fsv)
+
+
+    # ct_file = File("ct.pvd")
+    # cp_file = File("cp.pvd")
+    # ct_file.write(ct)
+    # cp_file.write(cp)
 
     return ct, cp
 
@@ -247,8 +253,117 @@ def evaluate_ct_cp(ct, cp, pitch, tsr):
     ct.eval(ct_val, x)
     cp.eval(cp_val, x)
 
+    # or:
+    # ct_val = ct(pitch, tsr)
+    # cp_val = cp(pitch, tsr)
     return ct_val, cp_val
 
+
+def point_eval_taylor_test(ct, cp):
+
+    pitch = Constant(5.)
+    tsr = Constant(8.)
+
+
+    # ctval = ct(pitch, tsr)
+
+    backend_ct = ct
+
+    def get_ct(pitch, tsr):
+        return backend_ct(pitch, tsr)
+
+    #  http://www.dolfin-adjoint.org/en/latest/documentation/custom_functions.html
+    from pyadjoint import Block
+
+    class CtBlock(Block):
+        def __init__(self, func, **kwargs):
+            super(CtBlock, self).__init__()
+            # self.func = func
+            self.gradient = [project(backend_ct.dx(0), backend_ct.function_space()),
+                             project(backend_ct.dx(1), backend_ct.function_space())]
+            self.kwargs = kwargs
+            self.add_dependency(func)
+
+        def __str__(self):
+            return "CtBlock"
+
+        def recompute_component(self, inputs, block_variable, idx, prepared):
+            return backend_ct(inputs[0], inputs[1])
+
+        def evaluate_adj_component(self, inputs, adj_inputs, block_variable, idx, prepared=None):
+            return self.gradient[idx](adj_inputs[0],adj_inputs[1])
+
+    from pyadjoint.overloaded_function import overload_function
+    get_ct = overload_function(get_ct, CtBlock)
+    # ct = overload_function(ct.__call__, CtBlock)
+
+    J = assemble(ct(pitch, tsr))
+    m = Control(pitch)
+
+    Jhat = ReducedFunctional(J, m)
+    dJdm = Jhat.derivative()
+    taylor_test(Jhat, m, m)
+
+
+def coefficient_gradient_trial(ct, cp):
+
+    pitch_val = Constant(10.)
+    tsr_val = Constant(6.)
+
+    def get_coefficient(func, pitch, tsr):
+        return func(pitch, tsr)
+
+    backend_get_coefficient = get_coefficient
+
+    from pyadjoint import Block
+
+    class CoefficientBlock(Block):
+        def __init__(self,func, pitch, tsr, **kwargs):
+            super(CoefficientBlock, self).__init__()
+            self.kwargs = kwargs
+            self.func = func
+            self.add_dependency(pitch)
+            self.add_dependency(tsr)
+            degree = func.function_space().ufl_element().degree()
+            family = func.function_space().ufl_element().family()
+            mesh = func.function_space().mesh()
+            if np.isin(family, ["CG", "Lagrange"]):
+                self.V = FunctionSpace(mesh, "DG", degree - 1)
+            else:
+                raise NotImplementedError(
+                    "Not implemented for other elements than Lagrange")
+
+        def __str__(self):
+            return "CoefficientBlock"
+
+        def evaluate_adj_component(self, inputs, adj_inputs, block_variable, idx, prepared=None):
+            # output = get_derivative(inputs[0], inputs[1], idx) * adj_inputs[0]
+            grad_idx = project(self.func.dx(idx), self.V)
+            output = grad_idx(inputs[0], inputs[1]) * adj_inputs[0]
+            return output
+
+        def recompute_component(self, inputs, block_variable, idx, prepared):
+            return backend_get_coefficient(self.func, inputs[0], inputs[1])
+
+    from pyadjoint.overloaded_function import overload_function
+
+    get_coefficient = overload_function(get_coefficient, CoefficientBlock)
+
+    controls = [pitch_val, tsr_val]
+
+    ctv = get_coefficient(ct, pitch_val, tsr_val)
+    cpv = get_coefficient(cp, pitch_val, tsr_val)
+    J = (ctv*cpv) **2
+
+    m = [Control(ctrl) for ctrl in controls]
+
+    Jhat = ReducedFunctional(J, m)
+    dJdm = Jhat.derivative()
+
+    print("\nBeginning taylor test:\n")
+    taylor_test(Jhat, controls, [Constant(0.01*np.random.rand()) for c in controls])
+
+    print("end")
 
 
 
@@ -265,10 +380,12 @@ if __name__ == '__main__':
     # plt.show()
 
     pitch_grid, tsr_grid, ct_array, cp_array = read_rosco_curves()
-    save_results(pitch_grid, tsr_grid, ct_array, cp_array)
-    plot_coefficient_surface(pitch_grid, tsr_grid, ct_array, cp_array)
+    # save_results(pitch_grid, tsr_grid, ct_array, cp_array)
+    # plot_coefficient_surface(pitch_grid, tsr_grid, ct_array, cp_array)
     # plt.show()
 
     ct, cp = lookup_field(pitch_grid, tsr_grid, ct_array, cp_array)
-    ctv, cpv = evaluate_ct_cp(ct, cp, pitch=0., tsr=10.)
-    print("Ct: {:.2f}, Cp: {:.2f}".format(float(ctv), float(cpv)))
+    coefficient_gradient_trial(ct,cp)
+    # point_eval_taylor_test(ct,cp)
+    # ctv, cpv = evaluate_ct_cp(ct, cp, pitch=0., tsr=10.)
+    # print("Ct: {:.2f}, Cp: {:.2f}".format(float(ctv), float(cpv)))

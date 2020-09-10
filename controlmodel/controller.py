@@ -48,7 +48,6 @@ class Controller:
         self.control_yaw(simulation_time)
         self.control_axial_induction(simulation_time)
 
-
     def control_yaw(self, simulation_time):
         if (simulation_time - self._time_last_updated_yaw >= conf.par.wind_farm.controller.control_discretisation)\
                 or self._yaw_ref == []:
