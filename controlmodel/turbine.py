@@ -240,6 +240,9 @@ class Turbine:
     def get_pitch(self):
         return float(self._pitch)
 
+    def get_torque(self):
+        return float(self._torque)
+    
     def set_pitch_and_torque(self, new_pitch=0., new_torque=0.):
         self._pitch.assign(new_pitch)
         self._torque.assign(new_torque)
@@ -247,7 +250,6 @@ class Turbine:
         #todo: implement first order turbine model
         self._tip_speed_ratio.assign(new_torque)
         self._update_coefficients()
-
 
     def get_tip_speed_ratio(self):
         return float(self._tip_speed_ratio)
