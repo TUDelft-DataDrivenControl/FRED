@@ -105,14 +105,14 @@ def main_with_ssc():
     time_start = time.time()
 
     def run_sim():
-        conf.par.load("./config/one.ssc.sim.yaml")
+        conf.par.load("./config/one.ssc.sim.bq.yaml")
         wind_farm = WindFarm()
         dfp = DynamicFlowProblem(wind_farm)
         dfs = DynamicFlowSolver(dfp)
         dfs.solve()
 
     def run_ssc():
-        conf.par.load("./config/one.ssc.ctrl.yaml")
+        conf.par.load("./config/one.ssc.ctrl.bq.yaml")
         t = np.arange(0,1000.,1.)
         pr = 5.0e6 + 0.7e6 *np.round(np.cos(t/10))
         power_reference = np.zeros((len(t),2))
@@ -133,14 +133,14 @@ def main_with_ssc_two():
     time_start = time.time()
 
     def run_sim():
-        conf.par.load("./config/two.ssc.sim.yaml")
+        conf.par.load("./config/two.ssc.sim.a.yaml")
         wind_farm = WindFarm()
         dfp = DynamicFlowProblem(wind_farm)
         dfs = DynamicFlowSolver(dfp)
         dfs.solve()
 
     def run_ssc():
-        conf.par.load("./config/two.ssc.ctrl.yaml")
+        conf.par.load("./config/two.ssc.ctrl.a.yaml")
         t = np.arange(0,1000.,1.)
         pr = 7.0e6 + 0.7e6 *np.round(np.cos(t/10))
         power_reference = np.zeros((len(t),2))
@@ -244,8 +244,8 @@ if __name__ == '__main__':
     # main_with_ssc_two()
     # main_step_series()
     # main_yaw_sweep()
-    conf.par.load("./config/one.00.steady.yaml")
+    # conf.par.load("./config/one.00.steady.yaml")
     # conf.par.load("./config/one.02.sweep.yaml")
     # conf.par.load("./config/one.02.sweep.induction.yaml")
-    main()
-    # main_with_ssc()
+    # main()
+    main_with_ssc()

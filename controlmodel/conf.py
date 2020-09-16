@@ -164,8 +164,8 @@ class ControlModelParameters:
                 if self.objective == "tracking":
                     self.power_reference = np.array(config_dict["power_reference"])
                     self.power_reference[:, 1] *= 1e6
-                if self.mode == "pitch_torque":
-                    raise NotImplementedError("gradient step pitch torque control not implemented.")
+                # if self.mode == "pitch_torque":
+                #     raise NotImplementedError("gradient step pitch torque control not implemented.")
 
 
 par = ControlModelParameters()

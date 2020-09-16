@@ -122,6 +122,7 @@ labels = {
     "yaw_rad": "$\psi$ (rad)",
     "yaw": r"$\psi$ ($\degree$)",
     "pitch": r"$\beta$ ($\degree$)",
+    "torque": "$Q$ (Nm)",
     "tsr": r"$\lambda$ (-)",
     "ct": r"$c_\mathrm{t}$ (-)",
     "cp": r"$c_\mathrm{p}$ (-)"

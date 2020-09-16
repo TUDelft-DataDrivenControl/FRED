@@ -54,6 +54,7 @@ turbine:
   kernel: gaussian # king, gaussian
   deflection_scale: 3. #
   yaw_rate_limit: 0.3
+#  coefficients: induction
   coefficients: lut
   pitch: 0.
   torque: 8.

@@ -255,6 +255,14 @@ class Controller:
     def get_axial_induction_controls(self):
         return self._axial_induction_ref
 
+    def get_pitch_controls(self):
+        return self._pitch_ref
+
+    def get_torque_controls(self):
+        return self._torque_ref
+
     def clear_controls(self):
         self._yaw_ref = []
         self._axial_induction_ref = []
+        self._pitch_ref = []
+        self._torque_ref = []

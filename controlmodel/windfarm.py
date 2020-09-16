@@ -57,6 +57,12 @@ class WindFarm:
         """
         return self._controller.get_axial_induction_controls()
 
+    def get_pitch_controls(self):
+        return self._controller.get_pitch_controls()
+
+    def get_torque_controls(self):
+        return self._controller.get_torque_controls()
+
     def clear_controls(self):
         """Clear the recorded list of control signals from the wind farm controller"""
         self._controller.clear_controls()
