@@ -68,6 +68,7 @@ class ZmqServer:
     def send(self, yaw_ref, pitch_ref, torque_ref):
         # data_send = np.array([[yaw, pitch, torque] for yaw, pitch,torque in zip(yaw_ref, pitch_ref, torque_ref)]).ravel()
         # Construct control signal array as expected by SOWFA
+        yaw_ref = [np.rad2deg(y) for y in yaw_ref]
         data_send = np.array([[torque, yaw, pitch] for torque, yaw, pitch in zip(torque_ref, yaw_ref, pitch_ref)]).ravel()
         self._send_data(data_send)
 
