@@ -12,8 +12,10 @@ import logging
 
 logger = logging.getLogger("cm.turbine")
 
+from pkg_resources import resource_string
+
 def read_rosco_curves():
-    filename = "./config/Cp_Ct_Cq.DTU10MW.txt"
+    filename = resource_string(__name__,"./config/Cp_Ct_Cq.DTU10MW.txt")
     with open(filename, "r") as f:
         datafile = f.readlines()
     for idx in range(len(datafile)):

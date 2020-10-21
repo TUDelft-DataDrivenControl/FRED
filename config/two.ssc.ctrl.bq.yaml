@@ -42,6 +42,7 @@ flow:
   wake_mixing_ml_max: 25. # m
   density: 1.2 # kg.m^-3
   continuity_correction: wfsim # none, wfsim, (general)
+  finite_element: MINI
 
 wind_farm:
   size: [2000,1000]
