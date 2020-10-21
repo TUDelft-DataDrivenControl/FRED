@@ -1,21 +1,20 @@
 mode: simulation
 
 simulation:
-  name: one.00.steady
+  name: nine.02.rotating
   is_dynamic: True
-  total_time: 600. # s
+  total_time: 900. # s
   time_step: 1. # s
   dimensions: 2 # -
   save_logs: True
   write_time_step: 10.0
 
 flow:
+  inflow_velocity: [9., 255]
   type: "steady"
-  inflow_velocity: [9., 270.]  # [|U|, theta]
-#  type: "series"
 #  inflow_velocity_series: # [t, |U|, theta]
-#    - [0,   9., 270]
-#    - [299,   9., 270]
+#    - [0,   9., 255]
+#    - [299,   9., 255]
 #    - [600., 9., 195]
 #    - [900., 9., 195]
   kinematic_viscosity: 0.000015 # kg.m^-1.s^-1
@@ -27,35 +26,50 @@ flow:
   wake_mixing_ml_max: 25. # m
   density: 1.2 # kg.m^-3
   continuity_correction: wfsim # none, wfsim, (general)
-  finite_element: MINI
 
 wind_farm:
-  size: [2000,1000]
-  cells: [40,20]
+  size: [3000,3000]
+  cells: [30, 30]
   do_refine_turbines: 1
   refine_radius: 100.
   positions: # [x, y] m
-    - [400,500]
-    - [1300,500]
+    - [600,500]
+    - [1500, 500]
+    - [2400, 500]
+    - [600, 1500]
+    - [1500, 1500]
+    - [2400, 1500]
+    - [600, 2400]
+    - [1500, 2400]
+    - [2400, 2400]
+#    - [1300,500]
   yaw_angles: # [gamma] deg
-    - 290.
-    - 270.
+    - 225.
+    - 225.
+    - 225.
+    - 225.
+    - 225.
+    - 225.
+    - 225.
+    - 225.
+    - 225.
+#    - 270.
   farm_controller:
     control_discretisation: 1.
-    yaw_control_type: series
-    yaw_series:
-      - [0, 290, 270.]
-      - [10, 290., 270.]
-    axial_induction_control_type: series
-    axial_induction_series:
-      - [0., 0.33, 0.33]
-      - [1., 0.33, 0.33]
+    yaw_control_type: fixed
+#    yaw_series:
+#      - [0, 270.]
+#      - [10, 270.]
+    axial_induction_control_type: fixed
+#    axial_induction_series:
+#      - [0., 0.33]
+#      - [1., 0.33]
     # if turbine:coefficients:lut, then need pitch and torque control
     pitch_control_type: fixed
 #    pitch_control_type: series
 #    pitch_series:
 #      - [0., 0.]
-#      - [120.,0.]
+#      - [120.,20.]
     torque_control_type: fixed
 #    torque_control_type: series
 #    torque_series:

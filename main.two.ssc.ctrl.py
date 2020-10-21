@@ -25,7 +25,7 @@ parameters["form_compiler"]["optimize"] = True
 def main():
     logger.setLevel(logging.DEBUG)
     time_start = time.time()
-    conf.par.load("./config/two.ssc.ctrl.yaml")
+    conf.par.load("./config/two.ssc.ctrl.a.yaml")
     t = np.arange(0, 1000., 1.)
     pr = 8.0e6 + 0.7e6 * np.round(np.cos(t / 10))
     power_reference = np.zeros((len(t), 2))

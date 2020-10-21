@@ -23,7 +23,7 @@ parameters["form_compiler"]["optimize"] = True
 def main():
     logger.setLevel(logging.DEBUG)
     time_start = time.time()
-    conf.par.load("./config/two.ssc.sim.yaml")
+    conf.par.load("./config/two.ssc.sim.a.yaml")
     wind_farm = WindFarm()
     dfp = DynamicFlowProblem(wind_farm)
     dfs = DynamicFlowSolver(dfp)

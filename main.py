@@ -61,24 +61,24 @@ def main():
 
 def main_steady():
     time_start = time.time()
-    conf.par.load("./config/test_config_steady.yaml")
+    # conf.par.load("./config/test_config_steady.yaml")
     wind_farm = WindFarm()
     sfp = SteadyFlowProblem(wind_farm)
     sfs = SteadyFlowSolver(sfp)
     sfs.solve()
 
-    functional_list = sfs.get_power_functional_list()
-    controls = sfs.get_flow_problem().get_wind_farm().get_yaw_controls()
-
-    J = sum(functional_list[0])
-    # J = functional_list[0][1]
-    m = [Control(c) for c in controls]
-    # g = compute_gradient(J,m)
-    Jhat = ReducedFunctional(-J,m)
-    m_opt = minimize(Jhat, bounds=([-0.5,-0.5], [0.5,0.5]))
-    [print(float(x)) for x in m_opt]
-    [wt.set_yaw_ref(y) for (wt, y) in zip(wind_farm.get_turbines(), m_opt)]
-    sfs.solve()
+    # functional_list = sfs.get_power_functional_list()
+    # controls = sfs.get_flow_problem().get_wind_farm().get_yaw_controls()
+    #
+    # J = sum(functional_list[0])
+    # # J = functional_list[0][1]
+    # m = [Control(c) for c in controls]
+    # # g = compute_gradient(J,m)
+    # Jhat = ReducedFunctional(-J,m)
+    # m_opt = minimize(Jhat, bounds=([-0.5,-0.5], [0.5,0.5]))
+    # [print(float(x)) for x in m_opt]
+    # [wt.set_yaw_ref(y) for (wt, y) in zip(wind_farm.get_turbines(), m_opt)]
+    # sfs.solve()
 
     time_end = time.time()
     logger.info("Total time: {:.2f} seconds".format(time_end - time_start))
@@ -243,11 +243,17 @@ if __name__ == '__main__':
     # main_steady()
     # main_rotating()
     # main_with_ssc()
-    main_with_ssc_two()
+    # main_with_ssc_two()
     # main_step_series()
     # main_yaw_sweep()
-    # conf.par.load("./config/one.00.steady.yaml")
+    conf.par.load("./config/one.00.steady.yaml")
     # conf.par.load("./config/one.02.sweep.yaml")
+    # conf.par.load("./config/two.00.steady.yaml")
+    # conf.par.load("./config/two.01.step.yaml")
+    # conf.par.load("./config/nine.02.rotating.yaml")
     # conf.par.load("./config/one.02.sweep.induction.yaml")
-    # main()
+    main()
+    # main_steady()
+    # list_timings()
+
     # main_with_ssc()

@@ -1,24 +1,23 @@
 mode: simulation
 
 simulation:
-  name: one.ssc.sim
+  name: two.00.steady
   is_dynamic: True
-  total_time: 599. # s
+  total_time: 600. # s
   time_step: 1. # s
   dimensions: 2 # -
-  save_logs: False
+  save_logs: True
   write_time_step: 10.0
 
 flow:
   type: "steady"
-  inflow_velocity: [9., 270.]  # [|U|, theta]
-#  type: series
+  inflow_velocity: [8., 270.]  # [|U|, theta]
+#  type: "series"
 #  inflow_velocity_series: # [t, |U|, theta]
 #    - [0,   9., 270]
-#    - [60., 9., 290]
-#    - [180., 9., 250]
-#    - [300., 9., 290]
-#    - [400., 9., 250]
+#    - [299,   9., 270]
+#    - [600., 9., 195]
+#    - [900., 9., 195]
   kinematic_viscosity: 0.000015 # kg.m^-1.s^-1
   tuning_viscosity: 0. # kg.m^-1.s^-1
   mixing_length: 10. #30. #20 # m
@@ -30,31 +29,33 @@ flow:
   continuity_correction: wfsim # none, wfsim, (general)
 
 wind_farm:
-  size: [1000,1000]
-  cells: [10, 10]
+  size: [2000,1000]
+  cells: [20, 10]
   do_refine_turbines: 1
   refine_radius: 100.
   positions: # [x, y] m
     - [400,500]
+    - [1300,500]
   yaw_angles: # [gamma] deg
     - 290.
+    - 270.
   farm_controller:
-    yaw_control_type: external
-    axial_induction_control_type: none
-    pitch_control_type: external
-    torque_control_type: external
-    port: 1638
     control_discretisation: 1.
+    yaw_control_type: fixed
+    axial_induction_control_type: fixed
+    # if turbine:coefficients:lut, then need pitch and torque control
+    pitch_control_type: fixed
+    torque_control_type: fixed
 
 turbine:
   axial_induction: 0.33
   diameter: 178.4 # m
-  thickness: 25. # m
+  thickness: 17.8 # m
   hub_height: 119.6 # m
   kernel: gaussian # king, gaussian
   deflection_scale: 3. #
-  yaw_rate_limit: 0.3
-#  coefficients: induction
-  coefficients: lut
-  pitch: 0.
-  torque: 8.
+  # type of coefficient calculation method [induction; lut]
+  coefficients: induction
+#  coefficients: lut
+  pitch: 1.
+  torque: 8. # currently linked to TSR directly

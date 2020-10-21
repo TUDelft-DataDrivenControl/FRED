@@ -4,32 +4,32 @@
 mode: simulation
 
 simulation:
-  name: two.01.step.20
-  is_dynamic: True
-  total_time: 1000. # s
+  name: two.01.step.00
+  is_dynamic: False
+  total_time: 120. # s
   time_step: 1. # s
   dimensions: 2 # -
   save_logs: True
-  write_time_step: 30.0
+  write_time_step: 1.0
 
 flow:
   type: "steady"
-  inflow_velocity: [9., 270.]  # [|U|, theta]
+  inflow_velocity: [8., 270.]  # [|U|, theta]
   kinematic_viscosity: 0.000015 # kg.m^-1.s^-1
-  tuning_viscosity: 0. # kg.m^-1.s^-1
+  tuning_viscosity: 1. # kg.m^-1.s^-1
   mixing_length: 10. #30. #20 # m
   wake_mixing_length: 1.5 # D
   wake_mixing_width: 0.6  # D
   wake_mixing_offset: 3.0 # D
-  wake_mixing_ml_max: 25. # m
+  wake_mixing_ml_max: 0. # m
   density: 1.2 # kg.m^-3
-  continuity_correction: wfsim # none, wfsim, (general)
+  continuity_correction: none #wfsim # none, wfsim, (general)
 
 wind_farm:
   size: [2000,1000]
-  cells: [20, 10]
-  do_refine_turbines: 1
-  refine_radius: 150.
+  cells: [40, 20]
+  do_refine_turbines: 0
+  refine_radius: 100.
   positions: # [x, y] m
     - [400,500]
     - [1300,500]
@@ -47,16 +47,19 @@ wind_farm:
     yaw_series: # [time, yaw_0, ... , yaw_n]
       - [  0., 270., 270.]
       - [299.9,270., 270.]
-      - [300., 290., 270.]
+#      - [300., 290., 270.]
 #      - [499.9,290., 270.]
 #      - [500., 270., 270.]
-      - [1000., 290., 270.]
+#      - [1000., 290., 270.]
 #    control_discretisation: 10.
+    pitch_control_type: fixed
+    torque_control_type: fixed
 
 turbine:
   axial_induction: 0.33
   diameter: 178.4 # m
-  thickness: 17.8 # m
+  thickness: 25. #17.8 # m
   hub_height: 119.6 # m
-  kernel: gaussian # king, gaussian
+  kernel: king #gaussian # king, gaussian
   deflection_scale: 3. #
+  coefficients: induction
