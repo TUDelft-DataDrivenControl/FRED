@@ -22,6 +22,7 @@ class FlowProblem:
         self._mixed_function_space = None
         self._setup_function_space()
         self._force_space = self._mixed_function_space.sub(0).collapse()
+        self._scalar_space = self._mixed_function_space.sub(1).collapse()
 
         self._boundary_conditions = []
 
@@ -44,6 +45,8 @@ class FlowProblem:
 
         self._lhs = None
         self._rhs = None
+
+        self._nu_turbulent = None
 
     def _update_inflow_velocity(self):
         theta = self._theta * pi / 180.
@@ -76,10 +79,19 @@ class FlowProblem:
         self._mesh = refine(self._mesh, cell_markers)
 
     def _setup_function_space(self):
-        vector_element = VectorElement("Lagrange", self._mesh.ufl_cell(), 2)
-        finite_element = FiniteElement("Lagrange", self._mesh.ufl_cell(), 1)
-        taylor_hood_element = vector_element * finite_element
-        mixed_function_space = FunctionSpace(self._mesh, taylor_hood_element)
+        if conf.par.flow.finite_element == "TH":
+            logger.info("Setting up Taylor-Hood finite element function space")
+            vector_element = VectorElement("Lagrange", self._mesh.ufl_cell(), 2)
+            finite_element = FiniteElement("Lagrange", self._mesh.ufl_cell(), 1)
+            taylor_hood_element = vector_element * finite_element
+            mixed_function_space = FunctionSpace(self._mesh, taylor_hood_element)
+        elif conf.par.flow.finite_element == "MINI":
+            logger.info("Setting up MINI finite element function space")
+            P1 = FiniteElement("CG", self._mesh.ufl_cell(), 1)
+            B = FiniteElement("Bubble", self._mesh.ufl_cell(), self._mesh.topology().dim() + 1)
+            V = VectorElement(NodalEnrichedElement(P1, B))
+            Q = P1
+            mixed_function_space = FunctionSpace(self._mesh, V * Q)
         self._mixed_function_space = mixed_function_space
 
     def _setup_boundary_conditions(self):
@@ -158,6 +170,11 @@ class FlowProblem:
     def get_wind_farm(self):
         return self._wind_farm
 
+    def get_nu_turbulent(self):
+        return self._nu_turbulent
+
+    def get_scalar_space(self):
+        return self._scalar_space
 
 class SteadyFlowProblem(FlowProblem):
 
@@ -192,13 +209,23 @@ class SteadyFlowProblem(FlowProblem):
             nu_turbulent = Constant(0.)
 
         nu_combined = nu + nu_tuning + nu_turbulent
-
+        self._nu_turbulent = nu_combined
         # Take the combination of all turbine forcing kernels to add into the flow
         forcing_list = [wt.compute_forcing(u) for wt in self._wind_farm.get_turbines()]
         f = sum(forcing_list)
         self._forcing = f
 
-        variational_form = inner(grad(u) * u, v) * dx + (nu_combined * inner(grad(u), grad(v))) * dx \
+        # variational_form = inner(grad(u) * u, v) * dx + (nu_combined * inner(grad(u), grad(v))) * dx \
+        #                    - inner(div(v), p) * dx - inner(div(u), q) * dx \
+        #                    - inner(f, v) * dx
+
+        # variational_form = inner(grad(u) * u, v) * dx +  (2 * nu_combined * inner(0.5*(grad(u) + grad(u).T), 0.5* (grad(v) + grad(v).T))) * dx \
+        #                    - inner(div(v), p) * dx - inner(div(u), q) * dx \
+        #                    - inner(f, v) * dx
+
+        epsilon = 0.5*(grad(u) + grad(u).T)
+        variational_form = inner(2 * nu_combined * epsilon, grad(v)) * dx \
+                           + inner(grad(u) * u, v) * dx\
                            - inner(div(v), p) * dx - inner(div(u), q) * dx \
                            - inner(f, v) * dx
 
@@ -275,9 +302,11 @@ class DynamicFlowProblem(FlowProblem):
             logger.warning("Not using a mixing length model.")
             nu_turbulent = Constant(0.)
 
+        self._nu_turbulent = nu_turbulent
+
         # Tuning viscosity may be used instead of a mixing length model
         nu_tuning = Constant(conf.par.flow.tuning_viscosity)
-
+        nu_combined = (nu + nu_tuning + nu_turbulent)
         # skew-symmetric formulation of the convective term
         convective_term = 0.5 * (inner(dot(u_tilde, nabla_grad(u_bar)), v)
                                  + inner(div(outer(u_tilde, u_bar)), v))
@@ -290,12 +319,22 @@ class DynamicFlowProblem(FlowProblem):
             logger.info("Applying no continuity correction")
             continuity_correction = 0
 
+        nu_combined = nu + nu_tuning + nu_turbulent
+        epsilon = 0.5 * (grad(u) + grad(u).T)
         variational_form = inner(u - u_prev, v) * dx \
-                           + dt * (nu + nu_tuning + nu_turbulent) * inner(nabla_grad(u_bar), nabla_grad(v)) * dx \
+                           + dt * inner(2 * nu_combined * epsilon, grad(v)) * dx \
                            + dt * convective_term * dx \
                            - dt * inner(f, v) * dx \
                            - dt * inner(div(v), p) * dx \
                            + inner(div(u) + continuity_correction, q) * dx
+        # + dt * (nu + nu_tuning + nu_turbulent) * inner(nabla_grad(u_bar), nabla_grad(v)) * dx \
+
+            # variational_form = inner(u - u_prev, v) * dx \
+        #                    + dt * (2 * nu_combined * inner(0.5 * (grad(u) + grad(u).T), 0.5 * (grad(v) + grad(v).T))) * dx \
+        #                    + dt * convective_term * dx \
+        #                    - dt * inner(f, v) * dx \
+        #                    - dt * inner(div(v), p) * dx \
+        #                    + inner(div(u) + continuity_correction, q) * dx
 
         self._variational_form = variational_form
 

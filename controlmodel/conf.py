@@ -137,6 +137,7 @@ class ControlModelParameters:
             elif self.type == "series":
                 self.inflow_velocity_series = np.array(config_dict["inflow_velocity_series"])
                 self.inflow_velocity = self.inflow_velocity_series[0, 1:3]
+            self.finite_element = config_dict.get("finite_element","TH")
 
     class SSC:
         def __init__(self, config_dict):
