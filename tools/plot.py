@@ -43,7 +43,7 @@ def plot_contours(x, u, ax=None, levels=None,domain=None,type='velocity'):
 
     grid_x, grid_y = np.meshgrid(x_coords, y_coords)
     if type == 'velocity' or type == 'force':
-        grid_u = griddata(x[:, 0:2], u[:, :], (grid_x, grid_y), method='nearest')
+        grid_u = griddata(x[:, 0:2], u[:, :], (grid_x, grid_y), method='linear')
         vnorm = np.sqrt(np.sum(grid_u**2,2))
     elif type == 'pressure':
         vnorm = griddata(x[:, 0:2], u, (grid_x, grid_y), method='linear')
@@ -114,6 +114,7 @@ labels = {
     "u": "$u$ (m s$^{-1}$)",
     "v": "$v$ (m s$^{-1}$)",
     "y": "$y$ (m)",
+    "ml": "$l_\mathrm{m}$ (m)",
     "induction": "$a$ (-)",
     "x": "$x$ (m)",
     "P": "$P$ (MW)",
@@ -124,8 +125,8 @@ labels = {
     "pitch": r"$\beta$ ($\degree$)",
     "torque": "$Q$ (Nm)",
     "tsr": r"$\lambda$ (-)",
-    "ct": r"$c_\mathrm{t}$ (-)",
-    "cp": r"$c_\mathrm{p}$ (-)"
+    "ct": r"$c_\mathrm{T}$ (-)",
+    "cp": r"$c_\mathrm{P}$ (-)"
     # u"\N{DEGREE SIGN}"
 }
 
