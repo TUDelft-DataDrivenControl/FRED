@@ -106,7 +106,7 @@ class SuperController:
                 logger.info("Sent yaw, pitch, torque control signals for time: {:.2f}".format(sim_time))
                 logger.info(
                     "Yaw: {:.2f}, pitch {:.2f}, torque {:.2f}".format(self._yaw_reference[0], self._pitch_reference[0],
-                                                                      torque_set_point))
+                                                                      self._torque_reference[0]))
 
     def _set_yaw_induction_reference(self, simulation_time):
         switcher = {
