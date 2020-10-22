@@ -21,6 +21,7 @@ ssc:
     - [  0., 6.1]
     - [999., 7.1]
   plant: sowfa # [cm; sowfa] if sowfa: convert tsr to torque with tsr tracker
+  sowfa_time_step: 0.2
 
 simulation:
   name: two.ssc.ctrl

@@ -225,6 +225,8 @@ class TorqueController:
                                              [300.00, 90000.0],
                                              [405.00, 164025.0],
                                              [480.00, 164025.0]])
+    def run_estimator(self, measured_rotor_speed, measured_generator_torque, measured_blade_pitch):
+        self._estimator.run_estimator(measured_rotor_speed, measured_generator_torque, measured_blade_pitch)
 
     def generate_torque_reference(self, tsr_desired):
         wind_speed = self._estimator._wind_speed
@@ -289,7 +291,7 @@ def main():
         measured_rotor_speed_series = np.concatenate((measured_rotor_speed_series, measured_rotor_speed.copy()))
 
         # estimate wind speed
-        estimator.run_estimator(measured_rotor_speed, measured_generator_torque, measured_blade_pitch)
+        controller.run_estimator(measured_rotor_speed, measured_generator_torque, measured_blade_pitch)
 
         estimated_wind_speed = np.concatenate((estimated_wind_speed, estimator._wind_speed.copy()))
         filtered_rotor_speed = np.concatenate((filtered_rotor_speed, estimator._rotor_speed_filtered.copy()))

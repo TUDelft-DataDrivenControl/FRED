@@ -9,8 +9,12 @@ from controlmodel.flowsolver import DynamicFlowSolver
 
 
 from controlmodel.zmqserver import ZmqServer
+
+from tools.tsrtracker import TorqueController
+
 import logging
 logger = logging.getLogger("cm.ssc")
+
 
 
 class SuperController:
@@ -63,6 +67,9 @@ class SuperController:
                 self._torque_reference_series[:, 0] = self._time_reference_series
                 self._torque_reference_series[:, 1:] = self._torque_reference * self._torque_reference_series[:, 1:]
 
+        if self._plant == "sowfa":
+            self._tsr_tracker = TorqueController(len(conf.par.wind_farm.positions), conf.par.ssc.sowfa_time_step)
+
     def start(self):
         self._server = ZmqServer(conf.par.ssc.port)
         logger.info("SSC started")
@@ -88,10 +95,18 @@ class SuperController:
                 logger.info("Yaw: {:.2f}, pitch {:.2f}, torque {:.2f}".format(self._yaw_reference[0], self._pitch_reference[0], self._torque_reference[0]))
             elif self._plant=="sowfa":
                 logger.warning("TSR tracker not yet connected!")
+                # todo: make automatic from sowfa specs
+                # measured_rotor_speed = mea[1::8]
+                # measured_generator_torque = []
+                # measured_blade_pitch =
+                self._tsr_tracker.run_estimator(measured_rotor_speed=measurements[1::8],
+                                                measured_generator_torque=measurements[5::8],
+                                                measured_blade_pitch=measurements[7::8])
+                torque_set_point = self._tsr_tracker.generate_torque_reference(tsr_desired=self._torque_reference)
                 logger.info("Sent yaw, pitch, torque control signals for time: {:.2f}".format(sim_time))
                 logger.info(
                     "Yaw: {:.2f}, pitch {:.2f}, torque {:.2f}".format(self._yaw_reference[0], self._pitch_reference[0],
-                                                                      self._torque_reference[0]))
+                                                                      torque_set_point))
 
     def _set_yaw_induction_reference(self, simulation_time):
         switcher = {
