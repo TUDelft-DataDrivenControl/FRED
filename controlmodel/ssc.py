@@ -99,9 +99,9 @@ class SuperController:
                 # measured_rotor_speed = mea[1::8]
                 # measured_generator_torque = []
                 # measured_blade_pitch =
-                self._tsr_tracker.run_estimator(measured_rotor_speed=measurements[1::8],
-                                                measured_generator_torque=measurements[5::8],
-                                                measured_blade_pitch=measurements[7::8])
+                self._tsr_tracker.run_estimator(measured_rotor_speed=np.array([measurements[1::8]]),
+                                                measured_generator_torque=np.array([measurements[5::8]]),
+                                                measured_blade_pitch=np.array([measurements[7::8]]))
                 torque_set_point = self._tsr_tracker.generate_torque_reference(tsr_desired=self._torque_reference)
                 logger.info("Sent yaw, pitch, torque control signals for time: {:.2f}".format(sim_time))
                 logger.info(
