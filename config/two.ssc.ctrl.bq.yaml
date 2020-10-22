@@ -20,6 +20,7 @@ ssc:
   power_reference:  #MW
     - [  0., 6.1]
     - [999., 7.1]
+  plant: sowfa # [cm; sowfa] if sowfa: convert tsr to torque with tsr tracker
 
 simulation:
   name: two.ssc.ctrl

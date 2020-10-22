@@ -167,7 +167,7 @@ class ControlModelParameters:
                     self.power_reference[:, 1] *= 1e6
                 # if self.mode == "pitch_torque":
                 #     raise NotImplementedError("gradient step pitch torque control not implemented.")
-
+            self.plant = config_dict.get("plant", "cm")
 
 par = ControlModelParameters()
 wind_farm = par.wind_farm

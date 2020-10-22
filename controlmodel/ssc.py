@@ -18,6 +18,7 @@ class SuperController:
     def __init__(self):
         self._control_type = conf.par.ssc.type
         self._control_mode = conf.par.ssc.mode
+        self._plant = conf.par.ssc.plant
         self._server = None
         self._yaw_reference = conf.par.ssc.yaw_angles.copy()
         # todo: pitch reference may be useful later for work with SOWFA
@@ -82,8 +83,15 @@ class SuperController:
             sim_time, measurements = self._server.receive()
             self._set_yaw_pitch_torque_reference(simulation_time=sim_time)
             self._server.send(self._yaw_reference, self._pitch_reference, self._torque_reference)
-            logger.info("Sent yaw, pitch, torque control signals for time: {:.2f}".format(sim_time))
-            logger.info("Yaw: {:.2f}, pitch {:.2f}, torque {:.2f}".format(self._yaw_reference[0], self._pitch_reference[0], self._torque_reference[0]))
+            if self._plant=="cm":
+                logger.info("Sent yaw, pitch, torque control signals for time: {:.2f}".format(sim_time))
+                logger.info("Yaw: {:.2f}, pitch {:.2f}, torque {:.2f}".format(self._yaw_reference[0], self._pitch_reference[0], self._torque_reference[0]))
+            elif self._plant=="sowfa":
+                logger.warning("TSR tracker not yet connected!")
+                logger.info("Sent yaw, pitch, torque control signals for time: {:.2f}".format(sim_time))
+                logger.info(
+                    "Yaw: {:.2f}, pitch {:.2f}, torque {:.2f}".format(self._yaw_reference[0], self._pitch_reference[0],
+                                                                      self._torque_reference[0]))
 
     def _set_yaw_induction_reference(self, simulation_time):
         switcher = {
