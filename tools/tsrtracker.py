@@ -203,8 +203,8 @@ class TurbineModel:
 
 class TorqueController:
     def __init__(self, num_turbines, sample_time):
-        self._torque_proportional_gain = -42000. / 5.
-        self._torque_integrator_gain = -21000. / 5.
+        self._torque_proportional_gain = -27338.
+        self._torque_integrator_gain = -6134.
 
         self._torque_reference_base = None
         self._torque_reference_integrator = None
