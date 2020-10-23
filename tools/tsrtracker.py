@@ -3,6 +3,9 @@ import control as ct
 import matplotlib.pyplot as plt
 import os
 import scipy.interpolate
+import logging
+logger = logging.getLogger("tools.tsrtracker")
+
 
 class Estimator:
     def __init__(self, num_turbines, sample_time):
@@ -200,8 +203,8 @@ class TurbineModel:
 
 class TorqueController:
     def __init__(self, num_turbines, sample_time):
-        self._torque_proportional_gain = -4200. / 5.
-        self._torque_integrator_gain = -2100. / 5.
+        self._torque_proportional_gain = -42000. / 5.
+        self._torque_integrator_gain = -21000. / 5.
 
         self._torque_reference_base = None
         self._torque_reference_integrator = None
@@ -246,7 +249,9 @@ class TorqueController:
         self._torque_reference_integrator += self._torque_integrator_gain * rotor_speed_error * self._estimator._sampling_time
 
         self._torque_reference_proportional = self._torque_proportional_gain * rotor_speed_error
-
+        logger.info(self._torque_reference_base)
+        logger.info(self._torque_reference_proportional)
+        logger.info(self._torque_reference_integrator)
         return self._torque_reference_base + self._torque_reference_integrator + self._torque_reference_proportional
 
 
@@ -299,6 +304,7 @@ def main():
 
         # control turbines
         torque_set_point = controller.generate_torque_reference(tsr_desired[step, :])
+        print(torque_set_point)
         # print(torque_set_point)
         # for idx in range(len(turbines)):
         #     turbines[idx].set_torque(generator_torque_reference[0,idx])

@@ -104,7 +104,7 @@ class SuperController:
                                                 measured_generator_torque=np.array([measurements[5::8]]),
                                                 measured_blade_pitch=np.array([measurements[7::8]]))
                 torque_set_point = self._tsr_tracker.generate_torque_reference(tsr_desired=self._torque_reference)
-                self._server.send(self._yaw_reference, self._pitch_reference, torque_set_point)
+                self._server.send(self._yaw_reference, self._pitch_reference, np.array(torque_set_point).squeeze())
                 logger.info("Sent yaw, pitch, torque control signals for time: {:.2f}".format(sim_time))
                 logger.info(
                     "Yaw: {:.2f}, pitch {:.2f}, torque {:.2f}".format(self._yaw_reference[0], self._pitch_reference[0],
