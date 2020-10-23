@@ -229,6 +229,8 @@ class TorqueController:
                                              [405.00, 164025.0],
                                              [480.00, 164025.0]])
     def run_estimator(self, measured_rotor_speed, measured_generator_torque, measured_blade_pitch):
+        logger.warning("Double-check rotorspeed units")
+        measured_rotor_speed = measured_rotor_speed * 30 / np.pi
         self._estimator.run_estimator(measured_rotor_speed, measured_generator_torque, measured_blade_pitch)
 
     def generate_torque_reference(self, tsr_desired):
