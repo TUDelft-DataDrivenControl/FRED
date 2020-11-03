@@ -132,7 +132,7 @@ class SuperController:
             for idx in range(len(self._yaw_reference)):
                 for var in m+c+t:
                     log.write(",{:s}_{:03n}".format(var,idx))
-                log.write("\r\n")
+            log.write("\r\n")
 
     def _write_output_file(self):
         with open(self._data_file, 'a') as log:

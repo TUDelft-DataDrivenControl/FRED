@@ -52,6 +52,8 @@ class ControlModelParameters:
                 self.wind_farm = self.WindFarm(self._config["wind_farm"])
                 self.simulation = self.Simulation(self._config["simulation"])
                 self.flow = self.Flow(self._config["flow"])
+            else:
+                self.simulation = self.Simulation(self._config["simulation"])
 
     class WindFarm:
         def __init__(self, config_dict):
