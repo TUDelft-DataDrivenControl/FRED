@@ -5,7 +5,7 @@ import os
 import scipy.interpolate
 import logging
 logger = logging.getLogger("tools.tsrtracker")
-
+from tools.plot import labels
 
 class Estimator:
     def __init__(self, num_turbines, sample_time):
@@ -203,8 +203,8 @@ class TurbineModel:
 
 class TorqueController:
     def __init__(self, num_turbines, sample_time):
-        self._torque_proportional_gain = -27338.
-        self._torque_integrator_gain = -6134.
+        self._torque_proportional_gain = -27338. *10.
+        self._torque_integrator_gain = -6134. * 10.
 
         self._torque_reference_base = None
         self._torque_reference_integrator = None
@@ -230,7 +230,7 @@ class TorqueController:
                                              [480.00, 164025.0]])
     def run_estimator(self, measured_rotor_speed, measured_generator_torque, measured_blade_pitch):
         logger.warning("Double-check rotorspeed units")
-        measured_rotor_speed = measured_rotor_speed * 30 / np.pi
+        # measured_rotor_speed = measured_rotor_speed * 30 / np.pi
         self._estimator.run_estimator(measured_rotor_speed, measured_generator_torque, measured_blade_pitch)
 
     def generate_torque_reference(self, tsr_desired):
@@ -258,9 +258,9 @@ class TorqueController:
 
 
 def main():
-    turbines = [TurbineModel(), TurbineModel(), TurbineModel()]
-
-    controller = TorqueController(len(turbines), sample_time=0.2)
+    turbines = [TurbineModel()] #, TurbineModel(), TurbineModel()]
+    sample_time = 0.2
+    controller = TorqueController(len(turbines), sample_time=sample_time)
     estimator = controller._estimator
 
     measured_rotor_speed = np.zeros((1, len(turbines)))
@@ -271,11 +271,11 @@ def main():
     pitch_set_point = np.zeros((1, len(turbines)))
 
     steps = 1000
-    true_wind_speed = 8. * np.ones((steps, len(turbines)))
-    # true_wind_speed[:,0] = 12  #+ np.cos(np.arange(0,steps,1)/100)
+    true_wind_speed = 9. * np.ones((steps, len(turbines)))
+    true_wind_speed[:,0] += np.cos(np.arange(0,steps,1)/100)
     true_wind_speed += 0.5 * np.random.randn(steps, len(turbines))
-    true_wind_speed[:, 1] += 2.
-    true_wind_speed[:, 2] += 4.
+    # true_wind_speed[:, 1] += 2.
+    # true_wind_speed[:, 2] += 4.
 
     estimated_wind_speed = estimator._wind_speed.copy()
     filtered_rotor_speed = estimator._rotor_speed_filtered.copy()
@@ -283,8 +283,8 @@ def main():
     estimated_tsr = estimator._tsr.copy()
 
     tsr_desired = 10. * np.ones_like(true_wind_speed)
-    tsr_desired[:, 0] += np.cos(np.arange(0, steps, 1) / 100)
-
+    tsr_desired[:, 0] += np.round(np.cos(np.arange(0, steps, 1) / 50))
+    torque_series = np.zeros_like(tsr_desired)
     for step in range(steps):
 
         # iterate and gather measurements
@@ -306,6 +306,7 @@ def main():
 
         # control turbines
         torque_set_point = controller.generate_torque_reference(tsr_desired[step, :])
+        torque_series[step,:] = torque_set_point
         print(torque_set_point)
         # print(torque_set_point)
         # for idx in range(len(turbines)):
@@ -313,23 +314,36 @@ def main():
 
         # record output wind speed
 
-    fig, ax = plt.subplots(3, 1, sharex='col')
-    ax[0].set_ylabel('wind speed (m/s)')
-    ax[0].plot(np.arange(1, steps + 1, 1), true_wind_speed, "--")
-    ax[0].plot(np.arange(0, steps + 1, 1), estimated_wind_speed)
+    fig, ax = plt.subplots(2,2, sharex='all',figsize=(10,6))
+    ax = ax.ravel()
+    ax[0].set_ylabel(labels['u'])
+    ax[0].plot(np.arange(1, steps + 1, 1)*sample_time, true_wind_speed, "-", lw=1,c='k',alpha=0.2)
+    ax[0].plot(np.arange(0, steps + 1, 1)*sample_time, estimated_wind_speed, lw=1, c="k")
 
-    ax[1].set_ylabel('rotor speed (rpm)')
-    ax[1].plot(np.arange(0, steps + 1, 1), measured_rotor_speed_series, "--")
-    ax[1].plot(np.arange(0, steps + 1, 1), filtered_rotor_speed)
+    ax[1].set_ylabel(labels['w'])
+    ax[1].plot(np.arange(0, steps + 1, 1)*sample_time, measured_rotor_speed_series, "-",lw=1,c='k', alpha=0.2)
+    ax[1].plot(np.arange(0, steps + 1, 1)*sample_time, filtered_rotor_speed, lw=1,c='k')
 
     actual_tsr = np.divide(measured_rotor_speed_series[1:, :] * np.pi / 30 * turbines[0]._parameters.rotor_radius,
                            true_wind_speed)
-    ax[2].set_ylabel('tip speed ratio (-)')
-    ax[2].plot(np.arange(1, steps + 1, 1), tsr_desired, 'k:')
-    ax[2].plot(np.arange(1, steps + 1, 1), actual_tsr, "--")
-    ax[2].plot(np.arange(0, steps + 1, 1), estimated_tsr)
+    ax[2].set_ylabel(labels['tsr'])
+    ax[2].plot(np.arange(1, steps + 1, 1) * sample_time, actual_tsr, lw=1, c='k', alpha=0.2,label='actual')
+    ax[2].plot(np.arange(1, steps + 1, 1)*sample_time, tsr_desired, 'k:',lw=1,label='reference')
+    ax[2].plot(np.arange(0, steps + 1, 1)*sample_time, estimated_tsr,lw=1, c="k",label='estimate')
+    ax[3].set_ylabel(labels['torque'])
+    ax[3].plot(np.arange(1, steps + 1, 1)*sample_time, torque_series, 'k-', lw=1)
 
-    ax[-1].set_xlabel('discrete time step (-)')
+
+    # ax[-1].set_xlabel('discrete time step (-)')
+    ax[-1].set_xlabel(labels['t'])
+    ax[0].set_xlim(0,steps*sample_time)
+    ax[0].set_ylim(7,11)
+    ax[1].set_ylim(8,12)
+    ax[2].set_ylim(8,12)
+    ax[2].legend(loc=4)
+    ax[-2].set_xlabel(labels['t'])
+    fig.tight_layout()
+    fig.savefig("../figures/tsrtracker.png",dpi=600, format="png")
     # ax[2].plot(np.arange(0, 10001, 1),rotor_speed_series)
     plt.show()
 

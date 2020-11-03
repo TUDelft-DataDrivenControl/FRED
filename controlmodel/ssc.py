@@ -3,6 +3,7 @@ import controlmodel.conf as conf
 if conf.with_adjoint:
     from fenics_adjoint import *
 import numpy as np
+import os
 from controlmodel.windfarm import WindFarm
 from controlmodel.flowproblem import DynamicFlowProblem
 from controlmodel.flowsolver import DynamicFlowSolver
@@ -30,6 +31,10 @@ class SuperController:
         self._pitch_reference = conf.par.turbine.pitch * np.ones_like(self._yaw_reference)
         self._torque_reference = conf.par.turbine.torque * np.ones_like(self._yaw_reference)
         logger.info("SSC initialised")
+        self._data_file = None
+        self._measurements = None
+        self._sim_time = None
+        self._tracker_torque_reference = None
 
         if self._control_type == "series":
             self._yaw_time_series = conf.par.ssc.yaw_series[:, 0]
@@ -86,8 +91,11 @@ class SuperController:
             logger.info("Sent yaw and induction control signals for time: {:.2f}".format(sim_time))
 
     def _run_yaw_pitch_torque_control(self):
+        self._setup_output_file()
         while True:
             sim_time, measurements = self._server.receive()
+            self._sim_time = sim_time
+            self._measurements = measurements
             self._set_yaw_pitch_torque_reference(simulation_time=sim_time)
             # self._server.send(self._yaw_reference, self._pitch_reference, self._torque_reference)
             if self._plant=="cm":
@@ -104,11 +112,42 @@ class SuperController:
                                                 measured_generator_torque=np.array([measurements[5::8]]),
                                                 measured_blade_pitch=np.array([measurements[7::8]]))
                 torque_set_point = self._tsr_tracker.generate_torque_reference(tsr_desired=self._torque_reference)
-                self._server.send(self._yaw_reference, self._pitch_reference, np.array(torque_set_point).squeeze())
+                self._tracker_torque_reference = np.array(torque_set_point).squeeze()
+                self._server.send(self._yaw_reference, self._pitch_reference, self._tracker_torque_reference)
                 logger.info("Sent yaw, pitch, torque control signals for time: {:.2f}".format(sim_time))
                 logger.info(
                     "Yaw: {:.2f}, pitch {:.2f}, torque {:.2f}".format(self._yaw_reference[0], self._pitch_reference[0],
-                                                                      self._torque_reference[0]))
+                                                                          self._torque_reference[0]))
+                self._write_output_file()
+
+    def _setup_output_file(self):
+        results_dir = "./results/" + conf.par.simulation.name
+        os.makedirs(results_dir, exist_ok=True)
+        self._data_file = results_dir + "/log_ssc.csv"
+        with open(self._data_file, 'w') as log:
+            log.write("time")
+            m = ["measured_rotor_speed", "measured_generator_torque", "measured_blade_pitch"]
+            c = ["yaw_reference", "pitch_reference", "tsr_reference", "torque_reference"]
+            t = ["filtered_rotor_speed", "wind_speed_estimate", "tsr_estimate"]
+            for idx in range(len(self._yaw_reference)):
+                for var in m+c+t:
+                    log.write(",{:s}_{:03n}".format(var,idx))
+                log.write("\r\n")
+
+    def _write_output_file(self):
+        with open(self._data_file, 'a') as log:
+            log.write("{:.6f}".format(self._sim_time))
+            # m = ["measured_rotor_speed", "measured_generator_torque", "measured_blade_pitch"]
+            m = [self._measurements[1::8], self._measurements[5::8], self._measurements[7::8]]
+            # c = ["yaw_reference", "pitch_reference", "tsr_reference", "torque_reference"]
+            c = [self._yaw_reference, self._pitch_reference, self._torque_reference, self._tracker_torque_reference]
+            # t = ["filtered_rotor_speed", "wind_speed_estimate", "tsr_estimate"]
+            t = [self._tsr_tracker._estimator._rotor_speed_filtered, self._tsr_tracker._estimator._wind_speed, self._tsr_tracker._estimator._rotor_speed_filtered*(np.pi/30)*conf.par.turbine.radius/self._tsr_tracker._estimator._wind_speed]
+            t = [np.array(x).squeeze() for x in t]
+            for idx in range(len(self._yaw_reference)):
+                for var in m+c+t:
+                    log.write(",{:.6f}".format(var[idx]))
+                log.write("\r\n")
 
     def _set_yaw_induction_reference(self, simulation_time):
         switcher = {

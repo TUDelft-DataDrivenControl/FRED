@@ -126,7 +126,8 @@ labels = {
     "torque": "$Q$ (Nm)",
     "tsr": r"$\lambda$ (-)",
     "ct": r"$c_\mathrm{T}$ (-)",
-    "cp": r"$c_\mathrm{P}$ (-)"
+    "cp": r"$c_\mathrm{P}$ (-)",
+    "w": r"$\omega$ (rpm)"
     # u"\N{DEGREE SIGN}"
 }
 

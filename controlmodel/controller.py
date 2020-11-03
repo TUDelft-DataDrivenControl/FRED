@@ -183,7 +183,7 @@ class Controller:
         if self._axial_induction_control_type == "external":
             new_ref = self._received_data[0::2]
         else:
-            new_ref = self._received_data[0::3]
+            new_ref = np.deg2rad(self._received_data[1::3])
 
         return new_ref
 
@@ -194,11 +194,11 @@ class Controller:
 
     def _external_pitch_controller(self, simulation_time):
         logger.warning("External pitch_torque controller only works if yaw controller implemented as well")
-        new_ref = self._received_data[1::3]
+        new_ref = self._received_data[2::3]
         return new_ref
 
     def _external_torque_controller(self, simulation_time):
-        new_ref = self._received_data[2::3]
+        new_ref = self._received_data[0::3]
         return new_ref
 
     def _update_yaw(self, new_ref):

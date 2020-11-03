@@ -103,15 +103,15 @@ class SteadyFlowSolver(FlowSolver):
         self._vtk_file_f.write(
             project(self._forcing, self._force_space,
                     annotate=False))
-        nu_t =  project(self._nu_turbulent, self._scalar_space,
-                    annotate=False)
-        self._vtk_file_nu.write(nu_t)
-        deltax = conf.par.wind_farm.size[0]/conf.par.wind_farm.cells[0]
-        # peclet_condition = u_sol.sub(0)*deltax/self._nu_turbulent
-        peclet_condition = 2 * self._nu_turbulent / u_sol.sub(0)
-        pe = project(peclet_condition, self._scalar_space,
-                     annotate=False)
-        self._vtk_file_pe.write(pe)
+        # nu_t =  project(self._nu_turbulent, self._scalar_space,
+        #             annotate=False)
+        # self._vtk_file_nu.write(nu_t)
+        # deltax = conf.par.wind_farm.size[0]/conf.par.wind_farm.cells[0]
+        # # peclet_condition = u_sol.sub(0)*deltax/self._nu_turbulent
+        # peclet_condition = 2 * self._nu_turbulent / u_sol.sub(0)
+        # pe = project(peclet_condition, self._scalar_space,
+        #              annotate=False)
+        # self._vtk_file_pe.write(pe)
 
 class DynamicFlowSolver(FlowSolver):
 
