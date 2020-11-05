@@ -143,7 +143,7 @@ def main_with_ssc_two():
 
     def run_ssc():
         # conf.par.load("./config/two.ssc.ctrl.a.yaml")
-        conf.par.load("./config/two.ssc.ctrl.bq.step.pitch.yaml")
+        conf.par.load("./config/two.ssc.ctrl.bq.yaml")
         t = np.arange(0,1000.,1.)
         pr = 7.0e6 + 0.7e6 *np.round(np.cos(t/100))
         power_reference = np.zeros((len(t),2))
@@ -244,16 +244,16 @@ if __name__ == '__main__':
     # main_steady()
     # main_rotating()
     # main_with_ssc()
-    # main_with_ssc_two()
+    main_with_ssc_two()
     # main_step_series()
     # main_yaw_sweep()
-    conf.par.load("./config/one.00.steady.yaml")
+    # conf.par.load("./config/one.00.steady.yaml")
     # conf.par.load("./config/one.02.sweep.yaml")
     # conf.par.load("./config/two.00.steady.yaml")
     # conf.par.load("./config/two.01.step.yaml")
     # conf.par.load("./config/nine.02.rotating.yaml")
     # conf.par.load("./config/one.02.sweep.induction.yaml")
-    main()
+    # main()
     # main_steady()
     # list_timings()
 

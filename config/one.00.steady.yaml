@@ -63,27 +63,6 @@ wind_farm:
         values:
           - [0., 7., 9.]
           - [60., 9., 7.]
-##    yaw_control_type: fixed
-##    yaw_series: [290., 270.]
-#    yaw_control_type: series
-#    yaw_series:
-#      - [0, 270, 270.]
-#      - [60, 290., 270.]
-#    axial_induction_control_type: series
-#    axial_induction_series:
-#      - [0., 0.33, 0.33]
-#      - [60., 0.2, 0.33]
-#    # if turbine:coefficients:lut, then need pitch and torque control
-##    pitch_control_type: fixed
-#    pitch_control_type: series
-#    pitch_series:
-#      - [0., 0., 2.]
-#      - [60.,2., 0.]
-##    torque_control_type: fixed
-#    torque_control_type: series
-#    torque_series:
-#      - [0., 7., 9.]
-#      - [60., 9., 7.]
 
 turbine:
   axial_induction: 0.33

@@ -71,31 +71,15 @@ class ControlModelParameters:
 
         class FarmController:
             def __init__(self, config_dict):
-                self.controls = config_dict["controls"]
-                #
-                # self.yaw_control_type = config_dict["yaw_control_type"]
                 self.control_discretisation = config_dict["control_discretisation"]
-                # if self.yaw_control_type == "fixed":
-                #     self.yaw_series = np.array(config_dict["yaw_series"])
-                #     self.yaw_series = np.deg2rad(self.yaw_series)
-                # if self.yaw_control_type == "series":
-                #     self.yaw_series = np.array(config_dict["yaw_series"])
-                #     self.yaw_series[:, 1:] = np.deg2rad(self.yaw_series[:, 1:])
-                # if self.yaw_control_type == "external":
-                #     self.port = config_dict["port"]
-                #
-                # self.axial_induction_control_type = config_dict.get("axial_induction_control_type", "fixed")
-                # if self.axial_induction_control_type == "series":
-                #     self.axial_induction_series = np.array(config_dict["axial_induction_series"])
-                #
-                # # todo: refine control settings
-                # self.pitch_control_type = config_dict.get("pitch_control_type", "none")
-                # if self.pitch_control_type == "series":
-                #     self.pitch_series = np.array(config_dict["pitch_series"])
-                # self.torque_control_type = config_dict.get("torque_control_type", "none")
-                # if self.torque_control_type == "series":
-                #     self.torque_series = np.array(config_dict["torque_series"])
-
+                self.controls = config_dict["controls"]
+                for control in self.controls.values():
+                    if control['type'] == 'external':
+                        self.with_external_controller = True
+                        self.external_controls = config_dict["external_controller"]["controls"]
+                        self.port = config_dict["external_controller"]["port"]
+                    break
+                # todo: refine control settings
 
     class Turbine:
         """

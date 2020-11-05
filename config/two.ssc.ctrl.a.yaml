@@ -3,6 +3,7 @@ mode: supercontroller
 ssc:
   port: 1652
   control_discretisation: 1.
+  mode: induction
 #  type: fixed
   yaw_angles:
     - 290.
@@ -12,6 +13,10 @@ ssc:
       - [0., 290, 270.]
       - [59., 250, 270.]
       - [119., 250, 290.]
+  axial_induction_series:
+      - [0., 0.1, 0.33]
+      - [300., 0.4, 0.33]
+      - [600., 0.1, 0.33 ]
 #  type: gradient_step
 #  prediction_horizon: 20.
 #  control_horizon: 1.
@@ -59,14 +64,17 @@ wind_farm:
   farm_controller:
 #    type: fixed
     control_discretisation: 1.
-    yaw_control_type: series
-    yaw_series:
-      - [0, 290., 270.]
-      - [0, 270., 270.]
-    axial_induction_control_type: series
-    axial_induction_series:
-      - [0., 0.33, 0.33]
-      - [1., 0.33, 0.33]
+    controls:
+      yaw:
+        type: series
+        values:
+          - [0, 270, 270.]
+          - [60, 290., 270.]
+      axial_induction:
+        type: series
+        values:
+          - [0., 0.33, 0.33]
+          - [60., 0.2, 0.33]
 turbine:
   axial_induction: 0.33
   diameter: 178.4 # m
@@ -75,3 +83,4 @@ turbine:
   kernel: gaussian # king, gaussian
   deflection_scale: 3. #
   yaw_rate_limit: 0.3
+  coefficients: induction

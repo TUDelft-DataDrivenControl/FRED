@@ -3,7 +3,7 @@ mode: simulation
 simulation:
   name: two.ssc.sim
   is_dynamic: True
-  total_time: 599. # s
+  total_time: 59. # s
   time_step: 1. # s
   dimensions: 2 # -
   save_logs: False
@@ -34,10 +34,20 @@ wind_farm:
     - 270.
     - 270.
   farm_controller:
-    yaw_control_type: external
-    axial_induction_control_type: external
-    port: 1652
     control_discretisation: 1.
+    controls:
+      yaw:
+        type: external
+      axial_induction:
+        type: external
+#    yaw_control_type: external
+#    axial_induction_control_type: external
+    external_controller:
+      port: 1652
+      controls: # order is important
+        - yaw
+        - axial_induction
+
 
 turbine:
   axial_induction: 0.33
@@ -47,3 +57,4 @@ turbine:
   kernel: gaussian # king, gaussian
   deflection_scale: 3. #
   yaw_rate_limit: 0.3
+  coefficients: induction

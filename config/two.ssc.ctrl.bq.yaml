@@ -8,20 +8,26 @@ ssc:
   yaw_angles:
     - 290.
     - 270.
-#  type: series
-#  yaw_series:
-#      - [0., 290, 270.]
-#      - [59., 250, 270.]
-  type: gradient_step # [fixed; series; gradient_step]
-  prediction_horizon: 20.
-  control_horizon: 1.
-  transient_time: 120.
-  objective: tracking # [tracking; maximisation]
-  power_reference:  #MW
-    - [  0., 6.1]
-    - [999., 7.1]
-  plant: cm # [cm; sowfa] if sowfa: convert tsr to torque with tsr tracker
-  sowfa_time_step: 0.2
+  type: series
+  yaw_series:
+    - [0., 290, 270.]
+    - [59., 250, 270.]
+  pitch_series:
+    - [0., 0., 3.]
+    - [60., 3., 0.]
+  torque_series:
+    - [0., 8., 8.]
+    - [60, 7., 9.]
+#  type: gradient_step # [fixed; series; gradient_step]
+#  prediction_horizon: 20.
+#  control_horizon: 1.
+#  transient_time: 120.
+#  objective: tracking # [tracking; maximisation]
+#  power_reference:  #MW
+#    - [  0., 6.1]
+#    - [999., 7.1]
+#  plant: cm # [cm; sowfa] if sowfa: convert tsr to torque with tsr tracker
+#  sowfa_time_step: 0.2
 
 simulation:
   name: two.ssc.ctrl
@@ -61,19 +67,23 @@ wind_farm:
   farm_controller:
 #    type: fixed
     control_discretisation: 1.
-    yaw_control_type: series
-    yaw_series:
-      - [0, 290., 270.]
-      - [0, 270., 270.]
-    axial_inductioN_control_type: none
-    pitch_control_type: series
-    pitch_series:
-      - [0., 0., 0.]
-      - [10., 5., 5.]
-    torque_control_type: series
-    torque_series:
-      - [0., 10., 10.]
-      - [10., 8., 8.]
+    controls:
+      yaw:
+        type: series
+        values:
+          - [0, 290., 270.]
+          - [0, 270., 270.]
+      pitch:
+        type: series
+        values:
+          - [0., 0., 0.]
+          - [10., 5., 5.]
+      torque:
+        type: series
+        values:
+          - [0., 10., 10.]
+          - [10., 8., 8.]
+
 turbine:
   axial_induction: 0.33
   diameter: 178.4 # m
