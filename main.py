@@ -133,18 +133,19 @@ def main_with_ssc_two():
     time_start = time.time()
 
     def run_sim():
-        # conf.par.load("./config/two.ssc.sim.a.yaml")
-        conf.par.load("./config/two.ssc.sim.bq.yaml")
-        wind_farm = WindFarm()
-        dfp = DynamicFlowProblem(wind_farm)
-        dfs = DynamicFlowSolver(dfp)
-        dfs.solve()
+        with stop_annotating():
+            # conf.par.load("./config/two.ssc.sim.a.yaml")
+            conf.par.load("./config/two.ssc.sim.bq.yaml")
+            wind_farm = WindFarm()
+            dfp = DynamicFlowProblem(wind_farm)
+            dfs = DynamicFlowSolver(dfp)
+            dfs.solve()
 
     def run_ssc():
         # conf.par.load("./config/two.ssc.ctrl.a.yaml")
-        conf.par.load("./config/two.ssc.ctrl.bq.yaml")
+        conf.par.load("./config/two.ssc.ctrl.bq.step.pitch.yaml")
         t = np.arange(0,1000.,1.)
-        pr = 7.0e6 + 0.7e6 *np.round(np.cos(t/10))
+        pr = 7.0e6 + 0.7e6 *np.round(np.cos(t/100))
         power_reference = np.zeros((len(t),2))
         power_reference[:,0] = t
         power_reference[:,1] = pr

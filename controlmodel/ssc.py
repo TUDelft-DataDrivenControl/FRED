@@ -596,3 +596,12 @@ class SuperController:
         t_ref_array = conf.par.ssc.power_reference[:, 0]
         p_ref_array = conf.par.ssc.power_reference[:, 1]
         return np.interp(simulation_time, t_ref_array, p_ref_array)
+
+class Control:
+    def __init__(self, name, type, num_turbines):
+        self._name = name
+
+
+
+
+

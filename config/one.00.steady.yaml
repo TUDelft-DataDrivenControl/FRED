@@ -42,10 +42,12 @@ wind_farm:
     - 270.
   farm_controller:
     control_discretisation: 1.
-    yaw_control_type: series
-    yaw_series:
-      - [0, 290, 270.]
-      - [10, 290., 270.]
+    yaw_control_type: fixed
+    yaw_series: [290., 270.]
+#    yaw_control_type: series
+#    yaw_series:
+#      - [0, 290, 270.]
+#      - [10, 290., 270.]
     axial_induction_control_type: series
     axial_induction_series:
       - [0., 0.33, 0.33]

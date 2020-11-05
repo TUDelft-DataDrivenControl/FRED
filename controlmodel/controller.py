@@ -27,6 +27,10 @@ class Controller:
         self._wind_farm = wind_farm
         self._turbines = wind_farm.get_turbines()
 
+        self._yaw_control = Control(name='yaw',
+                                    control_type=conf.par.wind_farm.controller.yaw_control_type,
+                                    value=conf.par.wind_farm.controller.yaw_series)
+
         self._yaw_ref = []
         self._axial_induction_ref = []
         self._pitch_ref = []
@@ -70,17 +74,20 @@ class Controller:
         self.control_pitch_and_torque(simulation_time)
 
     def control_yaw(self, simulation_time):
-        if (simulation_time - self._time_last_updated_yaw >= conf.par.wind_farm.controller.control_discretisation)\
-                or self._yaw_ref == []:
-            switcher = {
-                "fixed": self._fixed_yaw,
-                "series": self._yaw_series_control,
-                "external": self._external_controller
-            }
-            yaw_controller_function = switcher.get(self._yaw_control_type)
-            new_ref = yaw_controller_function(simulation_time)
-            self._update_yaw(new_ref)
-            self._time_last_updated_yaw = simulation_time
+        self._yaw_control.do_control(simulation_time)
+        [wt.set_yaw_ref(y) for (wt, y) in zip(self._turbines, self._yaw_control.get_reference())]
+        logger.info("Set {:s} to {}".format(self._yaw_control.get_name(), self._yaw_control.get_reference()))
+        # if (simulation_time - self._time_last_updated_yaw >= conf.par.wind_farm.controller.control_discretisation)\
+        #         or self._yaw_ref == []:
+        #     switcher = {
+        #         "fixed": self._fixed_yaw,
+        #         "series": self._yaw_series_control,
+        #         "external": self._external_controller
+        #     }
+        #     yaw_controller_function = switcher.get(self._yaw_control_type)
+        #     new_ref = yaw_controller_function(simulation_time)
+        #     self._update_yaw(new_ref)
+        #     self._time_last_updated_yaw = simulation_time
 
     def control_axial_induction(self, simulation_time):
         if (simulation_time - self._time_last_updated_induction >= conf.par.wind_farm.controller.control_discretisation)\
@@ -266,3 +273,66 @@ class Controller:
         self._axial_induction_ref = []
         self._pitch_ref = []
         self._torque_ref = []
+
+
+class Control:
+    def __init__(self, name, control_type, value):
+        self._name = name
+        switcher = {
+            "fixed": self._fixed_control,
+            "series": self._series_control,
+            "external": self._external_control
+        }
+        self._control_function = switcher.get(control_type, "fixed")
+        # control reference list
+        self._reference = []
+        self._time_last_updated = 0
+        # self._initialise(value)
+        self._time_series = None
+        self._reference_series = None
+
+        # def _initialise(self, value):
+        # if self._type == "fixed":
+        #     self._reference =
+        # el
+        if control_type == "series":
+            self._time_series = value[:, 0]
+            self._reference_series = value[:, 1:]
+
+    def get_name(self):
+        return self._name
+
+    def get_control_list(self):
+        return self._reference
+
+    def get_reference(self):
+        return self._reference[-1]
+
+    def do_control(self, simulation_time):
+        if (simulation_time - self._time_last_updated >= conf.par.wind_farm.controller.control_discretisation) \
+                or self._reference == []:
+            # execute the control function from init.
+            new_reference = self._control_function(simulation_time)
+            # todo: rate limit
+            # new_reference = self._apply_rate_limit(new_reference)
+            self._update_reference(new_reference)
+            self._time_last_updated = simulation_time
+
+    def _fixed_control(self, simulation_time):
+        new_reference = conf.par.wind_farm.yaw_angles.copy()
+        return new_reference
+
+    def _series_control(self, simulation_time):
+        raise NotImplementedError("Series control not implemented in Control class")
+
+    def _external_control(self, simulation_time):
+        raise NotImplementedError("External control not implemented in Control class")
+
+    def _update_reference(self, new_reference):
+        if len(new_reference) != len(conf.par.wind_farm.positions):
+            raise ValueError(
+                "Computed yaw reference (length {:d}) does not match {:d} turbines in farm."
+                    .format(len(new_reference), len(conf.par.wind_farm.positions)))
+        self._reference.append([Constant(y) for y in new_reference])
+
+

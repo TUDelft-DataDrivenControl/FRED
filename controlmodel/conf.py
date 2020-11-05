@@ -73,6 +73,9 @@ class ControlModelParameters:
             def __init__(self, config_dict):
                 self.yaw_control_type = config_dict["yaw_control_type"]
                 self.control_discretisation = config_dict["control_discretisation"]
+                if self.yaw_control_type == "fixed":
+                    self.yaw_series = np.array(config_dict["yaw_series"])
+                    self.yaw_series = np.deg2rad(self.yaw_series)
                 if self.yaw_control_type == "series":
                     self.yaw_series = np.array(config_dict["yaw_series"])
                     self.yaw_series[:, 1:] = np.deg2rad(self.yaw_series[:, 1:])
