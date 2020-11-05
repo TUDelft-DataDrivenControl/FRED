@@ -323,7 +323,11 @@ class Control:
         return new_reference
 
     def _series_control(self, simulation_time):
-        raise NotImplementedError("Series control not implemented in Control class")
+        new_reference = conf.par.wind_farm.yaw_angles.copy()
+        for idx in range(len(conf.par.wind_farm.positions)):
+            new_reference[idx] = np.interp(simulation_time, self._time_series, self._reference_series[:, idx])
+        return new_reference
+        # raise NotImplementedError("Series control not implemented in Control class")
 
     def _external_control(self, simulation_time):
         raise NotImplementedError("External control not implemented in Control class")
