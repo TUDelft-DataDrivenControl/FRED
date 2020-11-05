@@ -190,7 +190,7 @@ class Turbine:
         ct = get_coefficient(self._ct_function, self._pitch, self._tip_speed_ratio)
         cp = get_coefficient(self._cp_function, self._pitch, self._tip_speed_ratio)
         a = 0.33 #AdjFloat(0.5 - 0.5 * sqrt(1-ct))
-        self.set_axial_induction(a)
+        self._axial_induction.assign(a)
         # self._axial_induction = 0.5 - 0.5 * sqrt(1-ct)
         # ct = 1.
         # cp = 0.4
@@ -343,14 +343,14 @@ class Turbine:
         """
         return float(self._axial_induction)
 
-    def set_axial_induction(self, new_axial_induction):
-        """Set the turbine to the new axial induction factor.
-
-        Args:
-            new_axial_induction (float): new axial induction factor (-)
-
-        """
-        self._axial_induction.assign(new_axial_induction)
+    # def set_axial_induction(self, new_axial_induction):
+    #     """Set the turbine to the new axial induction factor.
+    #
+    #     Args:
+    #         new_axial_induction (float): new axial induction factor (-)
+    #
+    #     """
+    #     self._axial_induction.assign(new_axial_induction)
 
     def get_pitch(self):
         return float(self._pitch)
@@ -370,4 +370,24 @@ class Turbine:
     def get_tip_speed_ratio(self):
         return float(self._tip_speed_ratio)
 
+    def set_control(self, name, value):
+        if name == "yaw":
+            self._yaw_ref.assign(value)
 
+        elif name == "axial_induction":
+            self._axial_induction.assign(value)
+
+        elif name == "pitch":
+            self._pitch.assign(value)
+            if conf.par.turbine.coefficients == "lut":
+                self._update_coefficients()
+
+        elif name == "torque":
+            self._torque.assign(value)
+            logger.warning("Linking torque control directly to TSR because turbine model not yet implemented")
+            self._tip_speed_ratio.assign(value)
+            if conf.par.turbine.coefficients == "lut":
+                self._update_coefficients()
+
+        else:
+            raise ValueError("Control {} not known to turbine".format(name))

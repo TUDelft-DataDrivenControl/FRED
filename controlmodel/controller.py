@@ -12,38 +12,45 @@ logger = logging.getLogger("cm.controller")
 class Controller:
 
     def __init__(self, wind_farm):
-        self._yaw_control_type = conf.par.wind_farm.controller.yaw_control_type
-        logger.info("Setting up yaw controller of type: {}".format(self._yaw_control_type))
-
-        self._axial_induction_control_type = conf.par.wind_farm.controller.axial_induction_control_type
-        logger.info("Setting up induction controller of type: {}".format(self._axial_induction_control_type))
-
-        self._pitch_control_type = conf.par.wind_farm.controller.pitch_control_type
-        logger.info("Setting up pitch controller of type: {}".format(self._pitch_control_type))
-
-        self._torque_control_type = conf.par.wind_farm.controller.torque_control_type
-        logger.info("Setting up torque controller of type: {}".format(self._torque_control_type))
+        # self._yaw_control_type = conf.par.wind_farm.controller.yaw_control_type
+        # logger.info("Setting up yaw controller of type: {}".format(self._yaw_control_type))
+        #
+        # self._axial_induction_control_type = conf.par.wind_farm.controller.axial_induction_control_type
+        # logger.info("Setting up induction controller of type: {}".format(self._axial_induction_control_type))
+        #
+        # self._pitch_control_type = conf.par.wind_farm.controller.pitch_control_type
+        # logger.info("Setting up pitch controller of type: {}".format(self._pitch_control_type))
+        #
+        # self._torque_control_type = conf.par.wind_farm.controller.torque_control_type
+        # logger.info("Setting up torque controller of type: {}".format(self._torque_control_type))
 
         self._wind_farm = wind_farm
         self._turbines = wind_farm.get_turbines()
 
-        self._yaw_control = Control(name='yaw',
-                                    control_type=conf.par.wind_farm.controller.yaw_control_type,
-                                    value=conf.par.wind_farm.controller.yaw_series)
+        self._controls = []
+        for control in conf.par.wind_farm.controller.controls:
+            self._controls.append(Control(name=control,
+                                          control_type=conf.par.wind_farm.controller.controls[control]["type"],
+                                          value=np.array(conf.par.wind_farm.controller.controls[control]["values"])))
+            logger.info("Setting up {:s} controller of type: {}".format(control, conf.par.wind_farm.controller.controls[control]["type"]))
 
-        self._axial_induction_control = Control(name="axial_induction",
-                                                control_type=conf.par.wind_farm.controller.axial_induction_control_type,
-                                                value=conf.par.wind_farm.controller.axial_induction_series)
-
-        self._pitch_control = Control(name="pitch",
-                                      control_type=conf.par.wind_farm.controller.pitch_control_type,
-                                      value=conf.par.wind_farm.controller.pitch_series)
-
-        self._torque_control = Control(name="torque",
-                                       control_type=conf.par.wind_farm.controller.torque_control_type,
-                                       value=conf.par.wind_farm.controller.torque_series)
-
-        if self._yaw_control_type == "external":
+        # self._yaw_control = Control(name='yaw',
+        #                             control_type=conf.par.wind_farm.controller.yaw_control_type,
+        #                             value=conf.par.wind_farm.controller.yaw_series)
+        #
+        # self._axial_induction_control = Control(name="axial_induction",
+        #                                         control_type=conf.par.wind_farm.controller.axial_induction_control_type,
+        #                                         value=conf.par.wind_farm.controller.axial_induction_series)
+        #
+        # self._pitch_control = Control(name="pitch",
+        #                               control_type=conf.par.wind_farm.controller.pitch_control_type,
+        #                               value=conf.par.wind_farm.controller.pitch_series)
+        #
+        # self._torque_control = Control(name="torque",
+        #                                control_type=conf.par.wind_farm.controller.torque_control_type,
+        #                                value=conf.par.wind_farm.controller.torque_series)
+        # todo: reattach external controller
+        if "self._yaw_control_type" == "external":
             self._received_data = []
             logger.info("Initialising ZMQ communication")
             self._context = zmq.Context()
@@ -53,10 +60,15 @@ class Controller:
             logger.info("Connected to: {}".format(address))
 
     def control(self, simulation_time):
-        self.control_yaw(simulation_time)
-        if self._axial_induction_control_type != "none":
-            self.control_axial_induction(simulation_time)
-        self.control_pitch_and_torque(simulation_time)
+        for control in self._controls:
+            control.do_control(simulation_time)
+            # [wt.set_yaw_ref(y) for (wt, y) in zip(self._turbines, self._yaw_control.get_reference())]
+            [wt.set_control(control.get_name(), c) for (wt, c) in zip(self._turbines, control.get_reference())]
+
+        # self.control_yaw(simulation_time)
+        # if self._axial_induction_control_type != "none":
+        #     self.control_axial_induction(simulation_time)
+        # self.control_pitch_and_torque(simulation_time)
 
     def control_yaw(self, simulation_time):
         self._yaw_control.do_control(simulation_time)
@@ -166,6 +178,8 @@ class Control:
         if control_type == "series":
             self._time_series = value[:, 0]
             self._reference_series = value[:, 1:]
+            if name=="yaw":
+                self._reference_series = np.deg2rad(self._reference_series)
 
     def get_name(self):
         return self._name
