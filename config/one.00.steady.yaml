@@ -51,18 +51,18 @@ wind_farm:
     axial_induction_control_type: series
     axial_induction_series:
       - [0., 0.33, 0.33]
-      - [1., 0.33, 0.33]
+      - [60., 0.2, 0.33]
     # if turbine:coefficients:lut, then need pitch and torque control
-    pitch_control_type: fixed
-#    pitch_control_type: series
-#    pitch_series:
-#      - [0., 0.]
-#      - [120.,0.]
-    torque_control_type: fixed
-#    torque_control_type: series
-#    torque_series:
-#      - [0., 1000.]
-#      - [120., 1000.]
+#    pitch_control_type: fixed
+    pitch_control_type: series
+    pitch_series:
+      - [0., 0., 2.]
+      - [60.,2., 0.]
+#    torque_control_type: fixed
+    torque_control_type: series
+    torque_series:
+      - [0., 7., 9.]
+      - [60., 9., 7.]
 
 turbine:
   axial_induction: 0.33
@@ -72,7 +72,7 @@ turbine:
   kernel: gaussian # king, gaussian
   deflection_scale: 3. #
   # type of coefficient calculation method [induction; lut]
-  coefficients: induction
-#  coefficients: lut
+#  coefficients: induction
+  coefficients: lut
   pitch: 1.
   torque: 8. # currently linked to TSR directly
