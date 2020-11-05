@@ -31,24 +31,28 @@ class Controller:
                                     control_type=conf.par.wind_farm.controller.yaw_control_type,
                                     value=conf.par.wind_farm.controller.yaw_series)
 
-        self._yaw_ref = []
-        self._axial_induction_ref = []
+        self._axial_induction_control = Control(name="axial_induction",
+                                                control_type=conf.par.wind_farm.controller.axial_induction_control_type,
+                                                value=conf.par.wind_farm.controller.axial_induction_series)
+
+        # self._yaw_ref = []
+        # self._axial_induction_ref = []
         self._pitch_ref = []
         self._torque_ref = []
 
-        self._time_last_updated_yaw = 0
-        self._time_last_updated_induction = 0
+        # self._time_last_updated_yaw = 0
+        # self._time_last_updated_induction = 0
         self._time_last_updated_pitch = 0
         self._time_last_updated_torque = 0
 
         # todo: create series controller class?
-        if self._yaw_control_type == "series":
-            self._yaw_time_series = conf.par.wind_farm.controller.yaw_series[:, 0]
-            self._yaw_series = conf.par.wind_farm.controller.yaw_series[:, 1:]
+        # if self._yaw_control_type == "series":
+        #     self._yaw_time_series = conf.par.wind_farm.controller.yaw_series[:, 0]
+        #     self._yaw_series = conf.par.wind_farm.controller.yaw_series[:, 1:]
 
-        if self._axial_induction_control_type == "series":
-            self._axial_induction_time_series = conf.par.wind_farm.controller.axial_induction_series[:, 0]
-            self._axial_induction_series = conf.par.wind_farm.controller.axial_induction_series[:, 1:]
+        # if self._axial_induction_control_type == "series":
+        #     self._axial_induction_time_series = conf.par.wind_farm.controller.axial_induction_series[:, 0]
+        #     self._axial_induction_series = conf.par.wind_farm.controller.axial_induction_series[:, 1:]
 
         if self._pitch_control_type == "series":
             self._pitch_time_series = conf.par.wind_farm.controller.pitch_series[:, 0]
@@ -90,17 +94,21 @@ class Controller:
         #     self._time_last_updated_yaw = simulation_time
 
     def control_axial_induction(self, simulation_time):
-        if (simulation_time - self._time_last_updated_induction >= conf.par.wind_farm.controller.control_discretisation)\
-                or self._axial_induction_ref == []:
-            switcher = {
-                "fixed": self._fixed_induction,
-                "series": self._induction_series_control,
-                "external": self._external_induction_controller
-            }
-            induction_controller_function = switcher.get(self._axial_induction_control_type)
-            new_ref = induction_controller_function(simulation_time)
-            self._update_axial_induction(new_ref)
-            self._time_last_updated_induction = simulation_time
+        self._axial_induction_control.do_control(simulation_time)
+        [wt.set_axial_induction(a) for (wt, a) in zip(self._turbines, self._axial_induction_control.get_reference())]
+        logger.info("Set axial induction to {}".format(self._axial_induction_control.get_reference()))
+        #
+        # if (simulation_time - self._time_last_updated_induction >= conf.par.wind_farm.controller.control_discretisation)\
+        #         or self._axial_induction_ref == []:
+        #     switcher = {
+        #         "fixed": self._fixed_induction,
+        #         "series": self._induction_series_control,
+        #         "external": self._external_induction_controller
+        #     }
+        #     induction_controller_function = switcher.get(self._axial_induction_control_type)
+        #     new_ref = induction_controller_function(simulation_time)
+        #     self._update_axial_induction(new_ref)
+        #     self._time_last_updated_induction = simulation_time
 
     def control_pitch_and_torque(self, simulation_time):
         if (simulation_time - self._time_last_updated_pitch >= conf.par.wind_farm.controller.control_discretisation)\
@@ -124,9 +132,9 @@ class Controller:
             self._update_pitch_and_torque(new_pitch_ref, new_torque_ref)
             self._time_last_updated_pitch = simulation_time
 
-    def _fixed_yaw(self, simulation_time):
-        new_ref = conf.par.wind_farm.yaw_angles.copy()
-        return new_ref
+    # def _fixed_yaw(self, simulation_time):
+    #     new_ref = conf.par.wind_farm.yaw_angles.copy()
+    #     return new_ref
 
     def _fixed_induction(self, simulation_time):
         new_ref = [wt.get_axial_induction() for wt in self._turbines]
