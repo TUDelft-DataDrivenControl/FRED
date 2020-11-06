@@ -97,7 +97,7 @@ class SuperController:
         while True:
             sim_time, measurements = self._server.receive()
             for control in self._controls.values():
-                control.do_control()
+                control.do_control(sim_time)
             self._yaw_reference = self._controls['yaw'].get_reference()
             self._axial_induction_reference = self._controls['axial_induction'].get_reference()
             # self._set_yaw_induction_reference(simulation_time=sim_time)
@@ -112,7 +112,7 @@ class SuperController:
             self._measurements = measurements
             # self._set_yaw_pitch_torque_reference(simulation_time=sim_time)
             for control in self._controls.values():
-                control.do_control()
+                control.do_control(sim_time)
             self._yaw_reference = self._controls["yaw"].get_reference()
             self._pitch_reference = self._controls["pitch"].get_reference()
             self._torque_reference = self._controls["torque"].get_reference()
@@ -630,21 +630,24 @@ class Control:
         if control_type == "fixed":
             self._reference = values
         if control_type == "series":
-            self._time_series = values[:,0]
-            self._reference_series = values[:,1:]
+            self._reference = values[0, 1:].copy()
+            self._time_series = values[:, 0]
+            self._reference_series = values[:, 1:]
 
     def get_name(self):
         return self._name
 
-    def do_control(self):
-        self._control_function()
+    def do_control(self, simulation_time):
+        self._control_function(simulation_time)
 
-    def _fixed_control(self):
+    def _fixed_control(self, simulation_time):
         self._reference = self._reference
         # logger.error("Fixed control not implemented in SSC")
 
-    def _series_control(self):
-        logger.error("series control not implemented in SSC")
+    def _series_control(self, simulation_time):
+        for idx in range(len(self._reference)):
+            self._reference[idx] = np.interp(simulation_time, self._time_series, self._reference_series[:, idx])
+        # logger.error("series control not implemented in SSC")
 
     def _gradient_step_control(self):
         logger.error("gradient step control not implemented in SSC")

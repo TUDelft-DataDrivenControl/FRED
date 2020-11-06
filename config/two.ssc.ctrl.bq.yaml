@@ -7,11 +7,15 @@ ssc:
 #  type: fixed
   controls:
     yaw:
-      type: fixed
-      values: [260., 275.]
+      type: series
+      values:
+        - [0., 260., 275.]
+        - [60., 270., 255.]
     pitch:
-      type: fixed
-      values: [0., 3.]
+      type: series
+      values:
+        - [0., 0., 3.]
+        - [60., 3., 0.]
     torque:
       type: fixed
       values: [8., 9.]
