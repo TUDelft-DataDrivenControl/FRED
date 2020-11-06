@@ -48,12 +48,12 @@ class ControlModelParameters:
         if self.mode == "supercontroller":
             self.ssc = self.SSC(self._config["ssc"])
             self.turbine = self.Turbine(self._config["turbine"])
-            if self.ssc.type == "gradient_step":
-                self.wind_farm = self.WindFarm(self._config["wind_farm"])
-                self.simulation = self.Simulation(self._config["simulation"])
-                self.flow = self.Flow(self._config["flow"])
-            else:
-                self.simulation = self.Simulation(self._config["simulation"])
+            # if self.ssc.type == "gradient_step":
+            self.wind_farm = self.WindFarm(self._config["wind_farm"])
+            self.simulation = self.Simulation(self._config["simulation"])
+            self.flow = self.Flow(self._config["flow"])
+            # else:
+            #     self.simulation = self.Simulation(self._config["simulation"])
 
     class WindFarm:
         def __init__(self, config_dict):
@@ -133,31 +133,33 @@ class ControlModelParameters:
     class SSC:
         def __init__(self, config_dict):
             self.port = config_dict["port"]
-            self.type = config_dict["type"]
+            # self.type = config_dict["type"]
             self.mode = config_dict["mode"]
+            self.controls = config_dict["controls"]
+
             self.control_discretisation = config_dict["control_discretisation"]
-            if self.type == "fixed":
-                self.yaw_angles = np.deg2rad(config_dict["yaw_angles"])
-            if self.type == "series":
-                self.yaw_series = np.array(config_dict["yaw_series"])
-                self.yaw_series[:,1:] = np.deg2rad(self.yaw_series[:,1:])
-                self.yaw_angles = self.yaw_series[0, 1:]
-                if self.mode == "induction":
-                    self.axial_induction_series = np.array(config_dict["axial_induction_series"])
-                elif self.mode == "pitch_torque":
-                    self.pitch_series = np.array(config_dict["pitch_series"])
-                    self.torque_series = np.array(config_dict["torque_series"])
-            if self.type == "gradient_step":
-                self.yaw_angles = np.deg2rad(config_dict["yaw_angles"])
-                self.prediction_horizon = config_dict["prediction_horizon"]
-                self.control_horizon = config_dict["control_horizon"]
-                self.transient_time = config_dict.get("transient_time",-1)
-                self.objective = config_dict["objective"]
-                if self.objective == "tracking":
-                    self.power_reference = np.array(config_dict["power_reference"])
-                    self.power_reference[:, 1] *= 1e6
-                # if self.mode == "pitch_torque":
-                #     raise NotImplementedError("gradient step pitch torque control not implemented.")
+            # if self.type == "fixed":
+            #     self.yaw_angles = np.deg2rad(config_dict["yaw_angles"])
+            # if self.type == "series":
+            #     self.yaw_series = np.array(config_dict["yaw_series"])
+            #     self.yaw_series[:,1:] = np.deg2rad(self.yaw_series[:,1:])
+            #     self.yaw_angles = self.yaw_series[0, 1:]
+            #     if self.mode == "induction":
+            #         self.axial_induction_series = np.array(config_dict["axial_induction_series"])
+            #     elif self.mode == "pitch_torque":
+            #         self.pitch_series = np.array(config_dict["pitch_series"])
+            #         self.torque_series = np.array(config_dict["torque_series"])
+            # if self.type == "gradient_step":
+            #     self.yaw_angles = np.deg2rad(config_dict["yaw_angles"])
+            #     self.prediction_horizon = config_dict["prediction_horizon"]
+            #     self.control_horizon = config_dict["control_horizon"]
+            #     self.transient_time = config_dict.get("transient_time",-1)
+            #     self.objective = config_dict["objective"]
+            #     if self.objective == "tracking":
+            #         self.power_reference = np.array(config_dict["power_reference"])
+            #         self.power_reference[:, 1] *= 1e6
+            #     # if self.mode == "pitch_torque":
+            #     #     raise NotImplementedError("gradient step pitch torque control not implemented.")
             self.plant = config_dict.get("plant", "cm")
             if self.plant == "sowfa":
                 self.sowfa_time_step = config_dict["sowfa_time_step"]

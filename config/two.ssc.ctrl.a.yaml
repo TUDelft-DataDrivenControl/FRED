@@ -5,18 +5,29 @@ ssc:
   control_discretisation: 1.
   mode: induction
 #  type: fixed
-  yaw_angles:
-    - 290.
-    - 270.
-  type: series
-  yaw_series:
-      - [0., 290, 270.]
-      - [59., 250, 270.]
-      - [119., 250, 290.]
-  axial_induction_series:
-      - [0., 0.1, 0.33]
-      - [300., 0.4, 0.33]
-      - [600., 0.1, 0.33 ]
+  controls:
+    yaw:
+      type: fixed
+      values:
+        - 280.
+        - 260.
+    axial_induction:
+      type: fixed
+      values:
+        - 0.2
+        - 0.33
+#  yaw_angles:
+#    - 290.
+#    - 270.
+#  type: series
+#  yaw_series:
+#      - [0., 290, 270.]
+#      - [59., 250, 270.]
+#      - [119., 250, 290.]
+#  axial_induction_series:
+#      - [0., 0.1, 0.33]
+#      - [300., 0.4, 0.33]
+#      - [600., 0.1, 0.33 ]
 #  type: gradient_step
 #  prediction_horizon: 20.
 #  control_horizon: 1.

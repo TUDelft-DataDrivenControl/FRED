@@ -21,59 +21,69 @@ logger = logging.getLogger("cm.ssc")
 class SuperController:
 
     def __init__(self):
-        self._control_type = conf.par.ssc.type
+        # self._control_type = conf.par.ssc.type
         self._control_mode = conf.par.ssc.mode
-        self._plant = conf.par.ssc.plant
+        # self._plant = conf.par.ssc.plant
         self._server = None
-        self._yaw_reference = conf.par.ssc.yaw_angles.copy()
+        self._controls = {}
+        for control in conf.par.ssc.controls:
+            self._controls[control] = Control(name=control,
+                                              control_type=conf.par.ssc.controls[control]["type"],
+                                              values=np.array(conf.par.ssc.controls[control].get("values", None)))
+            logger.info("Setting up {:s} controller of type: {}"
+                        .format(control, conf.par.ssc.controls[control]["type"]))
+
+        # self._yaw_reference = conf.par.ssc.yaw_angles.copy()
         # todo: pitch reference may be useful later for work with SOWFA
-        self._axial_induction_reference = conf.par.turbine.axial_induction * np.ones_like(self._yaw_reference)
-        self._pitch_reference = conf.par.turbine.pitch * np.ones_like(self._yaw_reference)
-        self._torque_reference = conf.par.turbine.torque * np.ones_like(self._yaw_reference)
+        # self._axial_induction_reference = conf.par.turbine.axial_induction * np.ones_like(self._yaw_reference)
+        # self._pitch_reference = conf.par.turbine.pitch * np.ones_like(self._yaw_reference)
+        # self._torque_reference = conf.par.turbine.torque * np.ones_like(self._yaw_reference)
         logger.info("SSC initialised")
         self._data_file = None
         self._measurements = None
         self._sim_time = None
         self._tracker_torque_reference = None
 
-        if self._control_type == "series":
-            self._yaw_time_series = conf.par.ssc.yaw_series[:, 0]
-            self._yaw_series = conf.par.ssc.yaw_series[:, 1:]
-            if self._control_mode == "induction":
-                self._axial_induction_time_series = conf.par.ssc.axial_induction_series[:, 0]
-                self._axial_induction_series = conf.par.ssc.axial_induction_series[:, 1:]
-            elif self._control_mode == "pitch_torque":
-                self._pitch_time_series = conf.par.ssc.pitch_series[:, 0]
-                self._pitch_series = conf.par.ssc.pitch_series[:,1:]
-                self._torque_time_series = conf.par.ssc.torque_series[:, 0]
-                self._torque_series = conf.par.ssc.torque_series[:, 1:]
+        # if self._control_type == "series":
+        #     self._yaw_time_series = conf.par.ssc.yaw_series[:, 0]
+        #     self._yaw_series = conf.par.ssc.yaw_series[:, 1:]
+        #     if self._control_mode == "induction":
+        #         self._axial_induction_time_series = conf.par.ssc.axial_induction_series[:, 0]
+        #         self._axial_induction_series = conf.par.ssc.axial_induction_series[:, 1:]
+        #     elif self._control_mode == "pitch_torque":
+        #         self._pitch_time_series = conf.par.ssc.pitch_series[:, 0]
+        #         self._pitch_series = conf.par.ssc.pitch_series[:,1:]
+        #         self._torque_time_series = conf.par.ssc.torque_series[:, 0]
+        #         self._torque_series = conf.par.ssc.torque_series[:, 1:]
 
-        if self._control_type == "gradient_step":
-            self._wind_farm = WindFarm()
-            self._dynamic_flow_problem = DynamicFlowProblem(self._wind_farm)
-            self._dynamic_flow_solver = DynamicFlowSolver(self._dynamic_flow_problem, ssc=self)
-
-            self._time_last_optimised = -1.
-            self._time_reference_series = np.arange(0, conf.par.ssc.prediction_horizon, conf.par.ssc.control_discretisation) + conf.par.simulation.time_step
-
-            self._yaw_reference_series = np.ones((len(self._time_reference_series), len(conf.par.ssc.yaw_angles)+1))
-            self._yaw_reference_series[:, 0] = self._time_reference_series
-            self._yaw_reference_series[:, 1:] = self._yaw_reference * self._yaw_reference_series[:,1:]
-
-            if self._control_mode == "induction":
-                self._axial_induction_reference_series =   np.ones_like(self._yaw_reference_series)
-                self._axial_induction_reference_series[:, 0] = self._time_reference_series
-                self._axial_induction_reference_series[:, 1:] = self._axial_induction_reference * self._axial_induction_reference_series[:, 1:]
-            elif self._control_mode == "pitch_torque":
-                self._pitch_reference_series = np.ones_like(self._yaw_reference_series)
-                self._pitch_reference_series[:, 0] = self._time_reference_series
-                self._pitch_reference_series[:, 1:] = self._pitch_reference * self._pitch_reference_series[:, 1:]
-                self._torque_reference_series = np.ones_like(self._yaw_reference_series)
-                self._torque_reference_series[:, 0] = self._time_reference_series
-                self._torque_reference_series[:, 1:] = self._torque_reference * self._torque_reference_series[:, 1:]
-
-        if self._plant == "sowfa":
-            self._tsr_tracker = TorqueController(len(conf.par.wind_farm.positions), conf.par.ssc.sowfa_time_step)
+        # todo: redo gradient step
+        # todo: re-attach to sowfa
+        # if self._control_type == "gradient_step":
+        #     self._wind_farm = WindFarm()
+        #     self._dynamic_flow_problem = DynamicFlowProblem(self._wind_farm)
+        #     self._dynamic_flow_solver = DynamicFlowSolver(self._dynamic_flow_problem, ssc=self)
+        #
+        #     self._time_last_optimised = -1.
+        #     self._time_reference_series = np.arange(0, conf.par.ssc.prediction_horizon, conf.par.ssc.control_discretisation) + conf.par.simulation.time_step
+        #
+        #     self._yaw_reference_series = np.ones((len(self._time_reference_series), len(conf.par.ssc.yaw_angles)+1))
+        #     self._yaw_reference_series[:, 0] = self._time_reference_series
+        #     self._yaw_reference_series[:, 1:] = self._yaw_reference * self._yaw_reference_series[:,1:]
+        #
+        #     if self._control_mode == "induction":
+        #         self._axial_induction_reference_series =   np.ones_like(self._yaw_reference_series)
+        #         self._axial_induction_reference_series[:, 0] = self._time_reference_series
+        #         self._axial_induction_reference_series[:, 1:] = self._axial_induction_reference * self._axial_induction_reference_series[:, 1:]
+        #     elif self._control_mode == "pitch_torque":
+        #         self._pitch_reference_series = np.ones_like(self._yaw_reference_series)
+        #         self._pitch_reference_series[:, 0] = self._time_reference_series
+        #         self._pitch_reference_series[:, 1:] = self._pitch_reference * self._pitch_reference_series[:, 1:]
+        #         self._torque_reference_series = np.ones_like(self._yaw_reference_series)
+        #         self._torque_reference_series[:, 0] = self._time_reference_series
+        #         self._torque_reference_series[:, 1:] = self._torque_reference * self._torque_reference_series[:, 1:]
+        #
+        # if self._plant == "sowfa":
+        #     self._tsr_tracker = TorqueController(len(conf.par.wind_farm.positions), conf.par.ssc.sowfa_time_step)
 
     def start(self):
         self._server = ZmqServer(conf.par.ssc.port)
@@ -86,39 +96,48 @@ class SuperController:
     def _run_yaw_induction_control(self):
         while True:
             sim_time, measurements = self._server.receive()
-            self._set_yaw_induction_reference(simulation_time=sim_time)
+            for control in self._controls.values():
+                control.do_control()
+            self._yaw_reference = self._controls['yaw'].get_reference()
+            self._axial_induction_reference = self._controls['axial_induction'].get_reference()
+            # self._set_yaw_induction_reference(simulation_time=sim_time)
             self._server.send_yaw_induction(self._yaw_reference, self._axial_induction_reference)
             logger.info("Sent yaw and induction control signals for time: {:.2f}".format(sim_time))
 
     def _run_yaw_pitch_torque_control(self):
-        self._setup_output_file()
+        # self._setup_output_file()
         while True:
             sim_time, measurements = self._server.receive()
             self._sim_time = sim_time
             self._measurements = measurements
-            self._set_yaw_pitch_torque_reference(simulation_time=sim_time)
+            # self._set_yaw_pitch_torque_reference(simulation_time=sim_time)
+            for control in self._controls.values():
+                control.do_control()
+            self._yaw_reference = self._controls["yaw"].get_reference()
+            self._pitch_reference = self._controls["pitch"].get_reference()
+            self._torque_reference = self._controls["torque"].get_reference()
             # self._server.send(self._yaw_reference, self._pitch_reference, self._torque_reference)
-            if self._plant=="cm":
-                self._server.send(self._yaw_reference, self._pitch_reference, self._torque_reference)
-                logger.info("Sent yaw, pitch, torque control signals for time: {:.2f}".format(sim_time))
-                logger.info("Yaw: {:.2f}, pitch {:.2f}, torque {:.2f}".format(self._yaw_reference[0], self._pitch_reference[0], self._torque_reference[0]))
-            elif self._plant=="sowfa":
-                logger.warning("TSR tracker not yet connected!")
-                # todo: make automatic from sowfa specs
-                # measured_rotor_speed = mea[1::8]
-                # measured_generator_torque = []
-                # measured_blade_pitch =
-                self._tsr_tracker.run_estimator(measured_rotor_speed=np.array([measurements[1::8]]),
-                                                measured_generator_torque=np.array([measurements[5::8]]),
-                                                measured_blade_pitch=np.array([measurements[7::8]]))
-                torque_set_point = self._tsr_tracker.generate_torque_reference(tsr_desired=self._torque_reference)
-                self._tracker_torque_reference = np.array(torque_set_point).squeeze()
-                self._server.send(self._yaw_reference, self._pitch_reference, self._tracker_torque_reference)
-                logger.info("Sent yaw, pitch, torque control signals for time: {:.2f}".format(sim_time))
-                logger.info(
-                    "Yaw: {:.2f}, pitch {:.2f}, torque {:.2f}".format(self._yaw_reference[0], self._pitch_reference[0],
-                                                                          self._torque_reference[0]))
-                self._write_output_file()
+            # if self._plant=="cm":
+            self._server.send(self._yaw_reference, self._pitch_reference, self._torque_reference)
+            logger.info("Sent yaw, pitch, torque control signals for time: {:.2f}".format(sim_time))
+            logger.info("Yaw: {:.2f}, pitch {:.2f}, torque {:.2f}".format(self._yaw_reference[0], self._pitch_reference[0], self._torque_reference[0]))
+            # elif self._plant=="sowfa":
+            #     logger.warning("TSR tracker not yet connected!")
+            #     # todo: make automatic from sowfa specs
+            #     # measured_rotor_speed = mea[1::8]
+            #     # measured_generator_torque = []
+            #     # measured_blade_pitch =
+            #     self._tsr_tracker.run_estimator(measured_rotor_speed=np.array([measurements[1::8]]),
+            #                                     measured_generator_torque=np.array([measurements[5::8]]),
+            #                                     measured_blade_pitch=np.array([measurements[7::8]]))
+            #     torque_set_point = self._tsr_tracker.generate_torque_reference(tsr_desired=self._torque_reference)
+            #     self._tracker_torque_reference = np.array(torque_set_point).squeeze()
+            #     self._server.send(self._yaw_reference, self._pitch_reference, self._tracker_torque_reference)
+            #     logger.info("Sent yaw, pitch, torque control signals for time: {:.2f}".format(sim_time))
+            #     logger.info(
+            #         "Yaw: {:.2f}, pitch {:.2f}, torque {:.2f}".format(self._yaw_reference[0], self._pitch_reference[0],
+            #                                                               self._torque_reference[0]))
+            #     self._write_output_file()
 
     def _setup_output_file(self):
         results_dir = "./results/" + conf.par.simulation.name
@@ -597,9 +616,42 @@ class SuperController:
         p_ref_array = conf.par.ssc.power_reference[:, 1]
         return np.interp(simulation_time, t_ref_array, p_ref_array)
 
+
 class Control:
-    def __init__(self, name, type, num_turbines):
+    def __init__(self, name, control_type, values):
         self._name = name
+        switcher = {
+            "fixed": self._fixed_control,
+            "series": self._series_control,
+            "gradient_step": self._gradient_step_control
+        }
+        self._control_function = switcher.get(control_type, "fixed")
+        self._reference = []
+        if control_type == "fixed":
+            self._reference = values
+        if control_type == "series":
+            self._time_series = values[:,0]
+            self._reference_series = values[:,1:]
+
+    def get_name(self):
+        return self._name
+
+    def do_control(self):
+        self._control_function()
+
+    def _fixed_control(self):
+        self._reference = self._reference
+        # logger.error("Fixed control not implemented in SSC")
+
+    def _series_control(self):
+        logger.error("series control not implemented in SSC")
+
+    def _gradient_step_control(self):
+        logger.error("gradient step control not implemented in SSC")
+
+    def get_reference(self):
+        return self._reference
+
 
 
 
