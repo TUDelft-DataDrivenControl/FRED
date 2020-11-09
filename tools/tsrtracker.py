@@ -203,8 +203,8 @@ class TurbineModel:
 
 class TorqueController:
     def __init__(self, num_turbines, sample_time):
-        self._torque_proportional_gain = -27338. *10.
-        self._torque_integrator_gain = -6134. * 10.
+        self._torque_proportional_gain = -27338.
+        self._torque_integrator_gain = -6134.
 
         self._torque_reference_base = None
         self._torque_reference_integrator = None
@@ -230,7 +230,7 @@ class TorqueController:
                                              [480.00, 164025.0]])
     def run_estimator(self, measured_rotor_speed, measured_generator_torque, measured_blade_pitch):
         logger.warning("Double-check rotorspeed units")
-        # measured_rotor_speed = measured_rotor_speed * 30 / np.pi
+        measured_rotor_speed = measured_rotor_speed * 30 / np.pi
         self._estimator.run_estimator(measured_rotor_speed, measured_generator_torque, measured_blade_pitch)
 
     def generate_torque_reference(self, tsr_desired):
