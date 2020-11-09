@@ -99,23 +99,24 @@ class SuperController:
     def start(self):
         self._server = ZmqServer(conf.par.ssc.port)
         logger.info("SSC started")
-        if self._control_mode == "induction":
-            self._run_yaw_induction_control()
-        elif self._control_mode == "pitch_torque":
-            self._run_yaw_pitch_torque_control()
+        self._run_control()
+        # if self._control_mode == "induction":
+        #     self._run_yaw_induction_control()
+        # elif self._control_mode == "pitch_torque":
+        #     self._run_yaw_pitch_torque_control()
 
-    def _run_yaw_induction_control(self):
-        while True:
-            sim_time, measurements = self._server.receive()
-            for control in self._controls.values():
-                control.do_control(sim_time)
-            self._yaw_reference = self._controls['yaw'].get_reference()
-            self._axial_induction_reference = self._controls['axial_induction'].get_reference()
-            # self._set_yaw_induction_reference(simulation_time=sim_time)
-            self._server.send_yaw_induction(self._yaw_reference, self._axial_induction_reference)
-            logger.info("Sent yaw and induction control signals for time: {:.2f}".format(sim_time))
+    # def _run_yaw_induction_control(self):
+    #     while True:
+    #         sim_time, measurements = self._server.receive()
+    #         for control in self._controls.values():
+    #             control.do_control(sim_time)
+    #         self._yaw_reference = self._controls['yaw'].get_reference()
+    #         self._axial_induction_reference = self._controls['axial_induction'].get_reference()
+    #         # self._set_yaw_induction_reference(simulation_time=sim_time)
+    #         self._server.send_yaw_induction(self._yaw_reference, self._axial_induction_reference)
+    #         logger.info("Sent yaw and induction control signals for time: {:.2f}".format(sim_time))
 
-    def _run_yaw_pitch_torque_control(self):
+    def _run_control(self):
         self._setup_output_file()
         while True:
             sim_time, measurements = self._server.receive()
