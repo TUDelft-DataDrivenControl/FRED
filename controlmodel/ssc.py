@@ -31,9 +31,11 @@ class SuperController:
         self._gradient_controls = {}
         self._with_gradient_step = False
         for control in conf.par.ssc.controls:
+            # self._controls[control] = ControlParameter(name=control,
+            #                                            control_type=conf.par.ssc.controls[control]["type"],
+            #                                            values=np.array(conf.par.ssc.controls[control].get("values", None)))
             self._controls[control] = ControlParameter(name=control,
-                                                       control_type=conf.par.ssc.controls[control]["type"],
-                                                       values=np.array(conf.par.ssc.controls[control].get("values", None)))
+                                                       config=conf.par.ssc.controls[control])
             logger.info("Setting up {:s} controller of type: {}"
                         .format(control, conf.par.ssc.controls[control]["type"]))
             if conf.par.ssc.controls[control]["type"] == "gradient_step":
@@ -691,23 +693,30 @@ class SuperController:
 
 
 class ControlParameter:
-    def __init__(self, name, control_type, values):
+    # def __init__(self, name, control_type, values):
+    def __init__(self, name, config):
         self._name = name
         switcher = {
             "fixed": self._fixed_control,
             "series": self._series_control,
             "gradient_step": self._gradient_step_control
         }
-        self._control_function = switcher.get(control_type, "fixed")
+        self._control_type = config["type"]
+        self._control_function = switcher.get(self._control_type, "fixed")
         self._reference = []
-        if control_type == "fixed":
+        values = np.array(config["values"])
+
+        self._limits = config.get("range", None)
+        self._rate_limit = config.get("rate_limit", None)
+
+        if self._control_type == "fixed":
             self._reference = values
-        if control_type == "series" or control_type == "gradient_step":
+        if self._control_type == "series": # or self._control_type == "gradient_step":
             self._reference = values[0, 1:].copy()
             self._time_series = values[:, 0]
             self._reference_series = values[:, 1:]
 
-        if control_type == "gradient_step":
+        if self._control_type == "gradient_step":
             self._reference = values[0, 1:].copy()
             self._time_series = np.arange(0, conf.par.ssc.prediction_horizon,
                   conf.par.ssc.control_discretisation) + conf.par.simulation.time_step
@@ -733,9 +742,6 @@ class ControlParameter:
         reference_index = int((simulation_time - conf.par.simulation.time_step)
                               % conf.par.ssc.control_horizon // conf.par.ssc.control_discretisation)
         self._reference = self._reference_series[reference_index, :]
-        # for idx in range(len(self._reference)):
-        #     self._reference[idx] = np.interp(simulation_time, self._time_series, self._reference_series[:, idx])
-        # logger.error("series control not implemented in SSC")
 
     def _gradient_step_control(self, simulation_time):
         for idx in range(len(self._reference)):
@@ -779,24 +785,38 @@ class ControlParameter:
 
     def _apply_limits(self):
         # ..
-        logger.error("No rate/min/max limits implemented")
-        # todo: min/max limits
+        # logger.error("No rate/min/max limits implemented")
+        # # todo: min/max limits
+        #
+        # # todo: rate limits
+        if self._rate_limit is not None:
+            dt = np.diff(self._time_series)
+            dy_limit = self._rate_limit * dt
+            dy = np.diff(self._reference_series[:,0])
+            dy = np.max((-1 * dy_limit, np.min((np.abs(dy), dy_limit),axis=0)),axis=0)
+            self._reference_series[1:,0] = self._reference_series[0, 0] + np.cumsum(dy)
 
-        # todo: rate limits
-        if conf.par.turbine.yaw_rate_limit > 0 and self._name == "yaw":
-            yaw_rate_limit = conf.par.turbine.yaw_rate_limit
-            for idx in range(len(self._reference_series) - 1):
-                dyaw = self._reference_series[idx + 1, 0] - self._reference_series[idx, 0]
-                dt = self._time_series[idx + 1] - self._time_series[idx]
-                dmax = yaw_rate_limit * dt
-                dyaw = np.max((-dmax, np.min((dmax, dyaw))))
-                self._reference_series[idx + 1, 0] = self._reference_series[idx, 0] + dyaw
-
-        if self._name == "pitch":
+        if self._limits is not None:
             self._reference_series[:, 0] = \
-            np.min((25 * np.ones_like(self._reference_series[:, 0]),
-                    np.max((-1 * np.ones_like(self._reference_series[:, 0]),
-                            self._reference_series[:, 0]), 0)), 0)
+                np.min((self._limits[1] * np.ones_like(self._reference_series[:, 0]),
+                        np.max((self._limits[0] * np.ones_like(self._reference_series[:, 0]),
+                                self._reference_series[:, 0]), 0)), 0)
+
+        #     # np.diff(self._reference_series[:,0]) / np.diff(self._time_series)
+        # if conf.par.turbine.yaw_rate_limit > 0 and self._name == "yaw":
+        #     yaw_rate_limit = conf.par.turbine.yaw_rate_limit
+        #     for idx in range(len(self._reference_series) - 1):
+        #         dyaw = self._reference_series[idx + 1, 0] - self._reference_series[idx, 0]
+        #         dt = self._time_series[idx + 1] - self._time_series[idx]
+        #         dmax = yaw_rate_limit * dt
+        #         dyaw = np.max((-dmax, np.min((dmax, dyaw))))
+        #         self._reference_series[idx + 1, 0] = self._reference_series[idx, 0] + dyaw
+        #
+        # if self._name == "pitch":
+        #     self._reference_series[:, 0] = \
+        #     np.min((25 * np.ones_like(self._reference_series[:, 0]),
+        #             np.max((-1 * np.ones_like(self._reference_series[:, 0]),
+        #                     self._reference_series[:, 0]), 0)), 0)
 
 
 

@@ -145,7 +145,7 @@ def main_with_ssc_two():
         # conf.par.load("./config/two.ssc.ctrl.a.yaml")
         conf.par.load("./config/two.ssc.ctrl.bq.yaml")
         t = np.arange(0,1000.,1.)
-        pr = 7.0e6 + 0.7e6 *np.round(np.cos(t/100))
+        pr = 7.0e6 + 0.7e6 *np.round(np.cos(t/20))
         power_reference = np.zeros((len(t),2))
         power_reference[:,0] = t
         power_reference[:,1] = pr

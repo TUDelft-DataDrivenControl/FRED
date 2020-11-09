@@ -19,17 +19,22 @@ ssc:
       values:
         - [0., 280., 270.]
         - [60., 280., 270.]
+      rate_limit: 0.3
     pitch:
       type: gradient_step
       values:
         - [0., 0., 0.]
         - [60., 0., 0.]
+      rate_limit: 1.
+      range: [-1., 25.]
     torque:
       type: gradient_step
       values:
         - [0., 8., 8.]
         - [60., 8., 8.]
-  transient_time: 120.
+      rate_limit: 1.
+      range: [3., 14.]
+  transient_time: 20.
 
 #  yaw_angles:
 #    - 290.
