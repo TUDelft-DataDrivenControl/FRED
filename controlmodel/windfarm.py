@@ -63,6 +63,12 @@ class WindFarm:
     def get_torque_controls(self):
         return self._controller.get_torque_controls()
 
+    def get_controls_list(self, name):
+        return  self._controller.get_controls_list(name)
+
+    def set_control_reference_series(self, name, time_series, reference_series):
+        self._controller.set_control_reference_series(name, time_series, reference_series)
+
     def clear_controls(self):
         """Clear the recorded list of control signals from the wind farm controller"""
         self._controller.clear_controls()

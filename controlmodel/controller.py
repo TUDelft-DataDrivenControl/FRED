@@ -82,8 +82,11 @@ class Controller:
         new_ref = self._received_data[0::3]
         return new_ref
 
-    def get_controls(self, name):
-        return self._controls[name].get_controls_list()
+    def get_controls_list(self, name):
+        return self._controls[name].get_control_list()
+
+    def set_control_reference_series(self, name, time_series, reference_series):
+        self._controls[name].set_reference_series(time_series, reference_series)
 
     def clear_controls(self):
         for control in self._controls.values():
@@ -131,6 +134,7 @@ class Control:
             new_reference = self._apply_rate_limit(new_reference)
             self._update_reference(new_reference)
             self._time_last_updated = simulation_time
+            logger.info("Setting {} to {}".format(self._name, new_reference))
 
     def _fixed_control(self, simulation_time, received_controls):
         new_reference = conf.par.wind_farm.yaw_angles.copy()
@@ -155,6 +159,12 @@ class Control:
                     .format(len(new_reference), len(conf.par.wind_farm.positions)))
         self._reference.append([Constant(y) for y in new_reference])
 
+    def set_reference_series(self, time_series, reference_series):
+        self._time_series = time_series
+        self._reference_series = reference_series
+        if self._name == "yaw":
+            self._reference_series = np.deg2rad(self._reference_series)
+
     def _apply_rate_limit(self, new_reference):
         logger.warning("Rate limit in wind farm controller not implemented")
         return new_reference
@@ -169,3 +179,4 @@ class Control:
         #         delta_ref = np.max((-yaw_rate_limit * time_step * np.ones_like(new_ref), delta_ref),0)
         #     new_ref = prev_ref + delta_ref
         # return new_ref
+

@@ -23,15 +23,21 @@ class SuperController:
     def __init__(self):
         # self._control_type = conf.par.ssc.type
         self._control_mode = conf.par.ssc.mode
+        self._external_controls = conf.par.ssc.external_controls
         # self._plant = conf.par.ssc.plant
         self._server = None
         self._controls = {}
+        self._gradient_controls = {}
+        self._with_gradient_step = False
         for control in conf.par.ssc.controls:
-            self._controls[control] = Control(name=control,
-                                              control_type=conf.par.ssc.controls[control]["type"],
-                                              values=np.array(conf.par.ssc.controls[control].get("values", None)))
+            self._controls[control] = ControlParameter(name=control,
+                                                       control_type=conf.par.ssc.controls[control]["type"],
+                                                       values=np.array(conf.par.ssc.controls[control].get("values", None)))
             logger.info("Setting up {:s} controller of type: {}"
                         .format(control, conf.par.ssc.controls[control]["type"]))
+            if conf.par.ssc.controls[control]["type"] == "gradient_step":
+                self._gradient_controls[control] = self._controls[control]
+                self._with_gradient_step = True
 
         # self._yaw_reference = conf.par.ssc.yaw_angles.copy()
         # todo: pitch reference may be useful later for work with SOWFA
@@ -58,12 +64,12 @@ class SuperController:
 
         # todo: redo gradient step
         # todo: re-attach to sowfa
-        # if self._control_type == "gradient_step":
-        #     self._wind_farm = WindFarm()
-        #     self._dynamic_flow_problem = DynamicFlowProblem(self._wind_farm)
-        #     self._dynamic_flow_solver = DynamicFlowSolver(self._dynamic_flow_problem, ssc=self)
+        if self._with_gradient_step:
+            self._wind_farm = WindFarm()
+            self._dynamic_flow_problem = DynamicFlowProblem(self._wind_farm)
+            self._dynamic_flow_solver = DynamicFlowSolver(self._dynamic_flow_problem, ssc=self)
         #
-        #     self._time_last_optimised = -1.
+            self._time_last_optimised = -1.
         #     self._time_reference_series = np.arange(0, conf.par.ssc.prediction_horizon, conf.par.ssc.control_discretisation) + conf.par.simulation.time_step
         #
         #     self._yaw_reference_series = np.ones((len(self._time_reference_series), len(conf.par.ssc.yaw_angles)+1))
@@ -113,12 +119,25 @@ class SuperController:
             # self._set_yaw_pitch_torque_reference(simulation_time=sim_time)
             for control in self._controls.values():
                 control.do_control(sim_time)
+            if self._with_gradient_step:
+                if (sim_time - self._time_last_optimised >= conf.par.ssc.control_horizon) \
+                        or (self._time_last_optimised < 0):
+                   self._compute_gradients(sim_time)
+
+                # self._compute_gradients()
+                # pass gradients to control
+                # control.generate_
             self._yaw_reference = self._controls["yaw"].get_reference()
             self._pitch_reference = self._controls["pitch"].get_reference()
             self._torque_reference = self._controls["torque"].get_reference()
             # self._server.send(self._yaw_reference, self._pitch_reference, self._torque_reference)
             # if self._plant=="cm":
-            self._server.send(self._yaw_reference, self._pitch_reference, self._torque_reference)
+
+            send_controls = []
+            for control in self._external_controls:
+                send_controls += [self._controls[control].get_reference()]
+            self._server.send(send_controls)
+            # self._server.send(self._yaw_reference, self._pitch_reference, self._torque_reference)
             logger.info("Sent yaw, pitch, torque control signals for time: {:.2f}".format(sim_time))
             logger.info("Yaw: {:.2f}, pitch {:.2f}, torque {:.2f}".format(self._yaw_reference[0], self._pitch_reference[0], self._torque_reference[0]))
             # elif self._plant=="sowfa":
@@ -168,39 +187,81 @@ class SuperController:
                     log.write(",{:.6f}".format(var[idx]))
                 log.write("\r\n")
 
-    def _set_yaw_induction_reference(self, simulation_time):
-        switcher = {
-            "fixed": self._fixed_reference,
-            "series": self._yaw_induction_time_series_reference,
-            "gradient_step": self._yaw_induction_gradient_step_reference
-        }
-        control_function = switcher[self._control_type]
-        control_function(simulation_time)
+    def _compute_gradients(self, simulation_time):
+        if self._time_last_optimised >= 0:
+            for control in self._gradient_controls.values():
+                control.shift_reference_series(simulation_time)
 
-    def _set_yaw_pitch_torque_reference(self, simulation_time):
-        switcher = {
-            "fixed": self._fixed_reference,
-            "series": self._yaw_pitch_torque_time_series_reference,
-            "gradient_step": self._yaw_pitch_torque_gradient_step_reference
-            #todo: "gradient_step": self._gradient_step_reference
-        }
-        control_function = switcher[self._control_type]
-        control_function(simulation_time)
+        self._time_last_optimised = simulation_time
+        self._dynamic_flow_solver.save_checkpoint()
 
-    def _fixed_reference(self, simulation_time):
-        return None
+        if simulation_time > conf.par.ssc.transient_time:
 
-    def _yaw_induction_time_series_reference(self, simulation_time):
-        for idx in range(len(self._yaw_reference)):
-            self._yaw_reference[idx] = np.interp(simulation_time, self._yaw_time_series, self._yaw_series[:, idx])
-            self._axial_induction_reference[idx] = np.interp(simulation_time, self._axial_induction_time_series, self._axial_induction_series[:, idx])
+            self._set_wind_farm_reference_series()
+            self._do_forward_simulation()
+            controls_list, num_controls_dict = self._get_control_lists()
+            tracking_functional , tracking_functional_array = self._construct_cost_functional()
+            gradient = self._calculate_gradients(tracking_functional, controls_list)
 
-    def _yaw_pitch_torque_time_series_reference(self, simulation_time):
-        for idx in range(len(self._yaw_reference)):
-            self._yaw_reference[idx] = np.interp(simulation_time, self._yaw_time_series, self._yaw_series[:, idx])
-            self._pitch_reference[idx] = np.interp(simulation_time, self._pitch_time_series, self._pitch_series[:, idx])
-            self._torque_reference[idx] = np.interp(simulation_time, self._torque_time_series, self._torque_series[:, idx])
+            start_index = 0
+            for control in self._gradient_controls:
+                end_index = start_index + num_controls_dict[control]
+                print("{} : {}".format(start_index, end_index))
+                self._gradient_controls[control].update_reference_with_gradient(tracking_functional_array, gradient[start_index:end_index])
+                start_index = end_index
 
+        self._dynamic_flow_solver.reset_checkpoint()
+        self._dynamic_flow_solver.solve_segment(conf.par.ssc.control_horizon)
+
+    def _do_forward_simulation(self):
+        time_horizon = conf.par.ssc.prediction_horizon
+        logger.info("Forward simulation over time horizon {:.2f}".format(time_horizon))
+        #todo: shouldn't this be after setting controls?
+        self._dynamic_flow_solver.solve_segment(time_horizon)
+
+    def _set_wind_farm_reference_series(self):
+        for control in self._gradient_controls.values():
+            self._wind_farm.set_control_reference_series(name=control.get_name(),
+                                                         time_series=control.get_time_series(),
+                                                         reference_series=control.get_reference_series())
+
+    def _get_control_lists(self):
+        controls_list = []
+        num_controls_dict = {}
+        for control in self._gradient_controls:
+            controls_list += (self._wind_farm.get_controls_list(name=control))
+            num_controls_dict[control] = len(self._wind_farm.get_controls_list(name=control))
+        return controls_list, num_controls_dict
+
+    def _construct_cost_functional(self):
+        power = self._dynamic_flow_solver.get_power_functional_list()
+        total_power = [sum(x) * 1e-6 for x in power]
+        time = np.arange(self._sim_time, self._sim_time + conf.par.ssc.prediction_horizon, conf.par.simulation.time_step)
+        t_ref_array = conf.par.ssc.power_reference[:, 0]
+        p_ref_array = conf.par.ssc.power_reference[:, 1] * 1e-6
+        p_ref = np.interp(time, t_ref_array, p_ref_array)
+        logger.info("power reference: {}".format(p_ref))
+
+        power_difference_squared = [(p - pr) * (p - pr) for p, pr in zip(total_power, p_ref)]
+        # control_difference_squared = [1e4 * assemble((c1[0] - c0[0]) * (c1[0] - c0[0]) * dx(UnitIntervalMesh(1))) for
+        #                               c0, c1 in zip(yaw_controls[:-1], yaw_controls[1:])]
+
+        logger.info("length power tracking: {:d}".format(len(power_difference_squared)))
+        logger.info("Power cost:   {:.2e}".format(sum(power_difference_squared)))
+        # logger.info("Control cost: {:.2e}".format(sum(control_difference_squared)))
+        tracking_functional = sum(power_difference_squared) #+ \
+                              # sum(control_difference_squared)
+        return tracking_functional, power_difference_squared
+
+    def _calculate_gradients(self, tracking_functional, controls_list):
+        # J = tracking_functional
+        # todo: control on both turbines?
+        m = [Control(c[0]) for c in controls_list]
+        gradient = compute_gradient(tracking_functional, m)
+        scale = 1.
+        gradient = np.array([scale * float(g) for g in gradient])
+        return gradient
+    '''
     def _yaw_induction_gradient_step_reference(self, simulation_time):
         # t0 = simulation_time
 
@@ -609,7 +670,7 @@ class SuperController:
         self._yaw_reference = self._yaw_reference_series[reference_index, 1:]
         self._pitch_reference = self._pitch_reference_series[reference_index, 1:]
         self._torque_reference = self._torque_reference_series[reference_index, 1:]
-
+    '''
 
     def get_power_reference(self, simulation_time):
         t_ref_array = conf.par.ssc.power_reference[:, 0]
@@ -617,7 +678,7 @@ class SuperController:
         return np.interp(simulation_time, t_ref_array, p_ref_array)
 
 
-class Control:
+class ControlParameter:
     def __init__(self, name, control_type, values):
         self._name = name
         switcher = {
@@ -629,31 +690,101 @@ class Control:
         self._reference = []
         if control_type == "fixed":
             self._reference = values
-        if control_type == "series":
+        if control_type == "series" or control_type == "gradient_step":
             self._reference = values[0, 1:].copy()
             self._time_series = values[:, 0]
             self._reference_series = values[:, 1:]
+
+        if control_type == "gradient_step":
+            self._reference = values[0, 1:].copy()
+            self._time_series = np.arange(0, conf.par.ssc.prediction_horizon,
+                  conf.par.ssc.control_discretisation) + conf.par.simulation.time_step
+            self._reference_series = np.ones((len(self._time_series), len(self._reference)))
+            for idx in range(len(self._reference)):
+                self._reference_series[:,idx] = np.interp(self._time_series, values[:,0], values[:,idx+1])
+        #     self._yaw_reference_series = np.ones((len(self._time_reference_series), len(conf.par.ssc.yaw_angles)+1))
+        #     self._yaw_reference_series[:, 0] = self._time_reference_series
+        #     self._yaw_reference_series[:, 1:] = self._yaw_reference * self._yaw_reference_series[:,1:]
 
     def get_name(self):
         return self._name
 
     def do_control(self, simulation_time):
         self._control_function(simulation_time)
+        print("{}: {}".format(self._name, self._reference))
 
     def _fixed_control(self, simulation_time):
         self._reference = self._reference
         # logger.error("Fixed control not implemented in SSC")
 
     def _series_control(self, simulation_time):
-        for idx in range(len(self._reference)):
-            self._reference[idx] = np.interp(simulation_time, self._time_series, self._reference_series[:, idx])
+        reference_index = int((simulation_time - conf.par.simulation.time_step)
+                              % conf.par.ssc.control_horizon // conf.par.ssc.control_discretisation)
+        self._reference = self._reference_series[reference_index, :]
+        # for idx in range(len(self._reference)):
+        #     self._reference[idx] = np.interp(simulation_time, self._time_series, self._reference_series[:, idx])
         # logger.error("series control not implemented in SSC")
 
-    def _gradient_step_control(self):
+    def _gradient_step_control(self, simulation_time):
+        for idx in range(len(self._reference)):
+            self._reference[idx] = np.interp(simulation_time, self._time_series, self._reference_series[:, idx])
         logger.error("gradient step control not implemented in SSC")
 
     def get_reference(self):
         return self._reference
+
+    def get_time_series(self):
+        return self._time_series
+
+    def get_reference_series(self):
+        return self._reference_series
+
+    def shift_reference_series(self, simulation_time):
+        new_start_index = int(conf.par.ssc.control_horizon // conf.par.ssc.control_discretisation)
+        new_time_reference = np.arange(self._time_series[new_start_index],
+                                       self._time_series[new_start_index] + conf.par.ssc.prediction_horizon,
+                                       conf.par.ssc.control_discretisation)
+        for idx in range(len(self._reference)):
+            self._reference_series[:,idx] = np.interp(new_time_reference,
+                                                      self._time_series,
+                                                      self._reference_series[:,idx])
+        self._time_series = new_time_reference
+
+    def update_reference_with_gradient(self, tracking_functional_array, gradient):
+        logger.info("{} gradient = {}".format(self._name, gradient))
+        step = -1 * (conf.par.simulation.time_step / conf.par.ssc.control_discretisation) * \
+            (tracking_functional_array / gradient)
+        max_step = 5.
+        step = np.sign(step) * np.min((np.abs(step), max_step * np.ones_like(gradient)), 0)
+        step[0] = 0.
+        if self._name == "yaw":
+            step = np.rad2deg(step)
+        # todo: min/max step
+        # todo: multiple turbines
+        print(self._reference_series.shape)
+        self._reference_series[:,0] = self._reference_series[:,0] + step
+        self._apply_limits()
+
+    def _apply_limits(self):
+        # ..
+        logger.error("No rate/min/max limits implemented")
+        # todo: min/max limits
+
+        # todo: rate limits
+        if conf.par.turbine.yaw_rate_limit > 0 and self._name == "yaw":
+            yaw_rate_limit = conf.par.turbine.yaw_rate_limit
+            for idx in range(len(self._reference_series) - 1):
+                dyaw = self._reference_series[idx + 1, 0] - self._reference_series[idx, 0]
+                dt = self._time_series[idx + 1] - self._time_series[idx]
+                dmax = yaw_rate_limit * dt
+                dyaw = np.max((-dmax, np.min((dmax, dyaw))))
+                self._reference_series[idx + 1, 0] = self._reference_series[idx, 0] + dyaw
+
+        if self._name == "pitch":
+            self._reference_series[:, 0] = \
+            np.min((25 * np.ones_like(self._reference_series[:, 0]),
+                    np.max((-1 * np.ones_like(self._reference_series[:, 0]),
+                            self._reference_series[:, 0]), 0)), 0)
 
 
 

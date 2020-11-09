@@ -73,6 +73,7 @@ class ControlModelParameters:
             def __init__(self, config_dict):
                 self.control_discretisation = config_dict["control_discretisation"]
                 self.controls = config_dict["controls"]
+                self.with_external_controller = False
                 for control in self.controls.values():
                     if control['type'] == 'external':
                         self.with_external_controller = True
@@ -93,7 +94,7 @@ class ControlModelParameters:
             self.hub_height = config_dict["hub_height"]
             self.kernel = config_dict["kernel"]
             self.deflection_scale = config_dict["deflection_scale"]
-            self.yaw_rate_limit = np.deg2rad(config_dict.get("yaw_rate_limit",-1))
+            self.yaw_rate_limit = config_dict.get("yaw_rate_limit",-1)
             self.coefficients = config_dict.get("coefficients", "induction")
             self.pitch = config_dict.get("pitch", 0.)
             self.torque = config_dict.get("torque", 0.)
@@ -136,8 +137,10 @@ class ControlModelParameters:
             # self.type = config_dict["type"]
             self.mode = config_dict["mode"]
             self.controls = config_dict["controls"]
+            self.external_controls = config_dict["external_controls"]
 
             self.control_discretisation = config_dict["control_discretisation"]
+
             # if self.type == "fixed":
             #     self.yaw_angles = np.deg2rad(config_dict["yaw_angles"])
             # if self.type == "series":
@@ -151,9 +154,9 @@ class ControlModelParameters:
             #         self.torque_series = np.array(config_dict["torque_series"])
             # if self.type == "gradient_step":
             #     self.yaw_angles = np.deg2rad(config_dict["yaw_angles"])
-            #     self.prediction_horizon = config_dict["prediction_horizon"]
-            #     self.control_horizon = config_dict["control_horizon"]
-            #     self.transient_time = config_dict.get("transient_time",-1)
+            self.prediction_horizon = config_dict["prediction_horizon"]
+            self.control_horizon = config_dict["control_horizon"]
+            self.transient_time = config_dict.get("transient_time",-1)
             #     self.objective = config_dict["objective"]
             #     if self.objective == "tracking":
             #         self.power_reference = np.array(config_dict["power_reference"])
