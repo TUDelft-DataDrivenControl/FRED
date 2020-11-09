@@ -24,6 +24,7 @@ class SuperController:
         # self._control_type = conf.par.ssc.type
         self._control_mode = conf.par.ssc.mode
         self._external_controls = conf.par.ssc.external_controls
+        self._external_measurements = conf.par.ssc.external_measurements
         # self._plant = conf.par.ssc.plant
         self._server = None
         self._controls = {}
@@ -46,9 +47,11 @@ class SuperController:
         # self._torque_reference = conf.par.turbine.torque * np.ones_like(self._yaw_reference)
         logger.info("SSC initialised")
         self._data_file = None
-        self._measurements = None
+        self._measurements = {}
         self._sim_time = None
         self._tracker_torque_reference = None
+
+        self._num_turbines = len(conf.par.wind_farm.positions)
 
         # if self._control_type == "series":
         #     self._yaw_time_series = conf.par.ssc.yaw_series[:, 0]
@@ -111,11 +114,12 @@ class SuperController:
             logger.info("Sent yaw and induction control signals for time: {:.2f}".format(sim_time))
 
     def _run_yaw_pitch_torque_control(self):
-        # self._setup_output_file()
+        self._setup_output_file()
         while True:
             sim_time, measurements = self._server.receive()
             self._sim_time = sim_time
-            self._measurements = measurements
+            # self._measurements = measurements
+            self._assign_measurements(measurements)
             # self._set_yaw_pitch_torque_reference(simulation_time=sim_time)
             for control in self._controls.values():
                 control.do_control(sim_time)
@@ -127,9 +131,9 @@ class SuperController:
                 # self._compute_gradients()
                 # pass gradients to control
                 # control.generate_
-            self._yaw_reference = self._controls["yaw"].get_reference()
-            self._pitch_reference = self._controls["pitch"].get_reference()
-            self._torque_reference = self._controls["torque"].get_reference()
+            # self._yaw_reference = self._controls["yaw"].get_reference()
+            # self._pitch_reference = self._controls["pitch"].get_reference()
+            # self._torque_reference = self._controls["torque"].get_reference()
             # self._server.send(self._yaw_reference, self._pitch_reference, self._torque_reference)
             # if self._plant=="cm":
 
@@ -138,8 +142,8 @@ class SuperController:
                 send_controls += [self._controls[control].get_reference()]
             self._server.send(send_controls)
             # self._server.send(self._yaw_reference, self._pitch_reference, self._torque_reference)
-            logger.info("Sent yaw, pitch, torque control signals for time: {:.2f}".format(sim_time))
-            logger.info("Yaw: {:.2f}, pitch {:.2f}, torque {:.2f}".format(self._yaw_reference[0], self._pitch_reference[0], self._torque_reference[0]))
+            # logger.info("Sent yaw, pitch, torque control signals for time: {:.2f}".format(sim_time))
+            # logger.info("Yaw: {:.2f}, pitch {:.2f}, torque {:.2f}".format(self._yaw_reference[0], self._pitch_reference[0], self._torque_reference[0]))
             # elif self._plant=="sowfa":
             #     logger.warning("TSR tracker not yet connected!")
             #     # todo: make automatic from sowfa specs
@@ -156,7 +160,7 @@ class SuperController:
             #     logger.info(
             #         "Yaw: {:.2f}, pitch {:.2f}, torque {:.2f}".format(self._yaw_reference[0], self._pitch_reference[0],
             #                                                               self._torque_reference[0]))
-            #     self._write_output_file()
+            self._write_output_file()
 
     def _setup_output_file(self):
         results_dir = "./results/" + conf.par.simulation.name
@@ -164,11 +168,13 @@ class SuperController:
         self._data_file = results_dir + "/log_ssc.csv"
         with open(self._data_file, 'w') as log:
             log.write("time")
-            m = ["measured_rotor_speed", "measured_generator_torque", "measured_blade_pitch"]
-            c = ["yaw_reference", "pitch_reference", "tsr_reference", "torque_reference"]
-            t = ["filtered_rotor_speed", "wind_speed_estimate", "tsr_estimate"]
-            for idx in range(len(self._yaw_reference)):
-                for var in m+c+t:
+            # m = ["measured_rotor_speed", "measured_generator_torque", "measured_blade_pitch"]
+            # c = ["yaw_reference", "pitch_reference", "tsr_reference", "torque_reference"]
+            # t = ["filtered_rotor_speed", "wind_speed_estimate", "tsr_estimate"]
+            m = self._external_measurements
+            c = [c for c in self._controls]
+            for idx in range(self._num_turbines):
+                for var in m+c: #+t:
                     log.write(",{:s}_{:03n}".format(var,idx))
             log.write("\r\n")
 
@@ -176,16 +182,22 @@ class SuperController:
         with open(self._data_file, 'a') as log:
             log.write("{:.6f}".format(self._sim_time))
             # m = ["measured_rotor_speed", "measured_generator_torque", "measured_blade_pitch"]
-            m = [self._measurements[1::8], self._measurements[5::8], self._measurements[7::8]]
+            # m = [self._measurements[1::8], self._measurements[5::8], self._measurements[7::8]]
+            m = [m for m in self._measurements.values()]
             # c = ["yaw_reference", "pitch_reference", "tsr_reference", "torque_reference"]
-            c = [self._yaw_reference, self._pitch_reference, self._torque_reference, self._tracker_torque_reference]
+            # c = [self._yaw_reference, self._pitch_reference, self._torque_reference, self._tracker_torque_reference]
+            c = [c.get_reference() for c in self._controls.values()]
             # t = ["filtered_rotor_speed", "wind_speed_estimate", "tsr_estimate"]
-            t = [self._tsr_tracker._estimator._rotor_speed_filtered, self._tsr_tracker._estimator._wind_speed, self._tsr_tracker._estimator._rotor_speed_filtered*(np.pi/30)*conf.par.turbine.radius/self._tsr_tracker._estimator._wind_speed]
-            t = [np.array(x).squeeze() for x in t]
-            for idx in range(len(self._yaw_reference)):
-                for var in m+c+t:
+            # t = [self._tsr_tracker._estimator._rotor_speed_filtered, self._tsr_tracker._estimator._wind_speed, self._tsr_tracker._estimator._rotor_speed_filtered*(np.pi/30)*conf.par.turbine.radius/self._tsr_tracker._estimator._wind_speed]
+            # t = [np.array(x).squeeze() for x in t]
+            for idx in range(self._num_turbines):
+                for var in m+c: #+t:
                     log.write(",{:.6f}".format(var[idx]))
-                log.write("\r\n")
+            log.write("\r\n")
+
+    def _assign_measurements(self, measurements):
+        for idx in range(len(self._external_measurements)):
+            self._measurements[self._external_controls[idx]] = measurements[idx::len(self._external_measurements)]
 
     def _compute_gradients(self, simulation_time):
         if self._time_last_optimised >= 0:

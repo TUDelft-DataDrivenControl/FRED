@@ -138,7 +138,7 @@ class ControlModelParameters:
             self.mode = config_dict["mode"]
             self.controls = config_dict["controls"]
             self.external_controls = config_dict["external_controls"]
-
+            self.external_measurements = config_dict["external_measurements"]
             self.control_discretisation = config_dict["control_discretisation"]
 
             # if self.type == "fixed":

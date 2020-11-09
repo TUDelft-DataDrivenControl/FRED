@@ -6,6 +6,10 @@ ssc:
     - torque
     - yaw
     - pitch
+  external_measurements:
+    - one_m
+    - two_m
+    - three_m
   control_discretisation: 1.
   mode: pitch_torque # [induction; pitch_torque]
 #  type: fixed
@@ -26,6 +30,7 @@ ssc:
         - [0., 8., 8.]
         - [60., 8., 8.]
   transient_time: 120.
+
 #  yaw_angles:
 #    - 290.
 #    - 270.
