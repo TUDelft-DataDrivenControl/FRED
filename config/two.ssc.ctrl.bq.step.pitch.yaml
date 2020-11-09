@@ -2,24 +2,48 @@ mode: supercontroller
 
 ssc:
   port: 1652
+  external_controls:
+    - torque
+    - yaw
+    - pitch
+  external_measurements:
+    - generatorPower
+    - rotorSpeed
+    - azimuth
+    - rotorThrust
+    - rotorTorque
+    - generatorTorque
+    - nacelleYaw
+    - bladePitch
   control_discretisation: 1.
-  mode: pitch_torque # [induction; pitch_torque]
 #  type: fixed
-  yaw_angles:
-    - 290.
-    - 270.
-  type: series
-  yaw_series:
-    - [0., 270., 270.]
-    - [1000., 270., 270.]
-  pitch_series:
-    - [0., 0., 0.]
-    - [299.9, 0.,0.]
-    - [300., 3.,0.]
-    - [1000., 3.,0.]
-  torque_series: # tsr
-    - [0., 8., 8.]
-    - [1000., 8., 8.]
+  controls:
+    yaw:
+      type: series
+      values:
+        - [0., 270., 270.]
+        - [1000., 270., 270.]
+      rate_limit: 0.3
+    pitch:
+      type: gradient_step
+      values:
+        - [0., 0., 0.]
+        - [299.9, 0., 0.]
+        - [300., 3., 0.]
+        - [1000., 3., 0.]
+      rate_limit: 1.
+      range: [-1., 25.]
+    torque:
+      type: series
+      values:
+        - [0., 8., 8.]
+        - [1000., 8., 8.]
+      rate_limit: 1.
+      range: [3., 14.]
+  transient_time: 120.
+  prediction_horizon: 20.
+  control_horizon: 1.
+#  objective: tracking # [tracking; maximisation]
   plant: sowfa # [cm; sowfa] if sowfa: convert tsr to torque with tsr tracker
   sowfa_time_step: 0.2
 
@@ -61,19 +85,23 @@ wind_farm:
   farm_controller:
 #    type: fixed
     control_discretisation: 1.
-    yaw_control_type: series
-    yaw_series:
-      - [0, 290., 270.]
-      - [0, 270., 270.]
-    axial_inductioN_control_type: none
-    pitch_control_type: series
-    pitch_series:
-      - [0., 0., 0.]
-      - [10., 5., 5.]
-    torque_control_type: series
-    torque_series:
-      - [0., 10., 10.]
-      - [10., 8., 8.]
+    controls:
+      yaw:
+        type: series
+        values:
+          - [0, 280., 270.]
+          - [10, 280., 270.]
+      pitch:
+        type: series
+        values:
+          - [0., 0., 0.]
+          - [10., 0.,0.]
+      torque:
+        type: series
+        values:
+          - [0., 8., 8.]
+          - [10., 8., 8.]
+
 turbine:
   axial_induction: 0.33
   diameter: 178.4 # m

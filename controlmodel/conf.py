@@ -134,26 +134,11 @@ class ControlModelParameters:
     class SSC:
         def __init__(self, config_dict):
             self.port = config_dict["port"]
-            # self.type = config_dict["type"]
-            self.mode = config_dict["mode"]
             self.controls = config_dict["controls"]
             self.external_controls = config_dict["external_controls"]
             self.external_measurements = config_dict["external_measurements"]
             self.control_discretisation = config_dict["control_discretisation"]
 
-            # if self.type == "fixed":
-            #     self.yaw_angles = np.deg2rad(config_dict["yaw_angles"])
-            # if self.type == "series":
-            #     self.yaw_series = np.array(config_dict["yaw_series"])
-            #     self.yaw_series[:,1:] = np.deg2rad(self.yaw_series[:,1:])
-            #     self.yaw_angles = self.yaw_series[0, 1:]
-            #     if self.mode == "induction":
-            #         self.axial_induction_series = np.array(config_dict["axial_induction_series"])
-            #     elif self.mode == "pitch_torque":
-            #         self.pitch_series = np.array(config_dict["pitch_series"])
-            #         self.torque_series = np.array(config_dict["torque_series"])
-            # if self.type == "gradient_step":
-            #     self.yaw_angles = np.deg2rad(config_dict["yaw_angles"])
             self.prediction_horizon = config_dict["prediction_horizon"]
             self.control_horizon = config_dict["control_horizon"]
             self.transient_time = config_dict.get("transient_time",-1)

@@ -7,18 +7,22 @@ ssc:
     - yaw
     - pitch
   external_measurements:
-    - one_m
-    - two_m
-    - three_m
+    - generatorPower
+    - rotorSpeed
+    - azimuth
+    - rotorThrust
+    - rotorTorque
+    - generatorTorque
+    - nacelleYaw
+    - bladePitch
   control_discretisation: 1.
-  mode: pitch_torque # [induction; pitch_torque]
 #  type: fixed
   controls:
     yaw:
       type: gradient_step
       values:
-        - [0., 280., 270.]
-        - [60., 280., 270.]
+        - [0., 290., 270.]
+        - [60., 290., 270.]
       rate_limit: 0.3
     pitch:
       type: gradient_step
@@ -34,31 +38,12 @@ ssc:
         - [60., 8., 8.]
       rate_limit: 1.
       range: [3., 14.]
-  transient_time: 20.
-
-#  yaw_angles:
-#    - 290.
-#    - 270.
-#  type: series
-#  yaw_series:
-#    - [0., 290, 270.]
-#    - [59., 250, 270.]
-#  pitch_series:
-#    - [0., 0., 3.]
-#    - [60., 3., 0.]
-#  torque_series:
-#    - [0., 8., 8.]
-#    - [60, 7., 9.]
-#  type: gradient_step # [fixed; series; gradient_step]
+  transient_time: 120.
   prediction_horizon: 20.
   control_horizon: 1.
-#  transient_time: 120.
 #  objective: tracking # [tracking; maximisation]
-#  power_reference:  #MW
-#    - [  0., 6.1]
-#    - [999., 7.1]
-#  plant: cm # [cm; sowfa] if sowfa: convert tsr to torque with tsr tracker
-#  sowfa_time_step: 0.2
+  plant: sowfa # [cm; sowfa] if sowfa: convert tsr to torque with tsr tracker
+  sowfa_time_step: 0.2
 
 simulation:
   name: two.ssc.ctrl
