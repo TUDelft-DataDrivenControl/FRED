@@ -21,7 +21,7 @@ logger = logging.getLogger("cm.ssc")
 class SuperController:
 
     def __init__(self):
-        self._control_mode = conf.par.ssc.mode
+        # self._control_mode = conf.par.ssc.mode
         self._external_controls = conf.par.ssc.external_controls
         self._external_measurements = conf.par.ssc.external_measurements
         self._plant = conf.par.ssc.plant
@@ -88,7 +88,7 @@ class SuperController:
                 torque_set_point = self._tsr_tracker.generate_torque_reference(
                     tsr_desired=self._controls['torque'].get_reference())
                 self._tracker_torque_reference = np.array(torque_set_point).squeeze()
-                self._server.send(self._yaw_reference, self._pitch_reference, self._tracker_torque_reference)
+                # self._server.send(self._yaw_reference, self._pitch_reference, self._tracker_torque_reference)
                 for control in self._external_controls:
                     if control == "torque":
                         send_controls += [self._tracker_torque_reference]
@@ -135,7 +135,7 @@ class SuperController:
 
     def _assign_measurements(self, measurements):
         for idx in range(len(self._external_measurements)):
-            self._measurements[self._external_controls[idx]] = measurements[idx::len(self._external_measurements)]
+            self._measurements[self._external_measurements[idx]] = measurements[idx::len(self._external_measurements)]
 
     def _compute_gradients(self, simulation_time):
         if self._time_last_optimised >= 0:

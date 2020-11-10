@@ -27,7 +27,7 @@ ssc:
         - [1000., 290., 270.]
       rate_limit: 0.3
     pitch:
-      type: gradient_step
+      type: series
       values:
         - [0., 0., 0.]
         - [1000., 0., 0.]
