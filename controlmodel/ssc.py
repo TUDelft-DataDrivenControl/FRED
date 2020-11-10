@@ -87,7 +87,7 @@ class SuperController:
                                                 measured_blade_pitch=np.array([self._measurements["bladePitch"]]))
                 torque_set_point = self._tsr_tracker.generate_torque_reference(
                     tsr_desired=self._controls['torque'].get_reference())
-                self._tracker_torque_reference = np.array(torque_set_point).squeeze()
+                self._tracker_torque_reference = torque_set_point
                 # self._server.send(self._yaw_reference, self._pitch_reference, self._tracker_torque_reference)
                 for control in self._external_controls:
                     if control == "torque":

@@ -262,7 +262,7 @@ class TorqueController:
 
 
 def main():
-    turbines = [TurbineModel()] #, TurbineModel(), TurbineModel()]
+    turbines = [TurbineModel(), TurbineModel(), TurbineModel()]
     sample_time = 0.2
     controller = TorqueController(len(turbines), sample_time=sample_time)
     estimator = controller._estimator
@@ -271,8 +271,8 @@ def main():
     measured_generator_torque = np.zeros((1, len(turbines)))
     measured_blade_pitch = np.zeros((1, len(turbines)))
 
-    torque_set_point = np.zeros((1, len(turbines)))
-    pitch_set_point = np.zeros((1, len(turbines)))
+    torque_set_point = np.zeros(len(turbines))
+    pitch_set_point = np.zeros(len(turbines))
 
     steps = 1000
     true_wind_speed = 9. * np.ones((steps, len(turbines)))
@@ -294,10 +294,10 @@ def main():
         # iterate and gather measurements
         for idx in range(len(turbines)):
             turbines[idx].run_time_step(wind_speed=true_wind_speed[step, idx], torque=torque_set_point[idx],
-                                        pitch=pitch_set_point[0, idx])
-            measured_rotor_speed[0, idx] = turbines[idx].get_rotor_speed()
-            measured_generator_torque[0, idx] = turbines[idx].get_torque()
-            measured_blade_pitch[0, idx] = turbines[idx].get_pitch()
+                                        pitch=pitch_set_point[idx])
+            measured_rotor_speed[0,idx] = turbines[idx].get_rotor_speed()
+            measured_generator_torque[0,idx] = turbines[idx].get_torque()
+            measured_blade_pitch[0,idx] = turbines[idx].get_pitch()
 
         measured_rotor_speed_series = np.concatenate((measured_rotor_speed_series, measured_rotor_speed.copy()))
 
