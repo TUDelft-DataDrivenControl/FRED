@@ -49,7 +49,7 @@ class Controller:
 
     def send_measurements(self, simulation_time):
         # todo: measurements
-        measurements = np.linspace(0, 6, 7)
+        measurements = np.linspace(0, 16, 17)
         measurements[0] = simulation_time
         measurement_string = " ".join(["{:.6f}".format(x) for x in measurements]).encode()
         logger.warning("Real measurements not implemented yet")

@@ -302,14 +302,19 @@ class ControlParameter:
         # logger.error("Fixed control not implemented in SSC")
 
     def _series_control(self, simulation_time):
+        # reference_index = int((simulation_time - conf.par.simulation.time_step)
+        #                       % conf.par.ssc.control_horizon // conf.par.ssc.control_discretisation)
+        # self._reference = self._reference_series[reference_index, :]
+        for idx in range(len(self._reference)):
+            self._reference[idx] = np.interp(simulation_time, self._time_series, self._reference_series[:, idx])
+
+    def _gradient_step_control(self, simulation_time):
+        # for idx in range(len(self._reference)):
+        #     self._reference[idx] = np.interp(simulation_time, self._time_series, self._reference_series[:, idx])
+        # logger.error("gradient step control not implemented in SSC")
         reference_index = int((simulation_time - conf.par.simulation.time_step)
                               % conf.par.ssc.control_horizon // conf.par.ssc.control_discretisation)
         self._reference = self._reference_series[reference_index, :]
-
-    def _gradient_step_control(self, simulation_time):
-        for idx in range(len(self._reference)):
-            self._reference[idx] = np.interp(simulation_time, self._time_series, self._reference_series[:, idx])
-        logger.error("gradient step control not implemented in SSC")
 
     def get_reference(self):
         return self._reference
