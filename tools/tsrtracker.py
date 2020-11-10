@@ -189,7 +189,7 @@ class TurbineModel:
         self._update_rotor_speed()
 
     def get_rotor_speed(self):
-        return self._rotor_speed * 30 / np.pi
+        return self._rotor_speed
 
     def get_torque(self):
         return self._torque
@@ -254,7 +254,11 @@ class TorqueController:
         logger.info(self._torque_reference_base)
         logger.info(self._torque_reference_proportional)
         logger.info(self._torque_reference_integrator)
-        return self._torque_reference_base + self._torque_reference_integrator + self._torque_reference_proportional
+        ref = np.array(self._torque_reference_base + self._torque_reference_integrator + self._torque_reference_proportional)[0]
+        lower_limit = np.zeros_like(ref)
+        upper_limit = 164025.0 * np.ones_like(ref)
+        return np.min((np.max((ref,lower_limit), axis=0), upper_limit), axis=0)
+
 
 
 def main():
@@ -289,7 +293,7 @@ def main():
 
         # iterate and gather measurements
         for idx in range(len(turbines)):
-            turbines[idx].run_time_step(wind_speed=true_wind_speed[step, idx], torque=torque_set_point[0, idx],
+            turbines[idx].run_time_step(wind_speed=true_wind_speed[step, idx], torque=torque_set_point[idx],
                                         pitch=pitch_set_point[0, idx])
             measured_rotor_speed[0, idx] = turbines[idx].get_rotor_speed()
             measured_generator_torque[0, idx] = turbines[idx].get_torque()
