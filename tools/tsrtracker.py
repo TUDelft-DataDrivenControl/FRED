@@ -12,6 +12,7 @@ class Estimator:
         self._sampling_time = sample_time
 
         self._gamma = 10.
+        # todo: change all to simple arrays?
         self._rotor_speed_filtered = np.zeros((1, num_turbines))
         self._VwI = np.zeros((1, num_turbines))
         self._VwI_prev = np.zeros((1, num_turbines))
@@ -75,6 +76,12 @@ class Estimator:
                      (wt.density * wt.rotor_area) / 2 * np.multiply(np.power(self._wind_speed, 3),
                                                                     wt.power_coefficient_lut(tsr=self._tsr,
                                                                                              pitch=measured_blade_pitch)) / w)
+
+    def get_rotor_speed_filtered(self):
+        return np.array(self._rotor_speed_filtered)[0]
+
+    def get_wind_speed_estimate(self):
+        return np.array(self._wind_speed)[0]
 
     def _update_filter(self):
         self._wind_speed_prev = self._wind_speed

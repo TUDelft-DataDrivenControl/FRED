@@ -122,9 +122,9 @@ class SuperController:
             c = [c.get_reference() for c in self._controls.values()]
             # t = ["filtered_rotor_speed", "wind_speed_estimate", "tsr_estimate"]
             if self._plant == "sowfa":
-                t = [self._tsr_tracker._estimator._rotor_speed_filtered, self._tsr_tracker._estimator._wind_speed,
-                     self._tsr_tracker._estimator._rotor_speed_filtered * (
-                             np.pi / 30) * conf.par.turbine.radius / self._tsr_tracker._estimator._wind_speed]
+                t = [self._tsr_tracker._estimator.get_rotor_speed_filtered(), self._tsr_tracker._estimator.get_wind_speed_estimate(),
+                     self._tsr_tracker._estimator.get_rotor_speed_filtered() * (
+                             np.pi / 30) * conf.par.turbine.radius / self._tsr_tracker._estimator.get_wind_speed_estimate()]
             else:
                 t = []
             # t = [np.array(x).squeeze() for x in t]
