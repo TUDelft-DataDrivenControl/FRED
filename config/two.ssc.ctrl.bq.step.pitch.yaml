@@ -44,11 +44,11 @@ ssc:
   prediction_horizon: 20.
   control_horizon: 1.
 #  objective: tracking # [tracking; maximisation]
-  plant: sowfa # [cm; sowfa] if sowfa: convert tsr to torque with tsr tracker
+  plant: cm # [cm; sowfa] if sowfa: convert tsr to torque with tsr tracker
   sowfa_time_step: 0.2
 
 simulation:
-  name: two.ssc.ctrl
+  name: two.ssc.ctrl.step.pitch
   is_dynamic: True
   total_time: -1 # s
   time_step: 1. # s

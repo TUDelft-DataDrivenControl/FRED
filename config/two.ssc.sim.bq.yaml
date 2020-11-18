@@ -3,10 +3,10 @@ mode: simulation
 simulation:
   name: two.ssc.sim
   is_dynamic: True
-  total_time: 199. # s
+  total_time: 400. # s
   time_step: 1. # s
   dimensions: 2 # -
-  save_logs: False
+  save_logs: True
   write_time_step: 10.0
 
 flow:
@@ -18,15 +18,15 @@ flow:
   wake_mixing_length: 1.5 # D
   wake_mixing_width: 0.6  # D
   wake_mixing_offset: 3.0 # D
-  wake_mixing_ml_max: 25. # m
+  wake_mixing_ml_max: 0. # m
   density: 1.2 # kg.m^-3
   continuity_correction: wfsim # none, wfsim, (general)
   finite_element: MINI
 
 wind_farm:
   size: [2000,1000]
-  cells: [20, 10]
-  do_refine_turbines: 1
+  cells: [80, 40]
+  do_refine_turbines: 0
   refine_radius: 100.
   positions: # [x, y] m
     - [400,500]
@@ -52,13 +52,15 @@ wind_farm:
 
 
 turbine:
-  axial_induction: 0.33
+  axial_induction: 0.23
   diameter: 178.4 # m
   thickness: 17.8 # m
   hub_height: 119.6 # m
-  kernel: gaussian # king, gaussian
-  deflection_scale: 3. #
+  kernel: gaussian # gaussian #gaussian # king, gaussian
+  deflection_scale: 4. #
+  force_scale_axial: 1.2
+  force_scale_transverse: 3.
   yaw_rate_limit: 0.3
-  coefficients: lut
-  pitch: 0.
+  coefficients: lut #lut
+  pitch: 0.75
   torque: 8.

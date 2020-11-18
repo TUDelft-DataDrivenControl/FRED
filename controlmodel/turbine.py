@@ -275,9 +275,12 @@ class Turbine:
                      (exp(-0.5 * pow(zr / r, 2)) / (r * sqrt(2 * pi)))
 
         # compute forcing function with kernel
-        scale = conf.par.turbine.deflection_scale
-        logger.info("Scaling force for wake deflection by factor {:.1f}".format(scale))
-        forcing = -1 * force_constant * kernel * as_vector((-sin(self._yaw), -scale * cos(self._yaw))) * ud ** 2
+        # scale = conf.par.turbine.deflection_scale
+        axial_scale = conf.par.turbine.force_scale_axial
+        transverse_scale = conf.par.turbine.force_scale_transverse
+        # logger.info("Scaling force for wake deflection by factor {:.1f}".format(scale))
+        logger.info("Scaling  turbine force - axial : {:.2f} - transverse : {:.2f}".format(axial_scale, transverse_scale))
+        forcing = -1 * force_constant * kernel * as_vector((-axial_scale*sin(self._yaw), -transverse_scale * cos(self._yaw))) * ud ** 2
         # todo: check this
         power = power_constant * kernel * ud ** 3
 
