@@ -186,10 +186,14 @@ class Turbine:
         return ctp
 
     def _update_coefficients(self):
-        logger.info("Evaluating coefficients for pitch {:.2f}, tsr {:.2f}".format(float(self._pitch), float(self._tip_speed_ratio)))
+
         ct = get_coefficient(self._ct_function, self._pitch, self._tip_speed_ratio)
         cp = get_coefficient(self._cp_function, self._pitch, self._tip_speed_ratio)
-        a = 0.33 #AdjFloat(0.5 - 0.5 * sqrt(1-ct))
+        a = ct/4 #float(0.5 - 0.5 * sqrt(1-np.min((ct,1.))))
+        logger.info("Evaluating coefficients for pitch {:.2f}, tsr {:.2f} - ct {:.2f}, cp {:.2f}".format(float(self._pitch),
+                                                                                  float(self._tip_speed_ratio),
+                                                                                  ct*(1-a),
+                                                                                  cp*(1-a)**2))
         self._axial_induction.assign(a)
         # self._axial_induction = 0.5 - 0.5 * sqrt(1-ct)
         # ct = 1.

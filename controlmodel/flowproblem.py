@@ -57,7 +57,7 @@ class FlowProblem:
         southwest_corner = Point([0.0, 0.0])
         northeast_corner = Point(conf.par.wind_farm.size)
         cells = conf.par.wind_farm.cells
-        self._mesh = RectangleMesh(southwest_corner, northeast_corner, cells[0], cells[1], diagonal='crossed')
+        self._mesh = RectangleMesh(southwest_corner, northeast_corner, cells[0], cells[1], diagonal='left/right')
         #  diagonal = “left”, “right”, “left/right”, “crossed”
 
     def _refine_mesh(self, step):
