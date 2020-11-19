@@ -93,9 +93,9 @@ class ControlModelParameters:
             self.thickness = config_dict["thickness"]
             self.hub_height = config_dict["hub_height"]
             self.kernel = config_dict["kernel"]
-            self.deflection_scale = config_dict["deflection_scale"]
             self.force_scale_axial = config_dict.get("force_scale_axial",1.)
             self.force_scale_transverse = config_dict.get("force_scale_transverse",1.)
+            self.power_scale = config_dict.get("power_scale",1.)
             self.yaw_rate_limit = config_dict.get("yaw_rate_limit",-1)
             self.coefficients = config_dict.get("coefficients", "induction")
             self.pitch = config_dict.get("pitch", 0.)

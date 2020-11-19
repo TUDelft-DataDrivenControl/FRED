@@ -19,20 +19,20 @@ ssc:
 #  type: fixed
   controls:
     yaw:
-      type: gradient_step
+      type: series
       values:
         - [0., 290., 270.]
         - [60., 290., 270.]
       rate_limit: 0.3
     pitch:
-      type: gradient_step
+      type: series
       values:
         - [0., 0., 0.]
         - [60., 0., 0.]
       rate_limit: 1.
       range: [-1., 25.]
     torque:
-      type: gradient_step
+      type: series
       values:
         - [0., 8., 8.]
         - [60., 8., 8.]
@@ -71,7 +71,7 @@ flow:
 wind_farm:
   size: [2000,1000]
   cells: [20, 10]
-  do_refine_turbines: 1
+  do_refine_turbines: 2
   refine_radius: 100.
   positions: # [x, y] m
     - [400,500]
@@ -105,8 +105,10 @@ turbine:
   diameter: 178.4 # m
   thickness: 17.8 # m
   hub_height: 119.6 # m
-  kernel: gaussian # king, gaussian
-  deflection_scale: 3. #
+  kernel: king # gaussian #gaussian # king, gaussian
+  force_scale_axial: 1.6
+  force_scale_transverse: 4.
+  power_scale: 1.4
   yaw_rate_limit: 0.3
   coefficients: lut
   pitch: 0.

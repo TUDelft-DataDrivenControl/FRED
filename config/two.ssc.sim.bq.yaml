@@ -25,8 +25,8 @@ flow:
 
 wind_farm:
   size: [2000,1000]
-  cells: [80, 40]
-  do_refine_turbines: 0
+  cells: [20, 10]
+  do_refine_turbines: 2
   refine_radius: 100.
   positions: # [x, y] m
     - [400,500]
@@ -56,10 +56,10 @@ turbine:
   diameter: 178.4 # m
   thickness: 17.8 # m
   hub_height: 119.6 # m
-  kernel: gaussian # gaussian #gaussian # king, gaussian
-  deflection_scale: 4. #
-  force_scale_axial: 1.2
-  force_scale_transverse: 3.
+  kernel: king # gaussian #gaussian # king, gaussian
+  force_scale_axial: 1.6
+  force_scale_transverse: 4.
+  power_scale: 1.4
   yaw_rate_limit: 0.3
   coefficients: lut #lut
   pitch: 0.75

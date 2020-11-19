@@ -282,7 +282,8 @@ class Turbine:
         logger.info("Scaling  turbine force - axial : {:.2f} - transverse : {:.2f}".format(axial_scale, transverse_scale))
         forcing = -1 * force_constant * kernel * as_vector((-axial_scale*sin(self._yaw), -transverse_scale * cos(self._yaw))) * ud ** 2
         # todo: check this
-        power = power_constant * kernel * ud ** 3
+        power_scale = conf.par.turbine.power_scale
+        power = power_scale * power_constant * kernel * ud ** 3
 
         # The above computation yields a two-dimensional body force.
         # This is scaled to a 3D equivalent for output.
