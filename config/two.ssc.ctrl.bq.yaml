@@ -38,11 +38,11 @@ ssc:
         - [60., 8., 8.]
       rate_limit: 1.
       range: [3., 14.]
-  transient_time: 120.
+  transient_time: 30.
   prediction_horizon: 20.
   control_horizon: 1.
 #  objective: tracking # [tracking; maximisation]
-  plant: sowfa # [cm; sowfa] if sowfa: convert tsr to torque with tsr tracker
+  plant: cm # [cm; sowfa] if sowfa: convert tsr to torque with tsr tracker
   sowfa_time_step: 0.2
 
 simulation:
@@ -111,5 +111,5 @@ turbine:
   power_scale: 1.4
   yaw_rate_limit: 0.3
   coefficients: lut
-  pitch: 0.
+  pitch: 0.75
   torque: 8.

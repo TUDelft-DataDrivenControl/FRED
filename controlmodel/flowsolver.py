@@ -235,4 +235,18 @@ class DynamicFlowSolver(FlowSolver):
         self._up_prev2.assign(self._up_prev2_checkpoint)
         set_working_tape(Tape())
 
+    def get_checkpoint(self):
+        logger.info("Returning checkpoint at t={:.2f}".format(self._simulation_time))
+        up_1 = Function(self._up_prev.function_space())
+        up_2  = Function(self._up_prev.function_space())
+        up_1.assign(self._up_prev)
+        up_2.assign(self._up_prev2)
+        # return self._simulation_time, self._up_prev.copy(deepcopy=True), self._up_prev2.copy(deepcopy=True)
+        return self._simulation_time, up_1, up_2
 
+    def set_checkpoint(self, checkpoint):
+        simulation_time, up_prev, up_prev2 = checkpoint
+        self._simulation_time = simulation_time
+        self._up_prev.assign(up_prev)
+        self._up_prev2.assign(up_prev2)
+        set_working_tape(Tape())

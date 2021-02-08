@@ -51,6 +51,7 @@ class Controller:
         # todo: measurements
         measurements = np.linspace(0, 16, 17)
         measurements[0] = simulation_time
+        measurements[1::8] = [wt.get_power() for wt in self._turbines]
         measurement_string = " ".join(["{:.6f}".format(x) for x in measurements]).encode()
         logger.warning("Real measurements not implemented yet")
         logger.info("Sending: {}".format(measurement_string))

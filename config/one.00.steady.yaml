@@ -37,6 +37,7 @@ wind_farm:
   positions: # [x, y] m
     - [400,500]
     - [1300,500]
+    - []
   yaw_angles: # [gamma] deg
     - 290.
     - 270.

@@ -13,6 +13,8 @@ from controlmodel.zmqserver import ZmqServer
 
 from tools.tsrtracker import TorqueController
 
+from controlmodel.estimator import Estimator
+
 import logging
 
 logger = logging.getLogger("cm.ssc")
@@ -46,14 +48,16 @@ class SuperController:
         self._num_turbines = len(conf.par.wind_farm.positions)
 
         # todo: re-attach to sowfa
-        if self._with_gradient_step:
-            self._wind_farm = WindFarm()
-            self._dynamic_flow_problem = DynamicFlowProblem(self._wind_farm)
-            self._dynamic_flow_solver = DynamicFlowSolver(self._dynamic_flow_problem, ssc=self)
-            self._time_last_optimised = -1.
+        # if self._with_gradient_step:
+        self._wind_farm = WindFarm()
+        self._dynamic_flow_problem = DynamicFlowProblem(self._wind_farm)
+        self._dynamic_flow_solver = DynamicFlowSolver(self._dynamic_flow_problem, ssc=self)
+        self._time_last_optimised = -1.
 
         if self._plant == "sowfa":
             self._tsr_tracker = TorqueController(len(conf.par.wind_farm.positions), conf.par.ssc.sowfa_time_step)
+
+        self._estimator = Estimator()
 
     def start(self):
         self._server = ZmqServer(conf.par.ssc.port)
@@ -67,12 +71,23 @@ class SuperController:
             self._sim_time = sim_time
             self._assign_measurements(measurements)
 
+            # #todo: state estimation
+            # self._estimator.store_checkpoint(self._sim_time, self._dynamic_flow_solver.get_checkpoint())
+            # self._estimator.store_measurement(self._sim_time,self._measurements)
+            # self._estimator.store_controls(self._sim_time, self._controls)
+            # if self._sim_time > conf.par.ssc.transient_time:
+            #     self._estimator.do_estimation()
+            # #todo: use updated state
+            # # self._dynamic_flow_solver.set_checkpoint(self._estimator.get_updated_checkpoint())
+
             for control in self._controls.values():
                 control.do_control(sim_time)
-            if self._with_gradient_step:
-                if (sim_time - self._time_last_optimised >= conf.par.ssc.control_horizon) \
-                        or (self._time_last_optimised < 0):
+            if (sim_time - self._time_last_optimised >= conf.par.ssc.control_horizon) \
+                    or (self._time_last_optimised < 0):
+                if self._with_gradient_step:
                     self._compute_gradients(sim_time)
+                # with stop_annotating():
+                #     self._dynamic_flow_solver.solve_segment(conf.par.ssc.control_horizon)
 
             send_controls = []
             if self._plant == "cm":
@@ -162,7 +177,7 @@ class SuperController:
                 start_index = end_index
 
         self._dynamic_flow_solver.reset_checkpoint()
-        self._dynamic_flow_solver.solve_segment(conf.par.ssc.control_horizon)
+        # self._dynamic_flow_solver.solve_segment(conf.par.ssc.control_horizon)
 
     def _do_forward_simulation(self):
         time_horizon = conf.par.ssc.prediction_horizon
