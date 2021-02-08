@@ -1,0 +1,57 @@
+mode: simulation
+
+simulation:
+  name: fc.A1.1WT
+  is_dynamic: True
+  total_time: 800. # s
+  time_step: 1. # s
+  dimensions: 2 # -
+  save_logs: True
+  write_time_step: 10.0
+
+flow:
+  type: "steady"
+  inflow_velocity: [4.5, 225.]  # [|U|, theta]
+  kinematic_viscosity: 0.000015 # kg.m^-1.s^-1
+  tuning_viscosity: 1. # kg.m^-1.s^-1
+  mixing_length: 10. #30. #20 # m
+  wake_mixing_length: 1.5 # D
+  wake_mixing_width: 0.6  # D
+  wake_mixing_offset: 3.0 # D
+  wake_mixing_ml_max: 25 # m
+  density: 1.2 # kg.m^-3
+  continuity_correction: none # none, wfsim, (general)
+  finite_element: MINI # TH, MINI
+
+wind_farm:
+  size: [5000,5000]
+  cells: [50, 50]
+  do_refine_turbines: 2 # n refinements
+  refine_radius: 100. # m
+  positions: # [x, y] m
+    - [954.5, 954.5]
+  yaw_angles: # [gamma] deg
+    - 225.
+  farm_controller:
+    control_discretisation: 1.
+    controls:
+      yaw:
+#        type: series
+        type: fixed
+#        values:
+#          - [0., 225.]
+#          - [60., 225.]
+#      axial_induction:
+#        type: fixed
+
+turbine:
+  axial_induction: 0.33
+  diameter: 178.3 # m
+  thickness: 30. # 17.8 # m
+  hub_height: 119.0 # m
+  kernel: gaussian # king, gaussian
+  force_scale_axial: 1
+  force_scale_transverse: 1.
+  power_scale: 1
+  yaw_rate_limit: 0.3
+  coefficients: induction
