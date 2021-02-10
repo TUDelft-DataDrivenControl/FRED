@@ -42,8 +42,8 @@ class FlowSolver:
         self._vtk_file_u = File(results_dir + "/U.pvd")
         self._vtk_file_p = File(results_dir + "/p.pvd")
         self._vtk_file_f = File(results_dir + "/f.pvd")
-        self._vtk_file_nu = File(results_dir + "/nu.pvd")
-        self._vtk_file_pe = File(results_dir + "/Pe.pvd")
+        # self._vtk_file_nu = File(results_dir + "/nu.pvd")
+        # self._vtk_file_pe = File(results_dir + "/Pe.pvd")
         self._data_file = results_dir + "/log.csv"
 
         # write headers for csv data log file
@@ -217,9 +217,9 @@ class DynamicFlowSolver(FlowSolver):
             self._vtk_file_f.write(
                 project(self._forcing, self._force_space,
                         annotate=False))
-            nut = project(self._nu_turbulent, self._scalar_space,
-                        annotate=False)
-            self._vtk_file_nu.write(nut)
+            # nut = project(self._nu_turbulent, self._scalar_space,
+            #             annotate=False)
+            # self._vtk_file_nu.write(nut)
 
     def save_checkpoint(self):
         logger.info("Saving checkpoint at t={:.2f}".format(self._simulation_time))

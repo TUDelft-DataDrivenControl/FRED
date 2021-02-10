@@ -17,7 +17,8 @@ class FlowProblem:
         self._mesh = None
         self._generate_mesh()
         for step in range(conf.par.wind_farm.do_refine_turbines):
-            self._refine_mesh(step+1)
+            # largest area first
+            self._refine_mesh(conf.par.wind_farm.do_refine_turbines-1)
 
         self._mixed_function_space = None
         self._setup_function_space()
