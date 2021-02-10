@@ -23,21 +23,64 @@ parameters["form_compiler"]["optimize"] = True
 def main():
     time_start = time.time()
     # conf.par.load("config/farmconners/fc.A1.yaml")
-    for yaw_offset in np.linspace(-30, 30, 7):
-        conf.par.load("config/farmconners/fc.A1.WT1.yaml")
-
-        conf.par.simulation.name = "fc.A1.1WT.{:s}{:03.0f}".format("plus" if yaw_offset >= 0. else "min",
-                                                           np.abs(yaw_offset))
-        conf.par.wind_farm.yaw_angles += np.deg2rad(yaw_offset)
-
-        wind_farm = WindFarm()
-        dfp = DynamicFlowProblem(wind_farm)
-        dfs = DynamicFlowSolver(dfp)
-        dfs.solve()
+    # run_one_turbine_cases()
+    # run_three_turbine_cases()
+    run_nine_turbine_cases()
 
     time_end = time.time()
     logger.info("Total time: {:.2f} seconds".format(time_end - time_start))
 
+def run_one_turbine_cases():
+    for yaw_offset in [0.]: #np.linspace(-30, 30, 7):
+        conf.par.load("config/farmconners/fc.A4.1WT.yaml")
+        conf.par.simulation.name = "fc.A4.1WT.Y{:03.0f}".format(yaw_offset)
+        conf.par.wind_farm.yaw_angles += np.deg2rad(yaw_offset)
+        run_case()
+
+def run_three_turbine_cases():
+    offsets = [[  0., -10., 0.],
+               [  0., -30., 0.],
+               [ 10.,   0., 0.],
+               [-10.,   0., 0.],
+               [-10., -10., 0.],
+               [-10., -10., 0.],
+               [-10., -30., 0.],
+               [ 30,    0., 0.],
+               [-30.,   0., 0.],
+               [-30., -10., 0.],
+               [-30., -20., 0.],
+               [-30., -30., 0.]]
+    for yaw_offsets in offsets[0:1]:
+        conf.par.load("config/farmconners/fc.A4.3WT.yaml")
+        conf.par.simulation.name += ".Y{:03.0f}_Y{:03.0f}_Y{:03.0f}".format(*yaw_offsets)
+        conf.par.wind_farm.yaw_angles += np.deg2rad(yaw_offsets)
+        run_case()
+
+def run_nine_turbine_cases():
+    offsets = [[-10., -10., 0., -10., -20., 0., -10., -30., 0.],
+               [-30., -10., 0., -30., -20., 0., -30., -30., 0.],
+               [-10.,   0., 0., -20.,   0., 0., -30.,   0., 0.]]
+    for yaw_offsets in offsets[0:]:
+        conf.par.load("config/farmconners/fc.A4.9WT.yaml")
+        for row in range(3):
+            connector = "." if row == 0 else "_"
+            row_sign = "-" if yaw_offsets[row] < 0. else ""
+            conf.par.simulation.name += \
+                "{:s}Y{:s}{:1.0f}{:1.0f}{:1.0f}".format(
+                    connector,
+                    row_sign,
+                    *[np.abs(y/10.) for y in yaw_offsets[row::3]])
+        conf.par.wind_farm.yaw_angles += np.deg2rad(yaw_offsets)
+        run_case()
+
+def run_case():
+    t0 = time.time()
+    wind_farm = WindFarm()
+    dfp = DynamicFlowProblem(wind_farm)
+    dfs = DynamicFlowSolver(dfp)
+    dfs.solve()
+    t1 = time.time()
+    logger.info("Case {:s} ran in {:.2f} s".format(conf.par.simulation.name,t1-t0))
 
 if __name__ == '__main__':
     main()
