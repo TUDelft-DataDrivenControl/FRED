@@ -1,7 +1,7 @@
 from fenics import *
 import controlmodel.conf as conf
-if conf.with_adjoint:
-    from fenics_adjoint import *
+# if conf.with_adjoint:
+#     from fenics_adjoint import *
 from controlmodel.windfarm import WindFarm
 from controlmodel.flowproblem import DynamicFlowProblem, SteadyFlowProblem
 from controlmodel.flowsolver import DynamicFlowSolver, SteadyFlowSolver
@@ -24,7 +24,7 @@ def main():
     time_start = time.time()
     # conf.par.load("config/farmconners/fc.A1.yaml")
     # run_one_turbine_cases()
-    # run_three_turbine_cases()
+    run_three_turbine_cases()
     run_nine_turbine_cases()
 
     time_end = time.time()
