@@ -50,7 +50,7 @@ def run_three_turbine_cases():
                [-30., -10., 0.],
                [-30., -20., 0.],
                [-30., -30., 0.]]
-    for yaw_offsets in offsets[0:1]:
+    for yaw_offsets in offsets[0:]:
         conf.par.load("config/farmconners/fc.A4.3WT.yaml")
         conf.par.simulation.name += ".Y{:03.0f}_Y{:03.0f}_Y{:03.0f}".format(*yaw_offsets)
         conf.par.wind_farm.yaw_angles += np.deg2rad(yaw_offsets)
