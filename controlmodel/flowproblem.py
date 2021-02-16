@@ -280,7 +280,7 @@ class DynamicFlowProblem(FlowProblem):
                 ys = x[1] - pos[1]
                 # rotate space
                 # todo: get wind direction from constants
-                theta = np.deg2rad(270)
+                theta = np.deg2rad(self._theta)
                 logger.warning("Gaussian mixing length variation assumes fixed West wind")
                 diameter = conf.par.turbine.diameter
                 length = conf.par.flow.wake_mixing_length * diameter
