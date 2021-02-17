@@ -1,7 +1,7 @@
 #!/bin/sh
 #
 #PBS -l nodes=1:ppn=16
-#PBS -N cm.fc.multi
+#PBS -N cm.fc.multi.plot
 
 bash
 cd $PBS_O_WORKDIR

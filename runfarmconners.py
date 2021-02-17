@@ -181,6 +181,7 @@ if __name__ == '__main__':
             main_run()
         elif sys.argv[1] == "plot":
             print("starting plot")
+            main_plot()
         else:
             print("Choose either 'plot' or 'run' ")
     else:
