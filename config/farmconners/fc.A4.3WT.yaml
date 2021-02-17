@@ -20,13 +20,13 @@ flow:
   wake_mixing_offset: 3.0 # D
   wake_mixing_ml_max: 25 # m
   density: 1.2 # kg.m^-3
-  continuity_correction: none # none, wfsim, (general)
+  continuity_correction: wfsim_gen # none, wfsim, (general)
   finite_element: MINI # TH, MINI
 
 wind_farm:
   size: [5000,5000]
-  cells: [50, 50]
-  do_refine_turbines: 2 # n refinements
+  cells: [25,25]
+  do_refine_turbines: 3 # n refinements
   refine_radius: 200. # m
   positions: # [x, y] m
     - [ 954.5,  954.5]
@@ -49,7 +49,7 @@ turbine:
   hub_height: 119.0 # m
   kernel: gaussian # king, gaussian
   force_scale_axial: 1
-  force_scale_transverse: 1.
+  force_scale_transverse: 3.
   power_scale: 1
   yaw_rate_limit: 0.3
   coefficients: induction
