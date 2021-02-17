@@ -30,5 +30,5 @@ export LD_LIBRARY_PATH=$HOME/opt/lib:$HOME/opt/lib64:$LD_LIBRARY_PATH
 # make sure cmake3 is used
 alias cmake=cmake3
 
-python ./runfarmconners.py run
+python ./runfarmconners.py plot
 
