@@ -213,6 +213,7 @@ class SteadyFlowProblem(FlowProblem):
         self._nu_turbulent = nu_combined
         # Take the combination of all turbine forcing kernels to add into the flow
         forcing_list = [wt.compute_forcing(u) for wt in self._wind_farm.get_turbines()]
+        logger.warning("no force scaling in steady flow")
         f = sum(forcing_list)
         self._forcing = f
 
@@ -267,7 +268,18 @@ class DynamicFlowProblem(FlowProblem):
 
         # Take the combination of all turbine forcing kernels to add into the flow
         forcing_list = [wt.compute_forcing(u_prev) for wt in self._wind_farm.get_turbines()]
+
+
         f = sum(forcing_list)
+        axial_scale = Constant(conf.par.turbine.force_scale_axial)
+        transverse_scale = Constant(conf.par.turbine.force_scale_transverse)
+        # logger.info("Scaling force for wake deflection by factor {:.1f}".format(scale))
+        # logger.info("Scaling  turbine force - axial : {:.2f} - transverse : {:.2f}".format(axial_scale, transverse_scale))
+        theta = self._theta
+        e0 = as_vector((sin(theta), cos(theta)))
+        e1 = as_vector((-cos(theta), sin(theta)))
+        f = axial_scale * dot(f, e0) * e0 + transverse_scale * dot(f, e1) * e1
+
         self._forcing = f
 
         # Turbulence modelling with a mixing length model.
