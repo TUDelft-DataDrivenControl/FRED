@@ -27,7 +27,7 @@ def main():
         time_start = time.time()
         # conf.par.load("config/farmconners/fc.A1.yaml")
         # run_one_turbine_cases()
-        # run_three_turbine_cases() #12
+        run_three_turbine_cases() #12
         run_nine_turbine_cases() #3
 
         time_end = time.time()
@@ -61,7 +61,7 @@ def run_three_turbine_cases():
         run_case()
 
     for yaw_offsets in offsets[0:]:
-        Process(target=run_3WT_case,args=[yaw_offsets])
+        Process(target=run_3WT_case,args=[yaw_offsets]).start()
 
 def run_nine_turbine_cases():
     offsets = [[-10., -10., 0., -10., -20., 0., -10., -30., 0.],
