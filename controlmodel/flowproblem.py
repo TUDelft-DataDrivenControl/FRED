@@ -18,7 +18,7 @@ class FlowProblem:
         self._generate_mesh()
         for step in range(conf.par.wind_farm.do_refine_turbines):
             # largest area first
-            self._refine_mesh(conf.par.wind_farm.do_refine_turbines+1)
+            self._refine_mesh(conf.par.wind_farm.do_refine_turbines-step)
 
         self._mixed_function_space = None
         self._setup_function_space()
@@ -28,9 +28,9 @@ class FlowProblem:
         self._boundary_conditions = []
 
         self._u_mag = conf.par.flow.inflow_velocity[0]
-        self._theta = conf.par.flow.inflow_velocity[1]
-        theta = self._theta * pi / 180.
-        self._inflow_velocity = Constant((-self._u_mag * sin(theta), -self._u_mag * cos(theta)))
+        self._theta = Constant(np.deg2rad(conf.par.flow.inflow_velocity[1]))
+        # theta = self._theta * pi / 180.
+        self._inflow_velocity = Constant((-self._u_mag * sin(self._theta), -self._u_mag * cos(self._theta)))
         # self._inflow_velocity = Constant((8.,0.))
         # self._u_mag = conf.par.flow.inflow_velocity[0]
         # self._theta = conf.par.flow.inflow_velocity[1]
@@ -280,15 +280,15 @@ class DynamicFlowProblem(FlowProblem):
                 ys = x[1] - pos[1]
                 # rotate space
                 # todo: get wind direction from constants
-                theta = np.deg2rad(self._theta)
-                logger.warning("Gaussian mixing length variation assumes fixed West wind")
+                theta = self._theta
+                # logger.warning("Gaussian mixing length variation assumes fixed West wind")
                 diameter = conf.par.turbine.diameter
                 length = conf.par.flow.wake_mixing_length * diameter
                 offset = conf.par.flow.wake_mixing_offset * diameter
                 width = conf.par.flow.wake_mixing_width * diameter
                 ml_max = conf.par.flow.wake_mixing_ml_max
-                xr = -np.sin(theta) * xs - np.cos(theta) * ys - offset
-                yr = np.cos(theta) * xs - np.sin(theta) * ys
+                xr = -sin(theta) * xs - cos(theta) * ys - offset
+                yr = cos(theta) * xs - sin(theta) * ys
 
                 ml.append(ml_max * exp(- pow(xr / length, 2) - pow(yr / width, 4)))
             return sum(ml)
@@ -315,9 +315,17 @@ class DynamicFlowProblem(FlowProblem):
         if conf.par.flow.continuity_correction == "wfsim":
             logger.info("Applying WFSim continuity correction, valid for West-East flow")
             # attempt to modify relaxation according to Boersma2018 WFSim
-            continuity_correction = 1 * u[1].dx(1)
+            divu = 1 * u[1].dx(1)
+        elif conf.par.flow.continuity_correction == "wfsim_gen":
+            logger.info("Applying Generalised WFSim continuity correction.")
+            theta = self._theta
+            divu = -(-sin(theta) * u[0].dx(0) - cos(theta) * u[1].dx(0)) * sin(theta) \
+                     - (-sin(theta) * u[0].dx(1) - cos(theta) * u[1].dx(1)) * cos(theta) \
+                     + (-2 * sin(theta) * u[1].dx(0) + 2 * cos(theta) * u[0].dx(0)) * cos(theta) \
+                     - (-2 * sin(theta) * u[1].dx(1) + 2 * cos(theta) * u[0].dx(1)) * sin(theta)
         else:
             logger.info("Applying no continuity correction")
+            divu = div(u)
             continuity_correction = 0
 
         nu_combined = nu + nu_tuning + nu_turbulent
@@ -327,7 +335,7 @@ class DynamicFlowProblem(FlowProblem):
                            + dt * convective_term * dx \
                            - dt * inner(f, v) * dx \
                            - dt * inner(div(v), p) * dx \
-                           + inner(div(u) + continuity_correction, q) * dx
+                           + inner(divu, q) * dx
         # + dt * (nu + nu_tuning + nu_turbulent) * inner(nabla_grad(u_bar), nabla_grad(v)) * dx \
 
             # variational_form = inner(u - u_prev, v) * dx \
@@ -345,6 +353,6 @@ class DynamicFlowProblem(FlowProblem):
             u_mag_series = conf.par.flow.inflow_velocity_series[:, 1]
             theta_series = conf.par.flow.inflow_velocity_series[:, 2]
             self._u_mag = np.interp(simulation_time, t, u_mag_series)
-            self._theta = np.interp(simulation_time, t, theta_series)
+            self._theta.assign(np.deg2rad(np.interp(simulation_time, t, theta_series)))
             self._update_inflow_velocity()
             logger.info("Inflow spec is: [{:.2f}, {:.2f}]".format(float(self._u_mag), float(self._theta)))

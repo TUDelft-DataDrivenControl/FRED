@@ -162,13 +162,15 @@ class DynamicFlowSolver(FlowSolver):
         self._flow_problem.update_inflow(self._simulation_time)
         self._flow_problem.get_wind_farm().apply_controller(self._simulation_time)
 
-        A = assemble(self._left)
-        b = assemble(self._right)
-        x = self._up_next.vector()
-        for bc in self._flow_problem.get_boundary_conditions():
-            bc.apply(A, b)
-        solve(A, x, b,
-              self._solver, self._preconditioner)
+        # A = assemble(self._left)
+        # b = assemble(self._right)
+        # x = self._up_next.vector()
+        # for bc in self._flow_problem.get_boundary_conditions():
+        #     bc.apply(A, b)
+        # solve(A, x, b,
+        #       self._solver, self._preconditioner)
+        logger.info("adjusted solver to a==L format")
+        solve(self._left==self._right, self._up_next, self._flow_problem.get_boundary_conditions())
 
         logger.info(
             "{:.2f} seconds sim-time in {:.2f} seconds real-time".format(self._simulation_time,
