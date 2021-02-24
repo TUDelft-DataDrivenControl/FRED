@@ -26,6 +26,7 @@
 
 .idea
 results
+data
 log
 jit*
 docs/build/*
