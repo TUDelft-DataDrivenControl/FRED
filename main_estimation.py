@@ -32,7 +32,6 @@ parameters["form_compiler"]["optimize"] = True
 
 
 def main():
-    print("do_somethin")
     # load measurements
     time_start = time.time()
     # conf.par.load("./config/test_config.yaml")

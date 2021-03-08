@@ -23,8 +23,15 @@ class Estimator:
 
     """
     def __init__(self):
-        self._assimilation_window = 20 # todo: from config
-        # self._
+        self._estimator_type = conf.par.estimator.estimation_type
+        if self._estimator_type != "offline":
+            logger.error("Only `offline` estimation is implemented")
+
+        self._assimilation_window = conf.par.estimator.assimilation_window
+        self._transient_period = conf.par.estimator.transient_period
+        self._predicition_period = conf.par.estimator.prediction_period
+
+        self._cost_function_weights = conf.par.estimator.cost_function_weights
 
         self._wind_farm = WindFarm()
         self._dynamic_flow_problem = DynamicFlowProblem(self._wind_farm)
@@ -32,7 +39,7 @@ class Estimator:
         # self._time_last_optimised = -1.
 
         self._time_measured = []
-        self._stored_measurements = []
+        self._stored_measurements = {}
         self._stored_state = []
         self._stored_controls = {}
         self._stored_controls["time"] = np.zeros(self._assimilation_window)
@@ -43,22 +50,32 @@ class Estimator:
         self._yaw_file = data_dir + conf.par.estimator.data["yaw"]
         self._probe_file = data_dir + conf.par.estimator.data["probe"]
 
+
     def load_measurements(self):
         self._load_measurements_from_sowfa()
 
     def _load_measurements_from_sowfa(self):
         # measurement_function_space = FunctionSpace(measurement_mesh, V_m)
-        logger.info("Loading measurement data from SOWFA")
+        logger.info("Loading measurement data from SOWFA files")
         t, p, nt = read_power_sowfa(self._power_file)
         t, y, nt = read_power_sowfa(self._yaw_file)
+        if len(self._wind_farm.get_turbines()) != nt:
+            logger.error("Data has {:d} turbines but estimator is initialised with {:d}".format(nt, len(self._wind_farm.get_turbines())))
+        logger.info("Loaded power and yaw data")
 
-        print("Resampling data")
+        logger.info("Resampling data to simulation time step")
         # todo: convert below code to work in class
-        # model_time = np.arange(0, total_time + assimilation_time, 1)
-        # for idx in range(nt):
-        #     power_vec[:, idx] = np.interp(model_time, t, p[:, idx])
-        #     yaw_ref_vec[:, idx] = np.interp(model_time, t, y[:, idx])
-        # yaw_ref_vec = np.deg2rad(yaw_ref_vec)
+        time_vec = np.arange(0, t[-1], conf.par.simulation.time_step)
+        self._stored_measurements["time"] = time_vec
+        num_measurements = len(time_vec)
+        self._stored_measurements["power"] = np.zeros((num_measurements,nt))
+        self._stored_measurements["yaw"] = np.zeros((num_measurements, nt))
+        for idx in range(nt):
+            self._stored_measurements["power"][:, idx] = np.interp(time_vec, t, p[:, idx])
+            self._stored_measurements["yaw"][:, idx] = np.interp(time_vec, t, y[:, idx])
+        self._stored_measurements["yaw"] = np.deg2rad(self._stored_measurements["yaw"])
+        logger.info("Loaded nacelle yaw measurements in degrees and stored in radians")
+        
         #
         # probe_positions, t, probe_data = read_probe_data(data_dir + "U")
         # # probe_measurement_points = []
