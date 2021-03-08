@@ -75,9 +75,27 @@ def read_power_sowfa(filename):
     for idx in range(num_turbines):
         print(idx)
         value_data[:,idx] = data[idx::num_turbines,3]
-    value_data = value_data / 1.225 / 1e6
+    if "generatorPower" in filename:
+        value_data = value_data / 1.225 / 1e6
 
     return time_data, value_data, num_turbines
+
+# def read_power_sowfa(filename):
+#     if "bladePitch" in filename:
+#         converter = {3: lambda s: float(s.replace(b"}",b"").replace(b"3{",b""))}
+#     else:
+#         converter = None
+#     data = np.genfromtxt(filename, converters=converter)
+#
+#     num_turbines = int(np.max(data[:, 0]) + 1)
+#     time_data = data[0::num_turbines, 1] - data[0, 1]
+#     value_data = np.zeros((len(time_data), num_turbines))
+#     for idx in range(num_turbines):
+#         print(idx)
+#         value_data[:,idx] = data[idx::num_turbines,3]
+#     value_data = value_data
+#
+#     return time_data, value_data, num_turbines
 
 def read_power_wasp(filename,num_turbines):
     df = pd.read_csv(filename)

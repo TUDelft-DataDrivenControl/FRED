@@ -9,6 +9,9 @@ from controlmodel.windfarm import WindFarm
 from controlmodel.flowproblem import DynamicFlowProblem
 from controlmodel.flowsolver import DynamicFlowSolver
 
+from tools.data import *
+from tools.probes import *
+
 import logging
 
 logger = logging.getLogger("cm.estimator")
@@ -20,7 +23,7 @@ class Estimator:
 
     """
     def __init__(self):
-        self._assimilation_window = 20
+        self._assimilation_window = 20 # todo: from config
         # self._
 
         self._wind_farm = WindFarm()
@@ -34,6 +37,47 @@ class Estimator:
         self._stored_controls = {}
         self._stored_controls["time"] = np.zeros(self._assimilation_window)
         self._power_measured = []
+
+        data_dir = conf.par.estimator.data["dir"]
+        self._power_file = data_dir + conf.par.estimator.data["power"]
+        self._yaw_file = data_dir + conf.par.estimator.data["yaw"]
+        self._probe_file = data_dir + conf.par.estimator.data["probe"]
+
+    def load_measurements(self):
+        self._load_measurements_from_sowfa()
+
+    def _load_measurements_from_sowfa(self):
+        # measurement_function_space = FunctionSpace(measurement_mesh, V_m)
+        logger.info("Loading measurement data from SOWFA")
+        t, p, nt = read_power_sowfa(self._power_file)
+        t, y, nt = read_power_sowfa(self._yaw_file)
+
+        print("Resampling data")
+        # todo: convert below code to work in class
+        # model_time = np.arange(0, total_time + assimilation_time, 1)
+        # for idx in range(nt):
+        #     power_vec[:, idx] = np.interp(model_time, t, p[:, idx])
+        #     yaw_ref_vec[:, idx] = np.interp(model_time, t, y[:, idx])
+        # yaw_ref_vec = np.deg2rad(yaw_ref_vec)
+        #
+        # probe_positions, t, probe_data = read_probe_data(data_dir + "U")
+        # # probe_measurement_points = []
+        #
+        # probe_data = probe_data[t % 1 <= 0.01, :, 0:2]
+        # coords = measurement_function_space.sub(0).collapse().tabulate_dof_coordinates()
+        # points = probe_positions
+        # indices = []
+        # for coord in coords:
+        #     # print(point)
+        #     idx = int(np.logical_and(points[:, 0] == coord[0], points[:, 1] == coord[1]).nonzero()[0])
+        #     indices.append(idx)
+        # # indices = dof_to_vertex_map(measurement_function_space)
+        # # indices =vertex_to_dof_map(measurement_function_space)
+        # for n in range(len(velocity_measurements) - 1):
+        #     velocity_measurements[n + 1].vector()[:] = probe_data[n + 1, indices, :].ravel()
+        #     # velocity_measurements[n].vector()[:] = probe_data[n,:,:].ravel()[indices]
+        # velocity_measurements[0].assign(velocity_measurements[1])
+
 
     def store_checkpoint(self, simulation_time, checkpoint):
         self._stored_state.append(checkpoint)
@@ -80,6 +124,9 @@ class Estimator:
         # self._dynamic_flow_solver.solve_segment(conf.par.ssc.control_horizon)
 
     def construct_functional(self):
+        # todo: make private
+        # todo: proper cost function
+        # todo: weights from config
         # get stored power
         power_stored = self._power_measured[-self._assimilation_window:]
         # get modelled power

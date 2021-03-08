@@ -54,6 +54,8 @@ class ControlModelParameters:
             self.flow = self.Flow(self._config["flow"])
             # else:
             #     self.simulation = self.Simulation(self._config["simulation"])
+        if "estimator" in self._config.keys():
+            self.estimator = self.Estimator(self._config["estimator"])
 
     class WindFarm:
         def __init__(self, config_dict):
@@ -153,6 +155,24 @@ class ControlModelParameters:
             self.plant = config_dict.get("plant", "cm")
             if self.plant == "sowfa":
                 self.sowfa_time_step = config_dict["sowfa_time_step"]
+
+    class Estimator:
+        def __init__(self, config_dict):
+            try:
+                self.source = config_dict["source"]
+            except KeyError as ke:
+                logger.error("Only SOWFA as data source implemented")
+            self.estimation_type = config_dict["type"]
+            self.assimilation_window = config_dict["assimilation_window"]
+            self.forward_step = config_dict.get("forward_step", 1)
+            self.transient_period = config_dict.get("transient_period", -1)
+            self.prediction_period = config_dict.get("prediction_period", 0)
+            self.cost_function_weights = config_dict["cost_function_weights"]
+            self.data = config_dict["data"]
+
+
+
+
 
 par = ControlModelParameters()
 wind_farm = par.wind_farm

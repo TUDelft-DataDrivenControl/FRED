@@ -78,7 +78,8 @@ def read_probe_data(filename="data/U", plot_probes=False):
 
         probe_position_array = np.array(probe_positions)
         time_array = np.array(time_series)
-        if time_array[0] >= 20000
+        if time_array[0] >= 20000:
+            time_array -= 20000
         data_array = np.array(data_series)
 
         # Probe measurement scatter plot

@@ -57,21 +57,15 @@ x2 = [Constant(r) for r in np.random.rand(1)]
 idx = 0
 y = Constant(0.)
 
-ct = get_coefficient(z, x1[idx], x2[idx])
-a = AdjFloat(sqrt(1-ct))
-# y.assign(sqrt(1-ct))
-# y_intermediate = pow((1-ct), 0.5)
-# y.assign(y_intermediate)
-# ctp = ct * (1-y)
+dz = Function(V1)
 
-# J = project(ctp**2, FunctionSpace(mesh,"DG",1))
-# J = Constant(0.)
-# J.assign(project(ctp**2, J.ufl_function_space()))
-# J = AdjFloat(ctp**2)
-# J.assign(ctp**2)
-# J  = assemble(project(ctp**2, V0)*dx)
-J = (ct*a) ** 2
-controls = x1 + x2
+z.assign(project(z+dz,V1))
+ct = get_coefficient(z, x1[idx], x2[idx])
+# a = AdjFloat(sqrt(1-ct))
+
+J = (ct) ** 2
+# controls = x1 + x2
+controls = [dz]
 m = [Control(c) for c in controls]
 h = [Constant(0.01*np.random.rand()) for c in controls]
 
