@@ -13,23 +13,18 @@ from tools.data import *
 import time
 
 set_log_active(False)
-import logging
 
 parameters["form_compiler"]["quadrature_degree"] = 8
 parameters["form_compiler"]["optimize"] = True
 
-logging.basicConfig(level=logging.INFO,
-                    format='%(asctime)s %(name)-16s %(levelname)-8s %(message)s',
-                    datefmt='%Y-%m-%d %H:%M',
-                    filename='thrust_sine.log',
-                    filemode='w')
-logger = logging.getLogger('')
+
 
 import os
 from multiprocessing import Process, Pool
 from itertools import product
 
 def run_sine_test(induction_amplitude=0, strouhal=0.25 ):
+    print("Running amplitude {:03d} strouhal {:03d}".format(int(100*induction_amplitude), int(100*strouhal)))
     conf.par.load("./config/two.03.thrust_sine.yaml")
     conf.par.simulation.save_logs = False
     conf.par.simulation.name += ".{:03d}.{:03d}".format(int(100*induction_amplitude), int(100*strouhal))
@@ -48,16 +43,13 @@ def run_sine_test(induction_amplitude=0, strouhal=0.25 ):
     induction_reference_series[:, 1] = 0.33 - induction_amplitude + induction_amplitude * np.sin(
         radial_frequency * new_time_series)
     induction_reference_series[:, 2] = 0.33
+    conf.par.wind_farm.controller.controls["axial_induction"]["values"] = induction_reference_series
 
-    time_start = time.time()
     with stop_annotating():
         wind_farm = WindFarm()
         dfp = DynamicFlowProblem(wind_farm)
         dfs = DynamicFlowSolver(dfp)
         dfs.solve()
-
-    time_end = time.time()
-    logger.info("Total time: {:.2f} seconds".format(time_end - time_start))
 
     logfile = "./results/" + conf.par.simulation.name + "/log.csv"
     nt = len(conf.par.wind_farm.positions)
