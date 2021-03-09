@@ -97,6 +97,15 @@ def read_power_sowfa(filename):
 #
 #     return time_data, value_data, num_turbines
 
+def read_log_data(filename,num_turbines,var="yaw"):
+    df = pd.read_csv(filename)
+    time_data = df['time'].to_numpy()
+    if var=="power_ref":
+        value_data = df[['{:s}'.format(var)]].to_numpy()
+    else:
+        value_data = df[['{:s}_{:03d}'.format(var,x) for x in range(num_turbines)]].to_numpy()
+    return time_data, value_data
+
 def read_power_wasp(filename,num_turbines):
     df = pd.read_csv(filename)
     time_data = df['time'].to_numpy()
