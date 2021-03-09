@@ -24,10 +24,10 @@ from multiprocessing import Process, Pool
 from itertools import product
 
 def run_sine_test(induction_amplitude=0, strouhal=0.25 ):
-    print("Running amplitude {:03d} strouhal {:03d}".format(int(100*induction_amplitude), int(100*strouhal)))
+    print("Running amplitude {:03d} strouhal {:03d}".format(int(1000*induction_amplitude), int(1000*strouhal)))
     conf.par.load("./config/two.03.thrust_sine.yaml")
     conf.par.simulation.save_logs = False
-    conf.par.simulation.name += ".{:03d}.{:03d}".format(int(100*induction_amplitude), int(100*strouhal))
+    conf.par.simulation.name += "/{:03d}.{:03d}".format(int(1000*induction_amplitude), int(1000*strouhal))
 
     # strouhal = 0.25
     velocity = conf.par.flow.inflow_velocity[0]  # m.s^-1
@@ -57,7 +57,13 @@ def run_sine_test(induction_amplitude=0, strouhal=0.25 ):
 
     t, p = read_log_data(logfile, nt, var="power")
 
-    mp = np.mean(np.sum(p, axis=1)[180:])
+    t0 = 180
+    tot = conf.par.simulation.total_time
+    dt = tot-t0
+    period = 1/frequency
+    nperiods = dt // period
+    t1 = int(t0+nperiods*period)
+    mp = np.mean(np.sum(p, axis=1)[t0:t1])
     print("Mean power is: {:.3f} MW".format(mp))
     return [induction_amplitude, strouhal, mp]
 
@@ -85,7 +91,7 @@ def worker(procnum,pnum2):
 
 if __name__ == '__main__':
     a = np.linspace(0,0.15,16)
-    st = np.linspace(0.1,0.4,7)
+    st = np.linspace(0.1,0.4,13)
 
     pool = Pool(processes = 40)
     results = pool.starmap(run_sine_test, product(a, st))

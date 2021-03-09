@@ -6,7 +6,7 @@ mode: simulation
 simulation:
   name: two.03.thrust_sine
   is_dynamic: True
-  total_time: 400. # s
+  total_time: 600. # s
   time_step: 1. # s
   dimensions: 2 # -
   save_logs: True

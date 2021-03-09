@@ -1,7 +1,7 @@
 #!/bin/sh
 #
 #PBS -l nodes=4:ppn=8
-#PBS -N cm.fc.multi.run
+#PBS -N cm.sine.grid
 
 bash
 cd $PBS_O_WORKDIR
