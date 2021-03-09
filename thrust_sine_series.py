@@ -32,6 +32,7 @@ from itertools import product
 def run_sine_test(induction_amplitude=0, strouhal=0.25 ):
     conf.par.load("./config/two.03.thrust_sine.yaml")
     conf.par.simulation.save_logs = False
+    conf.par.simulation.name += ".{:03d}.{:03d}".format(int(100*induction_amplitude), int(100*strouhal))
 
     # strouhal = 0.25
     velocity = conf.par.flow.inflow_velocity[0]  # m.s^-1

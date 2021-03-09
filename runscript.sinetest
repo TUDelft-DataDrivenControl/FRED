@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-#PBS -l nodes=1:ppn=16
+#PBS -l nodes=4:ppn=8
 #PBS -N cm.fc.multi.run
 
 bash
