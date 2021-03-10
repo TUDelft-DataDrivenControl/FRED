@@ -63,9 +63,11 @@ def run_sine_test(induction_amplitude=0, strouhal=0.25 ):
     period = 1/frequency
     nperiods = dt // period
     t1 = int(t0+nperiods*period)
+    p0 = np.mean(p[t0:t1,0])
+    p1 = np.mean(p[t0:t1,1])
     mp = np.mean(np.sum(p, axis=1)[t0:t1])
     print("Mean power is: {:.3f} MW".format(mp))
-    return [induction_amplitude, strouhal, mp]
+    return [induction_amplitude, strouhal, mp, p0, p1]
 
 def run_series():
     a = np.linspace(0.,0.1,11)
@@ -91,7 +93,7 @@ def worker(procnum,pnum2):
 
 if __name__ == '__main__':
     a = np.linspace(0,0.15,16)
-    st = np.linspace(0.1,0.4,13)
+    st = [0] #np.linspace(0.1,0.4,13)
 
     pool = Pool(processes = 40)
     results = pool.starmap(run_sine_test, product(a, st))

@@ -153,7 +153,7 @@ class Turbine:
 
         if conf.par.turbine.coefficients == "induction":
             self._thrust_coefficient_prime = self._compute_ct_prime(self._axial_induction)
-            self._power_coefficient_prime = self._thrust_coefficient_prime * (1 - self._axial_induction)
+            self._power_coefficient_prime = self._thrust_coefficient_prime #* (1 - self._axial_induction)
         elif conf.par.turbine.coefficients == "lut":
             self._pitch.assign(conf.par.turbine.pitch)  # todo: load from config file
             # todo: implement first order turbine model for torque to tipspeed ratio
