@@ -60,7 +60,7 @@ def run_sine_test(induction_amplitude=0, strouhal=0.25 ):
     t0 = 180
     tot = conf.par.simulation.total_time
     dt = tot-t0
-    period = 1/frequency
+    period = 1/frequency if frequency > 1e-10 else 1
     nperiods = dt // period
     t1 = int(t0+nperiods*period)
     p0 = np.mean(p[t0:t1,0])
