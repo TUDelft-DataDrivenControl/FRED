@@ -40,7 +40,7 @@ def run_sine_test(induction_amplitude=0, strouhal=0.25 ):
     new_time_series = np.arange(0., conf.par.simulation.total_time, conf.par.simulation.time_step)
     induction_reference_series = np.zeros((len(new_time_series), 3))
     induction_reference_series[:, 0] = new_time_series
-    induction_reference_series[:, 1] = 0.33 - induction_amplitude + induction_amplitude * np.sin(
+    induction_reference_series[:, 1] = 0.33 + induction_amplitude * np.sin(
         radial_frequency * new_time_series)
     induction_reference_series[:, 2] = 0.33
     conf.par.wind_farm.controller.controls["axial_induction"]["values"] = induction_reference_series
@@ -92,12 +92,12 @@ def worker(procnum,pnum2):
 
 
 if __name__ == '__main__':
-    a = np.linspace(0,0.15,16)
-    st = [0] #np.linspace(0.1,0.4,13)
+    a = np.linspace(0, 0.15, 16)
+    st = np.linspace(0, 1.0, 21)
 
     pool = Pool(processes = 40)
     results = pool.starmap(run_sine_test, product(a, st))
     # print(pool.starmap(worker, product([0,2],[1,2,3]) ))
-    np.savetxt("sine_grid.txt",results)
+    np.savetxt("sine_grid_v2.txt",results)
 
 

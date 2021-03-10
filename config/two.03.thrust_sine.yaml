@@ -29,7 +29,7 @@ flow:
 wind_farm:
   size: [2000,1000]
   cells: [20, 10]
-  do_refine_turbines: 1
+  do_refine_turbines: 2
   refine_radius: 200.
   positions: # [x, y] m
     - [400,500]
