@@ -23,7 +23,7 @@ import os
 from multiprocessing import Process, Pool
 from itertools import product
 
-def run_sine_test(induction_amplitude=0, strouhal=0.25 ):
+def run_sine_test(induction_amplitude=0, strouhal=0.25, offset=True):
     print("Running amplitude {:03d} strouhal {:03d}".format(int(1000*induction_amplitude), int(1000*strouhal)))
     conf.par.load("./config/two.03.thrust_sine.yaml")
     conf.par.simulation.save_logs = False
@@ -40,8 +40,12 @@ def run_sine_test(induction_amplitude=0, strouhal=0.25 ):
     new_time_series = np.arange(0., conf.par.simulation.total_time, conf.par.simulation.time_step)
     induction_reference_series = np.zeros((len(new_time_series), 3))
     induction_reference_series[:, 0] = new_time_series
+
     induction_reference_series[:, 1] = 0.33 + induction_amplitude * np.sin(
-        radial_frequency * new_time_series)
+            radial_frequency * new_time_series)
+    if offset:
+        induction_reference_series[:, 1] = induction_reference_series[:, 1] - induction_amplitude
+
     induction_reference_series[:, 2] = 0.33
     conf.par.wind_farm.controller.controls["axial_induction"]["values"] = induction_reference_series
 
@@ -94,10 +98,12 @@ def worker(procnum,pnum2):
 if __name__ == '__main__':
     a = np.linspace(0, 0.15, 16)
     st = np.linspace(0, 1.0, 21)
+    o = [True]
 
     pool = Pool(processes = 40)
-    results = pool.starmap(run_sine_test, product(a, st))
+    results = pool.starmap(run_sine_test, product(a, st, o))
     # print(pool.starmap(worker, product([0,2],[1,2,3]) ))
-    np.savetxt("sine_grid_v2.txt",results)
+    np.savetxt("sine_grid_v1.txt",results)
+
 
 
