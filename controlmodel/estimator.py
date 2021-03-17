@@ -55,7 +55,6 @@ class Estimator:
         self._load_measurements_from_sowfa()
 
     def _load_measurements_from_sowfa(self):
-        # measurement_function_space = FunctionSpace(measurement_mesh, V_m)
         logger.info("Loading measurement data from SOWFA files")
         t, p, nt = read_power_sowfa(self._power_file)
         t, y, nt = read_power_sowfa(self._yaw_file)
@@ -75,25 +74,35 @@ class Estimator:
             self._stored_measurements["yaw"][:, idx] = np.interp(time_vec, t, y[:, idx])
         self._stored_measurements["yaw"] = np.deg2rad(self._stored_measurements["yaw"])
         logger.info("Loaded nacelle yaw measurements in degrees and stored in radians")
-        
+
         #
-        # probe_positions, t, probe_data = read_probe_data(data_dir + "U")
+
+        probe_positions, t, probe_data = read_probe_data(self._probe_file)
         # # probe_measurement_points = []
         #
-        # probe_data = probe_data[t % 1 <= 0.01, :, 0:2]
-        # coords = measurement_function_space.sub(0).collapse().tabulate_dof_coordinates()
-        # points = probe_positions
-        # indices = []
-        # for coord in coords:
-        #     # print(point)
-        #     idx = int(np.logical_and(points[:, 0] == coord[0], points[:, 1] == coord[1]).nonzero()[0])
-        #     indices.append(idx)
-        # # indices = dof_to_vertex_map(measurement_function_space)
-        # # indices =vertex_to_dof_map(measurement_function_space)
-        # for n in range(len(velocity_measurements) - 1):
-        #     velocity_measurements[n + 1].vector()[:] = probe_data[n + 1, indices, :].ravel()
-        #     # velocity_measurements[n].vector()[:] = probe_data[n,:,:].ravel()[indices]
-        # velocity_measurements[0].assign(velocity_measurements[1])
+        probe_data = probe_data[t % 1 <= 0.01, :, 0:2]
+        # todo: move this to flow problem?
+        cells = conf.par.wind_farm.cells
+        measurement_mesh = RectangleMesh(Point([0., 0.]), Point(conf.par.wind_farm.size),  cells[0],cells[1], diagonal='left/right')
+        V_m = VectorElement("CG", measurement_mesh.ufl_cell(), 1)
+        measurement_function_space = FunctionSpace(measurement_mesh, V_m)
+        coords = measurement_function_space.sub(0).collapse().tabulate_dof_coordinates()
+        points = probe_positions
+        indices = []
+        for coord in coords:
+            # print(point)
+            idx = int(np.logical_and(points[:, 0] == coord[0], points[:, 1] == coord[1]).nonzero()[0])
+            indices.append(idx)
+
+        velocity_measurements = []
+        for idx in range(len(self._stored_measurements["power"])):
+            velocity_measurements += [Function(measurement_function_space)]
+
+        for n in range(len(velocity_measurements) - 1):
+            velocity_measurements[n + 1].vector()[:] = probe_data[n + 1, indices, :].ravel()
+        velocity_measurements[0].assign(velocity_measurements[1])
+
+        self._stored_measurements["probes"] = velocity_measurements
 
 
     def store_checkpoint(self, simulation_time, checkpoint):
