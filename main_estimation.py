@@ -46,7 +46,7 @@ def main():
 
     est = Estimator()
     est.load_measurements()
-    # est.run_transient()
+    est.run_transient()
     # for i in steps:
     #     est.run_estimation_step()
     #     est.run_prediction()

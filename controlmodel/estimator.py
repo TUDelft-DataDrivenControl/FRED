@@ -75,8 +75,6 @@ class Estimator:
         self._stored_measurements["yaw"] = np.deg2rad(self._stored_measurements["yaw"])
         logger.info("Loaded nacelle yaw measurements in degrees and stored in radians")
 
-        #
-
         probe_positions, t, probe_data = read_probe_data(self._probe_file)
         # # probe_measurement_points = []
         #
@@ -103,6 +101,12 @@ class Estimator:
         velocity_measurements[0].assign(velocity_measurements[1])
 
         self._stored_measurements["probes"] = velocity_measurements
+
+    def run_transient(self):
+        logger.info("Running transient part of simulation over {:.0f}s".format(conf.par.estimator.transient_period))
+        with stop_annotating():
+            transient_time = conf.par.estimator.transient_period
+            self._dynamic_flow_solver.solve_segment(transient_time)
 
 
     def store_checkpoint(self, simulation_time, checkpoint):
