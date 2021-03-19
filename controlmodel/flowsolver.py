@@ -120,11 +120,15 @@ class DynamicFlowSolver(FlowSolver):
         FlowSolver.__init__(self, flow_problem, ssc)
 
         self._simulation_time = 0.0
+        self._step_number = 0
         self._time_start = 0.
 
         self._simulation_time_checkpoint = None
+        self._step_number_checkpoint = None
         self._up_prev_checkpoint = None
         self._up_prev2_checkpoint = None
+
+        self._state_update_parameters = []
 
         # self._supercontroller = ssc
 
@@ -145,7 +149,7 @@ class DynamicFlowSolver(FlowSolver):
                     .format(self._simulation_time, self._simulation_time+time_horizon))
         num_steps = int(time_horizon // conf.par.simulation.time_step)
 
-        self._functional_list = []
+        self._functional_list = [] # store power for every turbine over time-steps
         self._time_start = time.time()
         self._flow_problem.get_wind_farm().clear_controls()
 
@@ -159,8 +163,17 @@ class DynamicFlowSolver(FlowSolver):
 
     def _solve_step(self):
         self._simulation_time += conf.par.simulation.time_step
+
         self._flow_problem.update_inflow(self._simulation_time)
         self._flow_problem.get_wind_farm().apply_controller(self._simulation_time)
+
+        logger.info("Insert state update parameter")
+        if len(self._state_update_parameters) <= self._step_number:
+            self._state_update_parameters += [Function(self._flow_problem.get_full_function_space())]
+        self._up_prev2.assign(project(self._up_prev + self._state_update_parameters[self._step_number],
+                                      self._flow_problem.get_full_function_space()))
+        self._up_prev.assign(project(self._up_next + self._state_update_parameters[self._step_number],
+                                     self._flow_problem.get_full_function_space()))
 
         # A = assemble(self._left)
         # b = assemble(self._right)
@@ -169,14 +182,20 @@ class DynamicFlowSolver(FlowSolver):
         #     bc.apply(A, b)
         # solve(A, x, b,
         #       self._solver, self._preconditioner)
+
+
         logger.info("adjusted solver to a==L format")
         solve(self._left==self._right, self._up_next, self._flow_problem.get_boundary_conditions())
 
         logger.info(
             "{:.2f} seconds sim-time in {:.2f} seconds real-time".format(self._simulation_time,
                                                                          time.time() - self._time_start))
-        self._up_prev2.assign(self._up_prev)
-        self._up_prev.assign(self._up_next)
+        # self._up_prev2.assign(self._up_prev)
+        # self._up_prev.assign(self._up_next)
+
+
+
+        self._step_number += 1
 
         self._write_step_data()
 
@@ -226,6 +245,7 @@ class DynamicFlowSolver(FlowSolver):
     def save_checkpoint(self):
         logger.info("Saving checkpoint at t={:.2f}".format(self._simulation_time))
         self._simulation_time_checkpoint = self._simulation_time
+        self._step_number_checkpoint = self._step_number
         self._up_prev_checkpoint = self._up_prev.copy(deepcopy=True)
         self._up_prev2_checkpoint = self._up_prev2.copy(deepcopy=True)
         set_working_tape(Tape())
@@ -233,6 +253,7 @@ class DynamicFlowSolver(FlowSolver):
     def reset_checkpoint(self):
         logger.info("Restoring state to checkpoint at t={:.2f}".format(self._simulation_time_checkpoint))
         self._simulation_time = self._simulation_time_checkpoint
+        self._step_number = self._step_number_checkpoint
         self._up_prev.assign(self._up_prev_checkpoint)
         self._up_prev2.assign(self._up_prev2_checkpoint)
         set_working_tape(Tape())
@@ -244,11 +265,12 @@ class DynamicFlowSolver(FlowSolver):
         up_1.assign(self._up_prev)
         up_2.assign(self._up_prev2)
         # return self._simulation_time, self._up_prev.copy(deepcopy=True), self._up_prev2.copy(deepcopy=True)
-        return self._simulation_time, up_1, up_2
+        return self._simulation_time, self._step_number, up_1, up_2
 
     def set_checkpoint(self, checkpoint):
-        simulation_time, up_prev, up_prev2 = checkpoint
+        simulation_time, step_number, up_prev, up_prev2 = checkpoint
         self._simulation_time = simulation_time
+        self._step_number = step_number
         self._up_prev.assign(up_prev)
         self._up_prev2.assign(up_prev2)
         set_working_tape(Tape())

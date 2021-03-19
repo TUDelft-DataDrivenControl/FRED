@@ -177,6 +177,9 @@ class FlowProblem:
     def get_scalar_space(self):
         return self._scalar_space
 
+    def get_full_function_space(self):
+        return self._mixed_function_space
+
 class SteadyFlowProblem(FlowProblem):
 
     def __init__(self, wind_farm):
@@ -257,7 +260,10 @@ class DynamicFlowProblem(FlowProblem):
 
         vx, vy = self._inflow_velocity.values()
         initial_condition = Constant((vx, vy, 0.))
+        self._up_prev2.assign(interpolate(initial_condition, self._mixed_function_space))
         self._up_prev.assign(interpolate(initial_condition, self._mixed_function_space))
+        self._up_next.assign(interpolate(initial_condition, self._mixed_function_space))
+
 
         # specify time discretisation of Navier-Stokes solutions.
         u_tilde = 1.5 * u_prev - 0.5 * u_prev2  # (1-alpha)*u+alpha*u_prev
