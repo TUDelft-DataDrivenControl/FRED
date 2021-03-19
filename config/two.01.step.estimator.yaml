@@ -1,0 +1,85 @@
+#  turbine optimization config
+# DTU10MWRef
+
+mode: simulation
+
+simulation:
+  name: two.01.step.estimator
+  is_dynamic: True
+  total_time: 120. # s
+  time_step: 1. # s
+  dimensions: 2 # -
+  save_logs: False # save field logs True/False
+  write_time_step: 1.0
+
+flow:
+  type: "steady"
+  inflow_velocity: [8., 270.]  # [|U|, theta]
+  kinematic_viscosity: 0.000015 # kg.m^-1.s^-1
+  tuning_viscosity: 1. # kg.m^-1.s^-1
+  mixing_length: 10. #30. #20 # m
+  wake_mixing_length: 1.5 # D
+  wake_mixing_width: 0.6  # D
+  wake_mixing_offset: 3.0 # D
+  wake_mixing_ml_max: 30. # m
+  density: 1.2 # kg.m^-3
+  finite_elemnt: MINI
+  continuity_correction: wfsim_gen #wfsim # none, wfsim, (general)
+
+wind_farm:
+  size: [2000,1000]
+  cells: [20, 10]
+  do_refine_turbines: 1
+  refine_radius: 200.
+  positions: # [x, y] m
+    - [400,500]
+    - [1300,500]
+  yaw_angles: # [gamma] deg
+    - 270.
+    - 270.
+  farm_controller:
+    control_discretisation: 1.
+    controls:
+      yaw:
+        type: series
+        values:
+          - [0., 270., 270.]
+          - [299.9, 270., 270.]
+          - [300., 290., 270.]
+          - [1000., 290., 270.]
+
+turbine:
+  axial_induction: 0.33
+  diameter: 178.3 # m
+  thickness: 30. # 17.8 # m
+  hub_height: 119.0 # m
+  kernel: gaussian # king, gaussian
+  force_scale_axial: 1
+  force_scale_transverse: 3
+  power_scale: 1
+  yaw_rate_limit: 0.3
+  coefficients: induction
+
+estimator:  #todo: implement config
+  type: offline
+  data:
+    dir:  ./data/sowfa_yaw/
+    source: SOWFA
+    power: generatorPower
+    yaw: nacelleYaw
+    probe: U
+  assimilation_window: 10 #steps (int)
+  forward_step: 2 #steps (int)
+  transient_period: 10
+  prediction_period: 20
+  cost_function_weights: # float weights
+    power: 1.e1
+    velocity: 1.e-5
+    input: 1.e-6
+    regularisation: 1.e-1
+
+
+
+
+
+

@@ -12,6 +12,7 @@ from controlmodel.flowsolver import DynamicFlowSolver
 from tools.data import *
 from tools.probes import *
 
+set_log_active(False)
 import logging
 
 logger = logging.getLogger("cm.estimator")
@@ -22,6 +23,7 @@ class Estimator:
     State estimation
 
     """
+
     def __init__(self):
         self._estimator_type = conf.par.estimator.estimation_type
         if self._estimator_type != "offline":
@@ -29,7 +31,7 @@ class Estimator:
 
         self._assimilation_window = conf.par.estimator.assimilation_window
         self._transient_period = conf.par.estimator.transient_period
-        self._predicition_period = conf.par.estimator.prediction_period
+        self._prediction_period = conf.par.estimator.prediction_period
 
         self._cost_function_weights = conf.par.estimator.cost_function_weights
 
@@ -40,7 +42,7 @@ class Estimator:
 
         self._time_measured = []
         self._stored_measurements = {}
-        self._stored_state = []
+        self._stored_checkpoints = []
         self._stored_controls = {}
         self._stored_controls["time"] = np.zeros(self._assimilation_window)
         self._power_measured = []
@@ -50,7 +52,6 @@ class Estimator:
         self._yaw_file = data_dir + conf.par.estimator.data["yaw"]
         self._probe_file = data_dir + conf.par.estimator.data["probe"]
 
-
     def load_measurements(self):
         self._load_measurements_from_sowfa()
 
@@ -59,7 +60,8 @@ class Estimator:
         t, p, nt = read_power_sowfa(self._power_file)
         t, y, nt = read_power_sowfa(self._yaw_file)
         if len(self._wind_farm.get_turbines()) != nt:
-            logger.error("Data has {:d} turbines but estimator is initialised with {:d}".format(nt, len(self._wind_farm.get_turbines())))
+            logger.error("Data has {:d} turbines but estimator is initialised with {:d}".format(nt, len(
+                self._wind_farm.get_turbines())))
         logger.info("Loaded power and yaw data")
 
         logger.info("Resampling data to simulation time step")
@@ -67,7 +69,7 @@ class Estimator:
         time_vec = np.arange(0, t[-1], conf.par.simulation.time_step)
         self._stored_measurements["time"] = time_vec
         num_measurements = len(time_vec)
-        self._stored_measurements["power"] = np.zeros((num_measurements,nt))
+        self._stored_measurements["power"] = np.zeros((num_measurements, nt))
         self._stored_measurements["yaw"] = np.zeros((num_measurements, nt))
         for idx in range(nt):
             self._stored_measurements["power"][:, idx] = np.interp(time_vec, t, p[:, idx])
@@ -81,7 +83,8 @@ class Estimator:
         probe_data = probe_data[t % 1 <= 0.01, :, 0:2]
         # todo: move this to flow problem?
         cells = conf.par.wind_farm.cells
-        measurement_mesh = RectangleMesh(Point([0., 0.]), Point(conf.par.wind_farm.size),  cells[0],cells[1], diagonal='left/right')
+        measurement_mesh = RectangleMesh(Point([0., 0.]), Point(conf.par.wind_farm.size), cells[0], cells[1],
+                                         diagonal='left/right')
         V_m = VectorElement("CG", measurement_mesh.ufl_cell(), 1)
         measurement_function_space = FunctionSpace(measurement_mesh, V_m)
         coords = measurement_function_space.sub(0).collapse().tabulate_dof_coordinates()
@@ -108,10 +111,50 @@ class Estimator:
             transient_time = conf.par.estimator.transient_period
             self._dynamic_flow_solver.solve_segment(transient_time)
 
+    def run_estimation_step(self):
 
-    def store_checkpoint(self, simulation_time, checkpoint):
-        self._stored_state.append(checkpoint)
-        print("Storing state for t={:.2f}".format(simulation_time))
+        logger.warning("Estimation step not yet implemented")
+
+        # save checkpoint for starting prediction run
+        self._dynamic_flow_solver.save_checkpoint()
+
+        # start_time = self._time_measured[-1-self._assimilation_window]
+        # for control in self._stored_controls:
+        #     if control != "time":
+        #         self._wind_farm.set_control_reference_series(name=control,
+        #                                              time_series=self._stored_controls["time"],
+        #                                              reference_series=self._stored_controls[control])
+        # self._dynamic_flow_solver.set_checkpoint(self._stored_state[-1-self._assimilation_window])
+        # self._dynamic_flow_solver.solve_segment(self._time_measured[-1]-start_time)
+
+        # run forward sim
+
+        # construct functional
+
+        # optimise controls
+
+        # todo: insert control functions in flow solver
+        # self._store_checkpoint()
+
+    def run_prediction(self):
+        logger.warning("Prediction not yet implemented")
+
+        # set checkpoint
+        self._dynamic_flow_solver.reset_checkpoint()
+
+        # run over horizon
+        horizon = self._assimilation_window + self._prediction_period
+        logger.info("Running prediction over {:.2f}s".format(horizon))
+        self._dynamic_flow_solver.solve_segment(horizon)
+
+        # save output
+
+    # def _store_checkpoint(self, checkpoint):
+    #     self._stored_checkpointsself._dynamic_flow_solver.get_checkpoint())
+    #     # print("Storing state for t={:.2f}".format(simulation_time))
+    #
+    # def _set_last_checkpoint(self):
+    #     self._dynamic_flow_solver.set_checkpoint()
 
     def store_measurement(self, simulation_time, measurements):
         self._stored_measurements.append(measurements.copy())
@@ -128,12 +171,11 @@ class Estimator:
         for c in controls:
             if c not in self._stored_controls:
                 self._stored_controls[c] = np.zeros((self._assimilation_window, len(controls[c].get_reference())))
-            self._stored_controls[c][:-1, :] = self._stored_controls[c][1:,:]
-            self._stored_controls[c][-1,:] = controls[c].get_reference()
+            self._stored_controls[c][:-1, :] = self._stored_controls[c][1:, :]
+            self._stored_controls[c][-1, :] = controls[c].get_reference()
             # self._stored_controls[c].append(controls[c].get_reference())
             # print(self._stored_controls[c])
         # print(controls)
-
 
     def do_estimation(self):
         self.run_forward_simulation()
@@ -142,14 +184,14 @@ class Estimator:
 
     def run_forward_simulation(self):
         # with stored controls
-        start_time = self._time_measured[-1-self._assimilation_window]
+        start_time = self._time_measured[-1 - self._assimilation_window]
         for control in self._stored_controls:
             if control != "time":
                 self._wind_farm.set_control_reference_series(name=control,
-                                                     time_series=self._stored_controls["time"],
-                                                     reference_series=self._stored_controls[control])
-        self._dynamic_flow_solver.set_checkpoint(self._stored_state[-1-self._assimilation_window])
-        self._dynamic_flow_solver.solve_segment(self._time_measured[-1]-start_time)
+                                                             time_series=self._stored_controls["time"],
+                                                             reference_series=self._stored_controls[control])
+        self._dynamic_flow_solver.set_checkpoint(self._stored_checkpoints[-1 - self._assimilation_window])
+        self._dynamic_flow_solver.solve_segment(self._time_measured[-1] - start_time)
         # self._dynamic_flow_solver.reset_checkpoint()
         # self._dynamic_flow_solver.solve_segment(conf.par.ssc.control_horizon)
 
@@ -160,7 +202,7 @@ class Estimator:
         # get stored power
         power_stored = self._power_measured[-self._assimilation_window:]
         # get modelled power
-        power_modelled =self._dynamic_flow_solver.get_power_functional_list()
+        power_modelled = self._dynamic_flow_solver.get_power_functional_list()
         print("power stored")
         print(power_stored)
         print("power_modelled")
@@ -175,29 +217,28 @@ class Estimator:
         #         J = squared_difference
         #     else:
         #         J+=squared_difference
-        J = power_modelled[0][0]  #- power_stored[0][0]
+        J = power_modelled[0][0]  # - power_stored[0][0]
 
-        tp = [sum(x) *1e-6for x in power_modelled]
-        tps = [sum(x)*1e-6 for x in power_stored]
-        dsq = [(p-pr) * (p-pr) for p, pr in zip(tp, tps)]
+        tp = [sum(x) * 1e-6 for x in power_modelled]
+        tps = [sum(x) * 1e-6 for x in power_stored]
+        dsq = [(p - pr) * (p - pr) for p, pr in zip(tp, tps)]
         J = sum(dsq)
         # print(type(difference[0]))
         # print(type(squared_difference))
 
-
         # sum([sum(p_s - p_m) for p_s, p_m in zip(power_stored, power_modelled)])
-            # (power_stored - power_modelled).ravel()
+        # (power_stored - power_modelled).ravel()
         # J = squared_difference
         print("Cost function value: {:.2f}".format(J))
         # print(float(J))
 
-        t,up1,up2 = self._stored_state[-1-self._assimilation_window]
+        t, up1, up2 = self._stored_checkpoints[-1 - self._assimilation_window]
         print(type(up1))
         # print(up2)
         # clist = self._wind_farm.get_controls_list("yaw")
         m = [Control(c) for c in [up1]]
         # m = [Control(c[0]) for c in clist]
-        compute_gradient(J,m)
+        compute_gradient(J, m)
 
         # J  = (p-pr)*W*(p-pr)
 
@@ -209,22 +250,22 @@ class Estimator:
     #
     #
     # def get_state(self):
-        # return up, up_prev
+    # return up, up_prev
 
-        # def _do_state_estimation(self, simulation_time):
-        #     assimilation_window = 20
-        #
-        #     if simulation_time > conf.par.ssc.transient_time:
-        #         a = 1
-        #         # add measurements to history
-        #
-        #         # forward simulate to current time
-        #
-        #         # construct functional
-        #         measured_power =
-        #         modelled_power
-        #
-        #         functional =
-        #         # calculate gradients
-        #
-        #         # update state
+    # def _do_state_estimation(self, simulation_time):
+    #     assimilation_window = 20
+    #
+    #     if simulation_time > conf.par.ssc.transient_time:
+    #         a = 1
+    #         # add measurements to history
+    #
+    #         # forward simulate to current time
+    #
+    #         # construct functional
+    #         measured_power =
+    #         modelled_power
+    #
+    #         functional =
+    #         # calculate gradients
+    #
+    #         # update state
