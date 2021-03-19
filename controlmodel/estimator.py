@@ -114,29 +114,16 @@ class Estimator:
             self._dynamic_flow_solver.save_checkpoint()
 
     def run_estimation_step(self):
-
         logger.warning("Estimation step not yet implemented")
 
         # Start from checkpoint
         self._dynamic_flow_solver.reset_checkpoint()
 
-        # start_time = self._time_measured[-1-self._assimilation_window]
-        # for control in self._stored_controls:
-        #     if control != "time":
-        #         self._wind_farm.set_control_reference_series(name=control,
-        #                                              time_series=self._stored_controls["time"],
-        #                                              reference_series=self._stored_controls[control])
-        # self._dynamic_flow_solver.set_checkpoint(self._stored_state[-1-self._assimilation_window])
-        # self._dynamic_flow_solver.solve_segment(self._time_measured[-1]-start_time)
+        self._dynamic_flow_solver.solve_segment(self._assimilation_window)
+        # todo: construct objective function
+        # todo: introduce controls - state update parameters - in DFS
 
-        # run forward sim
-
-        # construct functional
-
-        # optimise controls
-
-        # todo: insert control functions in flow solver
-        # self._store_checkpoint()
+        # todo: optimise controls
 
     def run_prediction(self):
         logger.warning("Prediction not yet implemented")

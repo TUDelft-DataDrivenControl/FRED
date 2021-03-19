@@ -32,27 +32,14 @@ parameters["form_compiler"]["optimize"] = True
 
 
 def main():
-    # load measurements
     time_start = time.time()
-    # conf.par.load("./config/test_config.yaml")
-
-    # this is where parameter adjustments are possible
-    # #
-    # wind_farm = WindFarm()
-    # dfp = DynamicFlowProblem(wind_farm)
-    # dfs = DynamicFlowSolver(dfp)
-    # # # #
-    # dfs.solve()
 
     est = Estimator()
     est.load_measurements()
     est.run_transient()
-    est.run_estimation_step()
-    est.run_prediction()
-    # for i in steps:
-    #     est.run_estimation_step()
-    #     est.run_prediction()
-
+    for steps in range(3):
+        est.run_estimation_step()
+        est.run_prediction()
 
     time_end = time.time()
     logger.info("Total time: {:.2f} seconds".format(time_end - time_start))
