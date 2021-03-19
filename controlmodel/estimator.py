@@ -32,6 +32,7 @@ class Estimator:
         self._assimilation_window = conf.par.estimator.assimilation_window
         self._transient_period = conf.par.estimator.transient_period
         self._prediction_period = conf.par.estimator.prediction_period
+        self._forward_step = conf.par.estimator.forward_step
 
         self._cost_function_weights = conf.par.estimator.cost_function_weights
 
@@ -145,7 +146,10 @@ class Estimator:
         # run over horizon
         horizon = self._assimilation_window + self._prediction_period
         logger.info("Running prediction over {:.2f}s".format(horizon))
-        self._dynamic_flow_solver.solve_segment(horizon)
+        with stop_annotating():
+            self._dynamic_flow_solver.solve_segment(self._forward_step)
+            self._dynamic_flow_solver.save_checkpoint()
+            self._dynamic_flow_solver.solve_segment(horizon-self._forward_step)
 
         # save output
 
