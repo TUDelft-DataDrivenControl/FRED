@@ -111,13 +111,14 @@ class Estimator:
         with stop_annotating():
             transient_time = conf.par.estimator.transient_period
             self._dynamic_flow_solver.solve_segment(transient_time)
+            self._dynamic_flow_solver.save_checkpoint()
 
     def run_estimation_step(self):
 
         logger.warning("Estimation step not yet implemented")
 
-        # save checkpoint for starting prediction run
-        self._dynamic_flow_solver.save_checkpoint()
+        # Start from checkpoint
+        self._dynamic_flow_solver.reset_checkpoint()
 
         # start_time = self._time_measured[-1-self._assimilation_window]
         # for control in self._stored_controls:
