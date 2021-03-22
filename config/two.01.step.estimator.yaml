@@ -68,8 +68,8 @@ estimator:  #todo: implement config
     power: generatorPower
     yaw: nacelleYaw
     probe: U
-  assimilation_window: 10 #steps (int)
-  forward_step: 2 #steps (int)
+  assimilation_window: 10 # time(s)
+  forward_step: 2 # time (s)
   transient_period: 10
   prediction_period: 20
   cost_function_weights: # float weights

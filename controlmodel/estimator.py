@@ -35,6 +35,8 @@ class Estimator:
         self._forward_step = conf.par.estimator.forward_step
 
         self._cost_function_weights = conf.par.estimator.cost_function_weights
+        for key, val in self._cost_function_weights.items():
+            self._cost_function_weights[key] = float(val)
 
         self._wind_farm = WindFarm()
         self._dynamic_flow_problem = DynamicFlowProblem(self._wind_farm)
@@ -104,6 +106,8 @@ class Estimator:
             velocity_measurements[n + 1].vector()[:] = probe_data[n + 1, indices, :].ravel()
         velocity_measurements[0].assign(velocity_measurements[1])
 
+        velocity_measurements = [project(vm, self._dynamic_flow_problem.get_vector_space()) for vm in velocity_measurements]
+
         self._stored_measurements["probes"] = velocity_measurements
 
     def run_transient(self):
@@ -118,10 +122,34 @@ class Estimator:
 
         # Start from checkpoint
         self._dynamic_flow_solver.reset_checkpoint()
+        start_step = self._dynamic_flow_solver.get_simulation_step()
+        end_step = start_step + self._assimilation_window
+        # objective_function_value = AdjFloat(0.)
+        # ctrls = []
 
-        self._dynamic_flow_solver.solve_segment(self._assimilation_window)
-        # todo: construct objective function
-        #   todo: introduce controls - state update parameters - in DFS
+        model_flow_measurements = []  # todo: pre-allocate list of Functions for storing measurements
+        for idx in range(end_step - start_step):
+            model_flow_measurements += [Function(self._dynamic_flow_problem.get_vector_space())]
+        model_power_measurements = []
+        # while self._dynamic_flow_solver.get_simulation_step() < end_step:
+        for idx in range(end_step - start_step):
+            self._dynamic_flow_solver._solve_step()
+            model_power_measurements += \
+                [[wt.get_power() for wt in self._dynamic_flow_problem.get_wind_farm().get_turbines()]]
+            model_flow_measurements[idx].assign(project(self._dynamic_flow_solver.get_velocity_solution(),
+                                                        self._dynamic_flow_problem.get_vector_space()))
+            # objective_function_value += self._compute_objective_function()
+        state_update_parameters = self._dynamic_flow_solver.get_state_update_parameters(start_step, end_step)
+        # self._dynamic_flow_solver.solve_segment(self._assimilation_window)
+
+        J = self._compute_objective_function(start_step=start_step,
+                                             model_power_measurements=model_power_measurements,
+                                             model_flow_measurements=model_flow_measurements,
+                                             state_update_parameters=state_update_parameters)
+
+        # controls for adjoint calculation
+        m = [Control(c) for c in state_update_parameters]
+        # self._compute_objective_function()
 
         # todo: optimise controls
 
@@ -137,16 +165,49 @@ class Estimator:
         with stop_annotating():
             self._dynamic_flow_solver.solve_segment(self._forward_step)
             self._dynamic_flow_solver.save_checkpoint()
-            self._dynamic_flow_solver.solve_segment(horizon-self._forward_step)
+            self._dynamic_flow_solver.solve_segment(horizon - self._forward_step)
 
-        # save output
+        # todo: save output
 
-    # def _store_checkpoint(self, checkpoint):
-    #     self._stored_checkpointsself._dynamic_flow_solver.get_checkpoint())
-    #     # print("Storing state for t={:.2f}".format(simulation_time))
-    #
-    # def _set_last_checkpoint(self):
-    #     self._dynamic_flow_solver.set_checkpoint()
+    def _compute_objective_function(self, start_step, model_power_measurements,
+                                    model_flow_measurements, state_update_parameters):
+        # todo: construct objective function
+        #   todo: extract controls, power, etc. from DFS
+        #   todo: combine with weighting factors
+        #   todo: write objective function element values to file for analysis
+        #       todo: objective function for transient and prediction?
+        objective_function_value = AdjFloat(0.)
+
+        for idx in range(len(model_flow_measurements)):
+            # todo: flow measurements
+            flow_difference = self._stored_measurements["probes"][start_step + idx] - model_flow_measurements[idx]
+            cost_flow = self._cost_function_weights["velocity"] * \
+                        assemble(0.5 * inner(flow_difference, flow_difference) * dx)
+
+            # todo: power measurements
+            cost_power = AdjFloat(0.)
+            power_difference_list = [(p0-p1)*1e-6 for p0,p1
+                                in zip(self._stored_measurements["power"][start_step + idx],
+                                       model_power_measurements[idx])]
+            for power_difference in power_difference_list:
+                cost_power += self._cost_function_weights["power"] * 0.5 * power_difference ** 2
+            # power_modelled = self._dynamic_flow_solver.get_power_functional_list()
+
+            # todo: input cost
+            control = state_update_parameters[idx]
+            cost_input = self._cost_function_weights["input"] * assemble(0.5 * inner(control, control) * dx)
+            # Jinput = assemble(0.5 * a_2 * inner(ctrls[step], ctrls[step]) * dx)
+            # todo: regularisation
+            cost_regularisation = self._cost_function_weights["regularisation"] * \
+                                  assemble(0.5 * inner(grad(control), grad(control)) * dx)
+
+            objective_function_value += cost_flow + cost_power + cost_input + cost_regularisation
+
+        return objective_function_value
+
+    '''
+    Below is code from the first draft.    
+    '''
 
     def store_measurement(self, simulation_time, measurements):
         self._stored_measurements.append(measurements.copy())

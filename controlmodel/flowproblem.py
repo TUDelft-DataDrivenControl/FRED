@@ -22,7 +22,7 @@ class FlowProblem:
 
         self._mixed_function_space = None
         self._setup_function_space()
-        self._force_space = self._mixed_function_space.sub(0).collapse()
+        self._vector_space = self._mixed_function_space.sub(0).collapse()
         self._scalar_space = self._mixed_function_space.sub(1).collapse()
 
         self._boundary_conditions = []
@@ -165,8 +165,8 @@ class FlowProblem:
     def get_forcing(self):
         return self._forcing
 
-    def get_force_space(self):
-        return self._force_space
+    def get_vector_space(self):
+        return self._vector_space
 
     def get_wind_farm(self):
         return self._wind_farm

@@ -15,8 +15,9 @@ class FlowSolver:
 
         self._left, self._right = self._flow_problem.get_linear_system()
         self._up_next, self._up_prev, self._up_prev2 = self._flow_problem.get_state_vectors()
+        self._u_sol, self._p_sol = self._up_next.split()
         self._forcing = self._flow_problem.get_forcing()
-        self._force_space = self._flow_problem.get_force_space()
+        self._force_space = self._flow_problem.get_vector_space()
         self._nu_turbulent = self._flow_problem.get_nu_turbulent()
         self._scalar_space = self._flow_problem.get_scalar_space()
 
@@ -32,6 +33,7 @@ class FlowSolver:
         self._setup_output_files()
 
         self._functional_list = []
+        self._state_update_parameters = []
 
 
     def _setup_output_files(self):
@@ -72,6 +74,17 @@ class FlowSolver:
     def get_flow_problem(self):
         return self._flow_problem
 
+    def get_velocity_solution(self):
+        return self._u_sol
+
+    def get_pressure_solution(self):
+        return self._p_sol
+
+    def get_segment_state_update_parameters(self):
+        return self._segment_state_update_parameters
+
+    def get_state_update_parameters(self, idx0=0, idx1=None):
+        return self._state_update_parameters[idx0:idx1]
 
 class SteadyFlowSolver(FlowSolver):
     def __init__(self, flow_problem):
@@ -97,9 +110,9 @@ class SteadyFlowSolver(FlowSolver):
         self._functional_list.append([wt.get_power() for wt in self._flow_problem.get_wind_farm().get_turbines()])
 
         # write output
-        u_sol, p_sol = self._up_next.split()
-        self._vtk_file_u.write(u_sol)
-        self._vtk_file_p.write(p_sol)
+        self._u_sol, self._p_sol = self._up_next.split()
+        self._vtk_file_u.write(self._u_sol)
+        self._vtk_file_p.write(self._p_sol)
         self._vtk_file_f.write(
             project(self._forcing, self._force_space,
                     annotate=False))
@@ -128,8 +141,6 @@ class DynamicFlowSolver(FlowSolver):
         self._up_prev_checkpoint = None
         self._up_prev2_checkpoint = None
 
-        self._state_update_parameters = []
-
         # self._supercontroller = ssc
 
     def solve(self):
@@ -148,7 +159,7 @@ class DynamicFlowSolver(FlowSolver):
         logger.info("Starting dynamic flow solution from t={:.2f} to t={:.2f}"
                     .format(self._simulation_time, self._simulation_time+time_horizon))
         num_steps = int(time_horizon // conf.par.simulation.time_step)
-
+        segment_start_step = self._step_number
         self._functional_list = [] # store power for every turbine over time-steps
         self._time_start = time.time()
         self._flow_problem.get_wind_farm().clear_controls()
@@ -158,6 +169,8 @@ class DynamicFlowSolver(FlowSolver):
             # append individual turbine power
             self._functional_list.append([wt.get_power() for wt in self._flow_problem.get_wind_farm().get_turbines()])
 
+        self._segment_state_update_parameters = self._state_update_parameters[segment_start_step:
+                                                                              segment_start_step+num_steps]
         logger.info("Finished segment dynamic flow solution to t={:.2f}"
                     .format(self._simulation_time))
 
@@ -186,7 +199,7 @@ class DynamicFlowSolver(FlowSolver):
 
         logger.info("adjusted solver to a==L format")
         solve(self._left==self._right, self._up_next, self._flow_problem.get_boundary_conditions())
-
+        self._u_sol, self._p_sol = self._up_next.split()
         logger.info(
             "{:.2f} seconds sim-time in {:.2f} seconds real-time".format(self._simulation_time,
                                                                          time.time() - self._time_start))
@@ -274,3 +287,6 @@ class DynamicFlowSolver(FlowSolver):
         self._up_prev.assign(up_prev)
         self._up_prev2.assign(up_prev2)
         set_working_tape(Tape())
+
+    def get_simulation_step(self):
+        return self._step_number
