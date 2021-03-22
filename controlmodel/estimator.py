@@ -106,7 +106,8 @@ class Estimator:
             velocity_measurements[n + 1].vector()[:] = probe_data[n + 1, indices, :].ravel()
         velocity_measurements[0].assign(velocity_measurements[1])
 
-        velocity_measurements = [project(vm, self._dynamic_flow_problem.get_vector_space()) for vm in velocity_measurements]
+        velocity_measurements = [project(vm, self._dynamic_flow_problem.get_vector_space()) for vm in
+                                 velocity_measurements]
 
         self._stored_measurements["probes"] = velocity_measurements
 
@@ -127,6 +128,8 @@ class Estimator:
         # objective_function_value = AdjFloat(0.)
         # ctrls = []
 
+        # todo: refine forward run into seperate function
+        # todo: fix access to private functions
         model_flow_measurements = []  # todo: pre-allocate list of Functions for storing measurements
         for idx in range(end_step - start_step):
             model_flow_measurements += [Function(self._dynamic_flow_problem.get_vector_space())]
@@ -149,9 +152,10 @@ class Estimator:
 
         # controls for adjoint calculation
         m = [Control(c) for c in state_update_parameters]
-        # self._compute_objective_function()
-
+        Jhat = ReducedFunctional(J, m)
         # todo: optimise controls
+        m_opt = minimize(Jhat, "L-BFGS-B", options={"maxiter": 1, "disp": False}, tol=1e-3)
+        [c.assign(co) for c, co in zip(state_update_parameters, m_opt)]
 
     def run_prediction(self):
         logger.warning("Prediction not yet implemented")
@@ -186,9 +190,9 @@ class Estimator:
 
             # todo: power measurements
             cost_power = AdjFloat(0.)
-            power_difference_list = [(p0-p1)*1e-6 for p0,p1
-                                in zip(self._stored_measurements["power"][start_step + idx],
-                                       model_power_measurements[idx])]
+            power_difference_list = [(p0 - p1) * 1e-6 for p0, p1
+                                     in zip(self._stored_measurements["power"][start_step + idx],
+                                            model_power_measurements[idx])]
             for power_difference in power_difference_list:
                 cost_power += self._cost_function_weights["power"] * 0.5 * power_difference ** 2
             # power_modelled = self._dynamic_flow_solver.get_power_functional_list()
