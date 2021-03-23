@@ -82,8 +82,6 @@ class Estimator:
         for idx in range(nt):
             self._stored_measurements["power"][:, idx] = np.interp(time_vec, t, p[:, idx])
             self._stored_measurements["yaw"][:, idx] = np.interp(time_vec, t, y[:, idx])
-        self._stored_measurements["yaw"] = np.deg2rad(self._stored_measurements["yaw"])
-        logger.info("Loaded nacelle yaw measurements in degrees and stored in radians")
 
         probe_positions, t, probe_data = read_probe_data(self._probe_file)
         # # probe_measurement_points = []
