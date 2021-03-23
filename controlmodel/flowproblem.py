@@ -26,6 +26,7 @@ class FlowProblem:
         self._scalar_space = self._mixed_function_space.sub(1).collapse()
 
         self._boundary_conditions = []
+        self._boundary_field = Function(self._vector_space)
 
         self._u_mag = conf.par.flow.inflow_velocity[0]
         self._theta = Constant(np.deg2rad(conf.par.flow.inflow_velocity[1]))
@@ -97,6 +98,7 @@ class FlowProblem:
 
     def _setup_boundary_conditions(self):
         bound_margin = 1.
+        self._boundary_field.assign(project(self._inflow_velocity, self._vector_space))
 
         def wall_boundary_north(x, on_boundary):
             return x[1] >= conf.par.wind_farm.size[1] - bound_margin and on_boundary
@@ -114,7 +116,7 @@ class FlowProblem:
                       wall_boundary_east,
                       wall_boundary_south,
                       wall_boundary_west]
-        bcs = [DirichletBC(self._mixed_function_space.sub(0), self._inflow_velocity, b) for b in boundaries]
+        bcs = [DirichletBC(self._mixed_function_space.sub(0), self._boundary_field, b) for b in boundaries]
 
         self._boundary_conditions = bcs
 

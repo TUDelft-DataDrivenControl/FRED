@@ -50,8 +50,9 @@ class Estimator:
         self._model_measurements["flow"] = []
         for idx in range(self._assimilation_window):
             self._model_measurements["flow"]  += [Function(self._dynamic_flow_problem.get_vector_space())]
-        self._model_measurements["power"] = [[wt.get_power() for wt in self._dynamic_flow_problem.get_wind_farm().get_turbines()]
-                                             for m in self._model_measurements["flow"]]
+        self._model_measurements["power"] = [[wt.get_power()
+                                              for wt in self._dynamic_flow_problem.get_wind_farm().get_turbines()]
+                                              for m in self._model_measurements["flow"]]
         self._state_update_parameters = []
 
         data_dir = conf.par.estimator.data["dir"]
