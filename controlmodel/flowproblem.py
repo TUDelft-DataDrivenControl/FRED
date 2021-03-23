@@ -375,4 +375,8 @@ class DynamicFlowProblem(FlowProblem):
             self._u_mag = np.interp(simulation_time, t, u_mag_series)
             self._theta.assign(np.deg2rad(np.interp(simulation_time, t, theta_series)))
             self._update_inflow_velocity()
+            self._boundary_field.assign(project(self._inflow_velocity, self._vector_space()))
             logger.info("Inflow spec is: [{:.2f}, {:.2f}]".format(float(self._u_mag), float(self._theta)))
+
+    def get_boundary_field(self):
+        return self._boundary_field
