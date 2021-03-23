@@ -16,6 +16,7 @@ class FlowSolver:
         self._left, self._right = self._flow_problem.get_linear_system()
         self._up_next, self._up_prev, self._up_prev2 = self._flow_problem.get_state_vectors()
         self._u_sol, self._p_sol = self._up_next.split()
+        self._boundary_field = self._flow_problem.get_boundary_field()
         self._forcing = self._flow_problem.get_forcing()
         self._force_space = self._flow_problem.get_vector_space()
         self._nu_turbulent = self._flow_problem.get_nu_turbulent()
@@ -140,6 +141,7 @@ class DynamicFlowSolver(FlowSolver):
         self._step_number_checkpoint = None
         self._up_prev_checkpoint = None
         self._up_prev2_checkpoint = None
+        self._boundary_field_checkpoint = None
 
         # self._supercontroller = ssc
 
@@ -183,10 +185,16 @@ class DynamicFlowSolver(FlowSolver):
         logger.info("Insert state update parameter")
         if len(self._state_update_parameters) <= self._step_number:
             self._state_update_parameters += [Function(self._flow_problem.get_full_function_space())]
-        self._up_prev2.assign(project(self._up_prev + self._state_update_parameters[self._step_number],
+        state_update = self._state_update_parameters[self._step_number]
+        self._up_prev2.assign(project(self._up_prev + state_update,
                                       self._flow_problem.get_full_function_space()))
-        self._up_prev.assign(project(self._up_next + self._state_update_parameters[self._step_number],
+        self._up_prev.assign(project(self._up_next + state_update,
                                      self._flow_problem.get_full_function_space()))
+        # self._state_update_parameters[self._step_number].sub(0)
+        # todo: explain why this does not work and .split() does
+        velocity_update, pressure_update   = state_update.split()
+        self._boundary_field.assign(project(self._boundary_field + velocity_update,
+                                            self._flow_problem.get_vector_space()))
 
         # A = assemble(self._left)
         # b = assemble(self._right)
@@ -261,6 +269,7 @@ class DynamicFlowSolver(FlowSolver):
         self._step_number_checkpoint = self._step_number
         self._up_prev_checkpoint = self._up_prev.copy(deepcopy=True)
         self._up_prev2_checkpoint = self._up_prev2.copy(deepcopy=True)
+        self._boundary_field_checkpoint = self._boundary_field.copy(deepcopy=True)
         set_working_tape(Tape())
 
     def reset_checkpoint(self):
@@ -269,23 +278,27 @@ class DynamicFlowSolver(FlowSolver):
         self._step_number = self._step_number_checkpoint
         self._up_prev.assign(self._up_prev_checkpoint)
         self._up_prev2.assign(self._up_prev2_checkpoint)
+        self._boundary_field.assign(self._boundary_field_checkpoint)
         set_working_tape(Tape())
 
     def get_checkpoint(self):
         logger.info("Returning checkpoint at t={:.2f}".format(self._simulation_time))
         up_1 = Function(self._up_prev.function_space())
         up_2  = Function(self._up_prev.function_space())
+        gu = Function(self._flow_problem.get_vector_space())
         up_1.assign(self._up_prev)
         up_2.assign(self._up_prev2)
+        gu.assign(self._boundary_field)
         # return self._simulation_time, self._up_prev.copy(deepcopy=True), self._up_prev2.copy(deepcopy=True)
-        return self._simulation_time, self._step_number, up_1, up_2
+        return self._simulation_time, self._step_number, up_1, up_2, gu
 
     def set_checkpoint(self, checkpoint):
-        simulation_time, step_number, up_prev, up_prev2 = checkpoint
+        simulation_time, step_number, up_prev, up_prev2, gu = checkpoint
         self._simulation_time = simulation_time
         self._step_number = step_number
         self._up_prev.assign(up_prev)
         self._up_prev2.assign(up_prev2)
+        self._boundary_field.assign(gu)
         set_working_tape(Tape())
 
     def get_simulation_step(self):
