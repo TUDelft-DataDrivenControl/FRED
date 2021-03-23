@@ -141,7 +141,7 @@ class Estimator:
         for idx in range(end_step - start_step):
             self._dynamic_flow_solver._solve_step()
             self._model_measurements["power"][idx] = \
-                [[wt.get_power() for wt in self._dynamic_flow_problem.get_wind_farm().get_turbines()]]
+                [wt.get_power() for wt in self._dynamic_flow_problem.get_wind_farm().get_turbines()]
             self._model_measurements["flow"][idx].assign(project(self._dynamic_flow_solver.get_velocity_solution(),
                                                         self._dynamic_flow_problem.get_vector_space()))
         self._state_update_parameters = self._dynamic_flow_solver.get_state_update_parameters(start_step, end_step)
