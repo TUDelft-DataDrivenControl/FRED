@@ -45,10 +45,14 @@ class Estimator:
 
         self._time_measured = []
         self._stored_measurements = {}
-        self._stored_checkpoints = []
-        self._stored_controls = {}
-        self._stored_controls["time"] = np.zeros(self._assimilation_window)
-        self._power_measured = []
+        self._model_measurements = {}
+        # todo: generalise in config file
+        self._model_measurements["flow"] = []
+        for idx in range(self._assimilation_window):
+            self._model_measurements["flow"]  += [Function(self._dynamic_flow_problem.get_vector_space())]
+        self._model_measurements["power"] = [[wt.get_power() for wt in self._dynamic_flow_problem.get_wind_farm().get_turbines()]
+                                             for m in self._model_measurements["flow"]]
+        self._state_update_parameters = []
 
         data_dir = conf.par.estimator.data["dir"]
         self._power_file = data_dir + conf.par.estimator.data["power"]
@@ -116,7 +120,6 @@ class Estimator:
                                                          time_series=self._stored_measurements["time"],
                                                          reference_series=self._stored_measurements[control])
 
-    # todo: use saved control signal
     def run_transient(self):
         logger.info("Running transient part of simulation over {:.0f}s".format(conf.par.estimator.transient_period))
         with stop_annotating():
@@ -129,34 +132,28 @@ class Estimator:
 
         self._dynamic_flow_solver.reset_checkpoint()
         start_step = self._dynamic_flow_solver.get_simulation_step()
+        logger.warning("Note that assimilation window is used in steps, not seconds")
         end_step = start_step + self._assimilation_window
 
         # todo: refine forward run into separate function
         # todo: fix access to private functions
-        model_flow_measurements = []  # todo: pre-allocate list of Functions for storing measurements
-        for idx in range(end_step - start_step):
-            model_flow_measurements += [Function(self._dynamic_flow_problem.get_vector_space())]
-        model_power_measurements = []
 
         for idx in range(end_step - start_step):
             self._dynamic_flow_solver._solve_step()
-            model_power_measurements += \
+            self._model_measurements["power"][idx] = \
                 [[wt.get_power() for wt in self._dynamic_flow_problem.get_wind_farm().get_turbines()]]
-            model_flow_measurements[idx].assign(project(self._dynamic_flow_solver.get_velocity_solution(),
+            self._model_measurements["flow"][idx].assign(project(self._dynamic_flow_solver.get_velocity_solution(),
                                                         self._dynamic_flow_problem.get_vector_space()))
-        state_update_parameters = self._dynamic_flow_solver.get_state_update_parameters(start_step, end_step)
+        self._state_update_parameters = self._dynamic_flow_solver.get_state_update_parameters(start_step, end_step)
 
 
-        J = self._compute_objective_function(start_step=start_step,
-                                             model_power_measurements=model_power_measurements,
-                                             model_flow_measurements=model_flow_measurements,
-                                             state_update_parameters=state_update_parameters)
+        J = self._compute_objective_function(start_step=start_step)
 
-        m = [Control(c) for c in state_update_parameters]
+        m = [Control(c) for c in self._state_update_parameters]
         Jhat = ReducedFunctional(J, m)
 
         m_opt = minimize(Jhat, "L-BFGS-B", options={"maxiter": 1, "disp": False}, tol=1e-3)
-        [c.assign(co) for c, co in zip(state_update_parameters, m_opt)]
+        [c.assign(co) for c, co in zip(self._state_update_parameters, m_opt)]
 
     def run_prediction(self):
         logger.warning("Prediction not yet implemented")
@@ -172,22 +169,21 @@ class Estimator:
             self._dynamic_flow_solver.save_checkpoint()
             self._dynamic_flow_solver.solve_segment(horizon - self._forward_step)
 
-    def _compute_objective_function(self, start_step, model_power_measurements,
-                                    model_flow_measurements, state_update_parameters):
+    def _compute_objective_function(self, start_step):
         objective_function_value = AdjFloat(0.)
-        for idx in range(len(model_flow_measurements)):
-            flow_difference = self._stored_measurements["probes"][start_step + idx] - model_flow_measurements[idx]
+        for idx in range(self._assimilation_window):
+            flow_difference = self._stored_measurements["probes"][start_step + idx] - self._model_measurements["flow"][idx]
             cost_flow = self._cost_function_weights["velocity"] * \
                         assemble(0.5 * inner(flow_difference, flow_difference) * dx)
 
             cost_power = AdjFloat(0.)
             power_difference_list = [(p0 - p1) * 1e-6 for p0, p1
                                      in zip(self._stored_measurements["power"][start_step + idx],
-                                            model_power_measurements[idx])]
+                                            self._model_measurements["power"][idx])]
             for power_difference in power_difference_list:
                 cost_power += self._cost_function_weights["power"] * 0.5 * power_difference ** 2
 
-            control = state_update_parameters[idx]
+            control = self._state_update_parameters[idx]
             cost_input = self._cost_function_weights["input"] * assemble(0.5 * inner(control, control) * dx)
 
             cost_regularisation = self._cost_function_weights["regularisation"] * \
