@@ -111,6 +111,12 @@ class Estimator:
 
         self._stored_measurements["probes"] = velocity_measurements
 
+        for control in ["yaw"]:
+            self._wind_farm.set_control_reference_series(name=control,
+                                                         time_series=self._stored_measurements["time"],
+                                                         reference_series=self._stored_measurements[control])
+
+    # todo: use saved control signal
     def run_transient(self):
         logger.info("Running transient part of simulation over {:.0f}s".format(conf.par.estimator.transient_period))
         with stop_annotating():
@@ -119,41 +125,36 @@ class Estimator:
             self._dynamic_flow_solver.save_checkpoint()
 
     def run_estimation_step(self):
-        logger.warning("Estimation step not yet implemented")
+        logger.info("Running estimation step")
 
-        # Start from checkpoint
         self._dynamic_flow_solver.reset_checkpoint()
         start_step = self._dynamic_flow_solver.get_simulation_step()
         end_step = start_step + self._assimilation_window
-        # objective_function_value = AdjFloat(0.)
-        # ctrls = []
 
-        # todo: refine forward run into seperate function
+        # todo: refine forward run into separate function
         # todo: fix access to private functions
         model_flow_measurements = []  # todo: pre-allocate list of Functions for storing measurements
         for idx in range(end_step - start_step):
             model_flow_measurements += [Function(self._dynamic_flow_problem.get_vector_space())]
         model_power_measurements = []
-        # while self._dynamic_flow_solver.get_simulation_step() < end_step:
+
         for idx in range(end_step - start_step):
             self._dynamic_flow_solver._solve_step()
             model_power_measurements += \
                 [[wt.get_power() for wt in self._dynamic_flow_problem.get_wind_farm().get_turbines()]]
             model_flow_measurements[idx].assign(project(self._dynamic_flow_solver.get_velocity_solution(),
                                                         self._dynamic_flow_problem.get_vector_space()))
-            # objective_function_value += self._compute_objective_function()
         state_update_parameters = self._dynamic_flow_solver.get_state_update_parameters(start_step, end_step)
-        # self._dynamic_flow_solver.solve_segment(self._assimilation_window)
+
 
         J = self._compute_objective_function(start_step=start_step,
                                              model_power_measurements=model_power_measurements,
                                              model_flow_measurements=model_flow_measurements,
                                              state_update_parameters=state_update_parameters)
 
-        # controls for adjoint calculation
         m = [Control(c) for c in state_update_parameters]
         Jhat = ReducedFunctional(J, m)
-        # todo: optimise controls
+
         m_opt = minimize(Jhat, "L-BFGS-B", options={"maxiter": 1, "disp": False}, tol=1e-3)
         [c.assign(co) for c, co in zip(state_update_parameters, m_opt)]
 
@@ -171,158 +172,27 @@ class Estimator:
             self._dynamic_flow_solver.save_checkpoint()
             self._dynamic_flow_solver.solve_segment(horizon - self._forward_step)
 
-        # todo: save output
-
     def _compute_objective_function(self, start_step, model_power_measurements,
                                     model_flow_measurements, state_update_parameters):
-        # todo: construct objective function
-        #   todo: extract controls, power, etc. from DFS
-        #   todo: combine with weighting factors
-        #   todo: write objective function element values to file for analysis
-        #       todo: objective function for transient and prediction?
         objective_function_value = AdjFloat(0.)
-
         for idx in range(len(model_flow_measurements)):
-            # todo: flow measurements
             flow_difference = self._stored_measurements["probes"][start_step + idx] - model_flow_measurements[idx]
             cost_flow = self._cost_function_weights["velocity"] * \
                         assemble(0.5 * inner(flow_difference, flow_difference) * dx)
 
-            # todo: power measurements
             cost_power = AdjFloat(0.)
             power_difference_list = [(p0 - p1) * 1e-6 for p0, p1
                                      in zip(self._stored_measurements["power"][start_step + idx],
                                             model_power_measurements[idx])]
             for power_difference in power_difference_list:
                 cost_power += self._cost_function_weights["power"] * 0.5 * power_difference ** 2
-            # power_modelled = self._dynamic_flow_solver.get_power_functional_list()
 
-            # todo: input cost
             control = state_update_parameters[idx]
             cost_input = self._cost_function_weights["input"] * assemble(0.5 * inner(control, control) * dx)
-            # Jinput = assemble(0.5 * a_2 * inner(ctrls[step], ctrls[step]) * dx)
-            # todo: regularisation
+
             cost_regularisation = self._cost_function_weights["regularisation"] * \
                                   assemble(0.5 * inner(grad(control), grad(control)) * dx)
 
             objective_function_value += cost_flow + cost_power + cost_input + cost_regularisation
 
         return objective_function_value
-
-    '''
-    Below is code from the first draft.    
-    '''
-
-    def store_measurement(self, simulation_time, measurements):
-        self._stored_measurements.append(measurements.copy())
-        self._time_measured.append(simulation_time)
-        # storing measured power as numpy array does not work
-        self._power_measured.append(list(measurements["generatorPower"]))
-
-    def store_controls(self, simulation_time, controls):
-        # for c in controls.values():
-        #     print(c.get_reference())
-
-        self._stored_controls["time"][:-1] = self._stored_controls["time"][1:]
-        self._stored_controls["time"][-1] = simulation_time
-        for c in controls:
-            if c not in self._stored_controls:
-                self._stored_controls[c] = np.zeros((self._assimilation_window, len(controls[c].get_reference())))
-            self._stored_controls[c][:-1, :] = self._stored_controls[c][1:, :]
-            self._stored_controls[c][-1, :] = controls[c].get_reference()
-            # self._stored_controls[c].append(controls[c].get_reference())
-            # print(self._stored_controls[c])
-        # print(controls)
-
-    def do_estimation(self):
-        self.run_forward_simulation()
-        self.construct_functional()
-        # self.compute_gradient()
-
-    def run_forward_simulation(self):
-        # with stored controls
-        start_time = self._time_measured[-1 - self._assimilation_window]
-        for control in self._stored_controls:
-            if control != "time":
-                self._wind_farm.set_control_reference_series(name=control,
-                                                             time_series=self._stored_controls["time"],
-                                                             reference_series=self._stored_controls[control])
-        self._dynamic_flow_solver.set_checkpoint(self._stored_checkpoints[-1 - self._assimilation_window])
-        self._dynamic_flow_solver.solve_segment(self._time_measured[-1] - start_time)
-        # self._dynamic_flow_solver.reset_checkpoint()
-        # self._dynamic_flow_solver.solve_segment(conf.par.ssc.control_horizon)
-
-    def construct_functional(self):
-        # todo: make private
-        # todo: proper cost function
-        # todo: weights from config
-        # get stored power
-        power_stored = self._power_measured[-self._assimilation_window:]
-        # get modelled power
-        power_modelled = self._dynamic_flow_solver.get_power_functional_list()
-        print("power stored")
-        print(power_stored)
-        print("power_modelled")
-        print(power_modelled)
-        # print(" I need to calculate J without numpy...
-        # difference = [(p_s-p_m)*(p_s-p_m) for p_s, p_m in zip(power_stored,power_modelled)]
-        J = None
-        # for idx in range(2): #todo: len(turbines)
-        #     difference = [(p_m[idx]-p_s[idx])*(p_m[idx]-p_s[idx])*1e-6*1e-6 for p_s, p_m in zip(power_stored,power_modelled)]
-        #     squared_difference = sum(difference)
-        #     if J is None:
-        #         J = squared_difference
-        #     else:
-        #         J+=squared_difference
-        J = power_modelled[0][0]  # - power_stored[0][0]
-
-        tp = [sum(x) * 1e-6 for x in power_modelled]
-        tps = [sum(x) * 1e-6 for x in power_stored]
-        dsq = [(p - pr) * (p - pr) for p, pr in zip(tp, tps)]
-        J = sum(dsq)
-        # print(type(difference[0]))
-        # print(type(squared_difference))
-
-        # sum([sum(p_s - p_m) for p_s, p_m in zip(power_stored, power_modelled)])
-        # (power_stored - power_modelled).ravel()
-        # J = squared_difference
-        print("Cost function value: {:.2f}".format(J))
-        # print(float(J))
-
-        t, up1, up2 = self._stored_checkpoints[-1 - self._assimilation_window]
-        print(type(up1))
-        # print(up2)
-        # clist = self._wind_farm.get_controls_list("yaw")
-        m = [Control(c) for c in [up1]]
-        # m = [Control(c[0]) for c in clist]
-        compute_gradient(J, m)
-
-        # J  = (p-pr)*W*(p-pr)
-
-    # def assign_adjoint_controls(self):
-    #
-    # def compute_gradient(self, functional, adjoint_controls):
-    #
-    # def update_state_with_gradient(self):
-    #
-    #
-    # def get_state(self):
-    # return up, up_prev
-
-    # def _do_state_estimation(self, simulation_time):
-    #     assimilation_window = 20
-    #
-    #     if simulation_time > conf.par.ssc.transient_time:
-    #         a = 1
-    #         # add measurements to history
-    #
-    #         # forward simulate to current time
-    #
-    #         # construct functional
-    #         measured_power =
-    #         modelled_power
-    #
-    #         functional =
-    #         # calculate gradients
-    #
-    #         # update state
