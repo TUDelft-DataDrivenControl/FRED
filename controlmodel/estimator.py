@@ -60,7 +60,14 @@ class Estimator:
         self._yaw_file = data_dir + conf.par.estimator.data["yaw"]
         self._probe_file = data_dir + conf.par.estimator.data["probe"]
 
-    def load_measurements(self):
+    def run(self):
+        self._load_measurements()
+        self._run_transient()
+        for steps in range(3): # todo: properly specify range from config
+            self._run_forward_model()
+            self._optimise_state_update_parameters()
+
+    def _load_measurements(self):
         self._load_measurements_from_sowfa()
 
     def _load_measurements_from_sowfa(self):
@@ -119,10 +126,10 @@ class Estimator:
                                                          time_series=self._stored_measurements["time"],
                                                          reference_series=self._stored_measurements[control])
 
-    def run_transient(self):
+    def _run_transient(self):
         logger.info("Running transient part of simulation over {:.0f}s".format(conf.par.estimator.transient_period))
         with stop_annotating():
-            transient_time = conf.par.estimator.transient_period
+            transient_time = conf.par.estimator.transient_period - self._forward_step
             self._dynamic_flow_solver.solve_segment(transient_time)
             self._dynamic_flow_solver.save_checkpoint()
 
@@ -154,7 +161,7 @@ class Estimator:
         m_opt = minimize(Jhat, "L-BFGS-B", options={"maxiter": 1, "disp": False}, tol=1e-3)
         [c.assign(co) for c, co in zip(self._state_update_parameters, m_opt)]
 
-    def run_forward_model(self):
+    def _run_forward_model(self):
         # set checkpoint
         self._dynamic_flow_solver.reset_checkpoint()
         with stop_annotating():
