@@ -29,6 +29,7 @@ class FlowSolver:
         self._vtk_file_p = None
         self._vtk_file_f = None
         self._data_file = None
+        self._probes = conf.par.simulation.probes
 
         self._supercontroller = ssc
         self._setup_output_files()
@@ -67,6 +68,8 @@ class FlowSolver:
                 log.write(",kernel_{0:03n}".format(idx))
             if self._supercontroller is not None:
                 log.write(",power_ref")
+            for idx in range(len(self._probes)):
+                log.write(",probe_{0:03n}".format(idx))
             log.write("\r\n")
 
     def get_power_functional_list(self):
@@ -249,6 +252,8 @@ class DynamicFlowSolver(FlowSolver):
                 log.write(",{:.6f}".format(kernel))
             if self._supercontroller is not None:
                 log.write(",{:.6f}".format(self._supercontroller.get_power_reference(self._simulation_time)))
+            for idx in range(len(self._probes)):
+                log.write(",{:.6f}".format(self.get_probe_measurement(idx)))
             log.write("\r\n")
 
         if (self._simulation_time % conf.par.simulation.write_time_step <= DOLFIN_EPS_LARGE)\
@@ -306,3 +311,8 @@ class DynamicFlowSolver(FlowSolver):
 
     def get_simulation_time(self):
         return self._simulation_time
+
+    def get_probe_measurement(self,idx):
+        velocity = self._u_sol(self._probes[idx])
+        velocity_magnitude = np.sqrt(velocity[0]*velocity[0] + velocity[1]*velocity[1])
+        return velocity_magnitude

@@ -11,6 +11,10 @@ simulation:
   dimensions: 2 # -
   save_logs: False # save field logs True/False
   write_time_step: 1.0
+  probes:
+    - [300, 500]
+    - [1200, 500]
+
 
 flow:
   type: "steady"

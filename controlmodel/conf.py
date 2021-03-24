@@ -115,6 +115,7 @@ class ControlModelParameters:
             self.name = config_dict["name"]
             self.save_logs = config_dict["save_logs"]
             self.dimensions = config_dict["dimensions"]
+            self.probes = config_dict.get("probes",[])
 
     class Flow:
         def __init__(self, config_dict):
