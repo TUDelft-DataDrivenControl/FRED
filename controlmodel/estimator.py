@@ -126,7 +126,7 @@ class Estimator:
             self._dynamic_flow_solver.solve_segment(transient_time)
             self._dynamic_flow_solver.save_checkpoint()
 
-    def run_estimation_step(self):
+    def _run_estimation_step(self):
         logger.info("Running estimation step")
 
         self._dynamic_flow_solver.reset_checkpoint()
@@ -136,7 +136,7 @@ class Estimator:
 
         # todo: refine forward run into separate function
         # todo: fix access to private functions
-
+        self._model_measurements["start_step"] = start_step
         for idx in range(end_step - start_step):
             self._dynamic_flow_solver._solve_step()
             self._model_measurements["power"][idx] = \
@@ -145,8 +145,8 @@ class Estimator:
                                                         self._dynamic_flow_problem.get_vector_space()))
         self._state_update_parameters = self._dynamic_flow_solver.get_state_update_parameters(start_step, end_step)
 
-
-        J = self._compute_objective_function(start_step=start_step)
+    def _optimise_state_update_parameters(self):
+        J = self._compute_objective_function()
 
         m = [Control(c) for c in self._state_update_parameters]
         Jhat = ReducedFunctional(J, m)
@@ -154,21 +154,20 @@ class Estimator:
         m_opt = minimize(Jhat, "L-BFGS-B", options={"maxiter": 1, "disp": False}, tol=1e-3)
         [c.assign(co) for c, co in zip(self._state_update_parameters, m_opt)]
 
-    def run_prediction(self):
-        logger.warning("Prediction not yet implemented")
-
+    def run_forward_model(self):
         # set checkpoint
         self._dynamic_flow_solver.reset_checkpoint()
-
-        # run over horizon
-        horizon = self._assimilation_window + self._prediction_period
-        logger.info("Running prediction over {:.2f}s".format(horizon))
         with stop_annotating():
+            self._dynamic_flow_solver.reset_checkpoint()
             self._dynamic_flow_solver.solve_segment(self._forward_step)
             self._dynamic_flow_solver.save_checkpoint()
-            self._dynamic_flow_solver.solve_segment(horizon - self._forward_step)
+            # self._dynamic_flow_solver.solve_segment(horizon - self._forward_step)
+        self._run_estimation_step()
+        with stop_annotating():
+            self._dynamic_flow_solver.solve_segment(self._prediction_period)
 
-    def _compute_objective_function(self, start_step):
+    def _compute_objective_function(self):
+        start_step = self._model_measurements["start_step"]
         objective_function_value = AdjFloat(0.)
         for idx in range(self._assimilation_window):
             flow_difference = self._stored_measurements["probes"][start_step + idx] - self._model_measurements["flow"][idx]

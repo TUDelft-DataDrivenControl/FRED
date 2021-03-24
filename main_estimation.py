@@ -38,8 +38,9 @@ def main():
     est.load_measurements()
     est.run_transient()
     for steps in range(3):
-        est.run_estimation_step()
-        est.run_prediction()
+        # est.run_estimation_step()
+        est.run_forward_model()
+        est._optimise_state_update_parameters()
 
     time_end = time.time()
     logger.info("Total time: {:.2f} seconds".format(time_end - time_start))
