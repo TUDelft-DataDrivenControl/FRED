@@ -303,3 +303,6 @@ class DynamicFlowSolver(FlowSolver):
 
     def get_simulation_step(self):
         return self._step_number
+
+    def get_simulation_time(self):
+        return self._simulation_time

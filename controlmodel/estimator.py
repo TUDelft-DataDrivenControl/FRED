@@ -63,7 +63,8 @@ class Estimator:
     def run(self):
         self._load_measurements()
         self._run_transient()
-        for steps in range(3): # todo: properly specify range from config
+        num_steps = int((conf.par.simulation.total_time - conf.par.estimator.transient_period) // self._forward_step)
+        for step in range(num_steps):
             self._run_forward_model()
             self._optimise_state_update_parameters()
 

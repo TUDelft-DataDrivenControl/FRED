@@ -6,7 +6,7 @@ mode: simulation
 simulation:
   name: two.01.step.estimator
   is_dynamic: True
-  total_time: 120. # s
+  total_time: 50. # s
   time_step: 1. # s
   dimensions: 2 # -
   save_logs: False # save field logs True/False
@@ -70,7 +70,7 @@ estimator:  #todo: implement config
     probe: U
   assimilation_window: 10 # time(s)
   forward_step: 2 # time (s)
-  transient_period: 10
+  transient_period: 40
   prediction_period: 20
   cost_function_weights: # float weights
     power: 1.e1
