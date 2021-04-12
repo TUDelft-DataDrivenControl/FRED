@@ -1,5 +1,5 @@
 from fenics import *
-import controlmodel.conf as conf
+import fred.conf as conf
 
 if conf.with_adjoint:
     from fenics_adjoint import *

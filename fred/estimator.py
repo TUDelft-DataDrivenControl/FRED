@@ -1,13 +1,13 @@
 from fenics import *
-import controlmodel.conf as conf
+import fred.conf as conf
 
 if conf.with_adjoint:
     from fenics_adjoint import *
 import numpy as np
 import os
-from controlmodel.windfarm import WindFarm
-from controlmodel.flowproblem import DynamicFlowProblem
-from controlmodel.flowsolver import DynamicFlowSolver
+from fred.windfarm import WindFarm
+from fred.flowproblem import DynamicFlowProblem
+from fred.flowsolver import DynamicFlowSolver
 
 from tools.data import *
 from tools.probes import *

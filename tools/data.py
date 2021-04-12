@@ -5,7 +5,7 @@ import floris.tools as wfct
 import scipy.signal as sig
 import pandas as pd
 
-import controlmodel.conf as conf
+import fred.conf as conf
 
 def read_vtk_unstructured(filename_one):
     reader = vtk.vtkXMLUnstructuredGridReader()

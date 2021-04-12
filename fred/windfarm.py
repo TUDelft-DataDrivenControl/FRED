@@ -1,9 +1,9 @@
 from fenics import *
-import controlmodel.conf as conf
+import fred.conf as conf
 if conf.with_adjoint:
     from fenics_adjoint import *
-from controlmodel.turbine import Turbine
-from controlmodel.controller import Controller
+from fred.turbine import Turbine
+from fred.controller import Controller
 import logging
 logger = logging.getLogger("cm.windfarm")
 
