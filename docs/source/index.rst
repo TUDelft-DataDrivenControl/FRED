@@ -1,5 +1,6 @@
-Control Oriented Modelling for Wind Farm Control
-================================================
+FRED
+====
+FRED is a Framework for wind Farm Flow Regulation and Estimation with Dynamics.
 
 .. toctree::
    :maxdepth: 2

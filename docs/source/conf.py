@@ -17,8 +17,8 @@ sys.path.insert(0, os.path.abspath('../../'))
 
 # -- Project information -----------------------------------------------------
 
-project = 'Control Model'
-copyright = '2020, Maarten J. van den Broek'
+project = 'FRED'
+copyright = '2021, Maarten J. van den Broek'
 author = 'Maarten J. van den Broek'
 
 # The full version, including alpha/beta/rc tags

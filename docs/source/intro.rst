@@ -34,4 +34,5 @@ Three-dimensional flow modelling has been tested to be functional, but the code 
 link to `FEniCS <https://fenicsproject.org/>`_  and `dolfin-adjoint <http://www.dolfin-adjoint.org/>`_ project pages
 ZeroMQ
 
-If you use this project, please cite ... TORQUE2020 paper
+If you use this project, please cite the work presented in `TORQUE2020 <https://doi.org/10.1088/1742-6596/1618/2/022023>`_
+'Dynamic Flow Modelling for Model-Predictive Wind Farm Control'.
