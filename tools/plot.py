@@ -6,11 +6,12 @@ from mpl_toolkits.axes_grid1 import AxesGrid
 from scipy.interpolate import griddata
 from mpl_toolkits.mplot3d import Axes3D
 
-def set_tex_fonts():
+def set_tex_fonts(size=10):
     plt.rcParams['text.usetex'] = True
     mpl.rcParams['font.family'] = 'serif'
     mpl.rcParams['font.serif'] = 'cm'
     mpl.rcParams['mathtext.fontset'] = 'cm'
+    mpl.rcParams['font.size'] = size
 
 
 def get_slice(x, u, xloc=None, yloc=None, domain=None):
@@ -110,7 +111,10 @@ def get_colours(n):
 
 
 labels = {
-    "umag": "$||\\mathbf{u}||$ (m s$^{-1}$)",
+    "umag": "$|\\mathbf{u}|$ (m s$^{-1}$)",
+    "umagm": "$|\\mathbf{u}_\mathrm{t}|$ (m s$^{-1}$)",
+    "umagt": "$|\\mathbf{u}_\mathrm{m}|$ (m s$^{-1}$)",
+    "udiff": "$|\\mathbf{u}_\mathrm{m}-\\mathbf{u}_\mathrm{t}|$ (m s$^{-1}$)",
     "u": "$u$ (m s$^{-1}$)",
     "v": "$v$ (m s$^{-1}$)",
     "y": "$y$ (m)",
@@ -127,7 +131,8 @@ labels = {
     "tsr": r"$\lambda$ (-)",
     "ct": r"$c_\mathrm{T}$ (-)",
     "cp": r"$c_\mathrm{P}$ (-)",
-    "w": r"$\omega$ (rpm)"
+    "w": r"$\omega$ (rpm)",
+    "strouhal": r"$St$ (-)"
     # u"\N{DEGREE SIGN}"
 }
 
@@ -146,3 +151,5 @@ if __name__ == '__main__':
     fig.savefig("figure.pdf", type='pdf')
     fig.savefig("figure.png", type='png',dpi=300)
     plt.show()
+
+

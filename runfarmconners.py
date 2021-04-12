@@ -121,7 +121,8 @@ def plot_flow_slice(frame):
     current_ax.set_ylabel(labels['y'])
     cb = plt.colorbar(contours, ax=current_ax)
     cb.set_label(labels["umag"])
-    ax.set_title(conf.par.simulation.name)
+    dt = conf.par.simulation.write_time_step / conf.par.simulation.time_step
+    ax.set_title(conf.par.simulation.name + " {:03.0f}".format((frame+1)*dt))
     return fig, ax
 
 def plot_three_turbine_cases():
