@@ -1,4 +1,7 @@
-# Wind Farm Modelling for Control
+# FRED
+Framework for wind Farm Flow Regulation and Estimation with Dynamics
+
+This project is under active development.
 
 Finite Element Modelling using:
 * FEniCS 2019.1.0
