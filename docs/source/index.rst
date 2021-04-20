@@ -7,7 +7,9 @@ FRED is a Framework for wind Farm Flow Regulation and Estimation with Dynamics.
    :caption: Contents:
 
    intro
+   installation
    examples
+   theory
    api
 
 
