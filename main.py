@@ -7,7 +7,6 @@ from fred.flowproblem import DynamicFlowProblem, SteadyFlowProblem
 from fred.flowsolver import DynamicFlowSolver, SteadyFlowSolver
 from fred.ssc import SuperController
 from multiprocessing import Process
-import fred.analysis as analysis
 
 import numpy as np
 import time
