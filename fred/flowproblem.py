@@ -335,7 +335,7 @@ class DynamicFlowProblem(FlowProblem):
         if conf.par.flow.continuity_correction == "wfsim":
             logger.info("Applying WFSim continuity correction, valid for West-East flow")
             # attempt to modify relaxation according to Boersma2018 WFSim
-            divu = 1 * u[1].dx(1)
+            divu = div(u) + 1 * u[1].dx(1)
         elif conf.par.flow.continuity_correction == "wfsim_gen":
             logger.info("Applying Generalised WFSim continuity correction.")
             theta = self._theta
