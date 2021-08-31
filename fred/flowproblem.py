@@ -15,7 +15,12 @@ class FlowProblem:
     def __init__(self, wind_farm):
         self._wind_farm = wind_farm
         self._mesh = None
-        self._generate_mesh()
+        self._dim = conf.par.simulation.dimensions
+        if self._dim == 2:
+            self._generate_mesh()
+        elif self._dim == 3:
+            self._generate_mesh_3d()
+
         for step in range(conf.par.wind_farm.do_refine_turbines):
             # largest area first
             self._refine_mesh(conf.par.wind_farm.do_refine_turbines-step)
@@ -31,7 +36,10 @@ class FlowProblem:
         self._u_mag = conf.par.flow.inflow_velocity[0]
         self._theta = Constant(np.deg2rad(conf.par.flow.inflow_velocity[1]))
         # theta = self._theta * pi / 180.
-        self._inflow_velocity = Constant((-self._u_mag * sin(self._theta), -self._u_mag * cos(self._theta)))
+        if self._dim ==2:
+            self._inflow_velocity = Constant((-self._u_mag * sin(self._theta), -self._u_mag * cos(self._theta)))
+        elif self._dim ==3:
+            self._inflow_velocity = Constant((-self._u_mag * sin(self._theta), -self._u_mag * cos(self._theta), 0.))
         # self._inflow_velocity = Constant((8.,0.))
         # self._u_mag = conf.par.flow.inflow_velocity[0]
         # self._theta = conf.par.flow.inflow_velocity[1]
@@ -62,7 +70,15 @@ class FlowProblem:
         self._mesh = RectangleMesh(southwest_corner, northeast_corner, cells[0], cells[1], diagonal='left/right')
         #  diagonal = “left”, “right”, “left/right”, “crossed”
 
+    def _generate_mesh_3d(self):
+        southwestlower_corner = Point([0.0, 0.0,0.0])
+        northeastupper_corner = Point(conf.par.wind_farm.size)
+        cells = conf.par.wind_farm.cells
+        self._mesh = BoxMesh(southwestlower_corner,northeastupper_corner,cells[0],cells[1],cells[2])
+
+
     def _refine_mesh(self, step):
+        # todo: adjust refinement for 3d
         #
         cell_markers = MeshFunction("bool", self._mesh, 2)
         cell_markers.set_all(False)
@@ -71,6 +87,10 @@ class FlowProblem:
             # check if cell midpoint within refinement radius around turbine
             in_rx = abs(cell.midpoint().x() - pos[0]) <= radius
             in_ry = abs(cell.midpoint().y() - pos[1]) <= radius
+            if self._dim == 3:
+                in_rz = abs(cell.midpoint().z() - conf.par.turbine.hub_height) <= radius
+            else:
+                in_rz = True
             return in_rx and in_ry
 
         for position in conf.par.wind_farm.positions:
@@ -112,12 +132,21 @@ class FlowProblem:
         def wall_boundary_west(x, on_boundary):
             return x[0] <= 0. + bound_margin and on_boundary
 
+        def bottom_boundary(x, on_boundary):
+            return x[2] <= 0. + bound_margin and on_boundary
+
+        def top_boundary(x, on_boundary):
+            return x[2] >= conf.par.wind_farm.size[2] - bound_margin and on_boundary
+
         boundaries = [wall_boundary_north,
                       wall_boundary_east,
                       wall_boundary_south,
                       wall_boundary_west]
-        bcs = [DirichletBC(self._mixed_function_space.sub(0), self._boundary_field, b) for b in boundaries]
+        if self._dim ==3:
+            boundaries.append(bottom_boundary)
+            boundaries.append(top_boundary)
 
+        bcs = [DirichletBC(self._mixed_function_space.sub(0), self._boundary_field, b) for b in boundaries]
         self._boundary_conditions = bcs
 
     def get_boundary_conditions(self):
@@ -149,6 +178,8 @@ class FlowProblem:
         # neither west and east boundaries are active within a conf.epsilon margin around 0.
         # neither north and south boundaries are active within a conf.epsilon margin around 0.
 
+        if self._dim == 3:
+            indices+=[4,5]
         return [self._boundary_conditions[x] for x in indices]
 
     def _split_variational_form(self):
@@ -196,7 +227,12 @@ class SteadyFlowProblem(FlowProblem):
 
         # Need initial condition for steady state because solver won't converge starting from 0_
         vx, vy = self._inflow_velocity.values()
-        initial_condition = Constant((vx, vy, 0.))  # velocity and pressure
+        # todo: refine implementation of dimension switch
+        if self._dim == 2:
+            initial_condition = Constant((vx, vy, 0.))  # velocity and pressure
+        elif self._dim ==3:
+            initial_condition = Constant((vx, vy, 0., 0.))  # velocity and pressure
+
         self._up_next.assign(interpolate(initial_condition, self._mixed_function_space))
 
         (u, p) = split(self._up_next)
@@ -260,8 +296,14 @@ class DynamicFlowProblem(FlowProblem):
         u_prev, p_prev = split(self._up_prev)
         u_prev2, p_prev2 = split(self._up_prev2)
 
-        vx, vy = self._inflow_velocity.values()
-        initial_condition = Constant((vx, vy, 0.))
+
+        # todo: refine implementation
+        if self._dim == 2:
+            vx, vy = self._inflow_velocity.values()
+            initial_condition = Constant((vx, vy, 0.))
+        elif self._dim == 3:
+            vx, vy, vz = self._inflow_velocity.values()
+            initial_condition = Constant((vx, vy, vz, 0.))
         self._up_prev2.assign(interpolate(initial_condition, self._mixed_function_space))
         self._up_prev.assign(interpolate(initial_condition, self._mixed_function_space))
         self._up_next.assign(interpolate(initial_condition, self._mixed_function_space))
@@ -284,8 +326,12 @@ class DynamicFlowProblem(FlowProblem):
         # logger.info("Scaling force for wake deflection by factor {:.1f}".format(scale))
         # logger.info("Scaling  turbine force - axial : {:.2f} - transverse : {:.2f}".format(axial_scale, transverse_scale))
         theta = self._theta
-        e0 = as_vector((sin(theta), cos(theta)))
-        e1 = as_vector((-cos(theta), sin(theta)))
+        if self._dim ==2:
+            e0 = as_vector((sin(theta), cos(theta)))
+            e1 = as_vector((-cos(theta), sin(theta)))
+        elif self._dim ==3:
+            e0 = as_vector((sin(theta), cos(theta), 0.))
+            e1 = as_vector((-cos(theta), sin(theta), 0.))
         f = axial_scale * dot(f, e0) * e0 + transverse_scale * dot(f, e1) * e1
 
         self._forcing = f

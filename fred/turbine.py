@@ -223,7 +223,9 @@ class Turbine:
         if conf.par.simulation.dimensions == 2:
             return self._compute_turbine_forcing_two_dim(u)
         elif conf.par.simulation.dimensions == 3:
-            raise NotImplementedError("Three-dimensional turbine forcing not yet defined")
+            # raise NotImplementedError("Three-dimensional turbine forcing not yet defined")
+            logger.warning("Three-dimensional turbine forcing is not extensively tested")
+            return self._compute_turbine_forcing_three_dim(u)
             # return self._compute_force_three_dim(u)
         else:
             raise ValueError("Invalid dimension.")
@@ -289,6 +291,80 @@ class Turbine:
         # The above computation yields a two-dimensional body force.
         # This is scaled to a 3D equivalent for output.
         fscale = pi * 0.5 * self._radius
+        # todo: compute accurate 3D scaling factor
+        self._force = forcing * fscale
+        self._power = power * fscale
+        # self._power = - self._force*ud #dot(self._force, u)
+        self._kernel = kernel * fscale
+        self._velocity = u * kernel * fscale
+
+        return forcing
+
+    def _compute_turbine_forcing_three_dim(self, u):
+        """Computes two-dimensional turbine forcing based on Actuator-Disk Model.
+
+        Depending on the specification in the configuration file, the force is distributed using a kernel similar to
+        the work by R. King (2017), or using a conventional Gaussian kernel.
+
+        Args:
+            u (Function): three-dimensional vectory velocity field
+
+        Returns:
+            Function: two-dimensional vector force field.
+
+        """
+
+        force_constant = 0.5 * conf.par.flow.density * self._area * self._thrust_coefficient_prime
+        power_constant = 0.5 * conf.par.flow.density * self._area * self._power_coefficient_prime
+        ud = u[0] * - sin(self._yaw) + u[1] * - cos(self._yaw)
+
+        x = SpatialCoordinate(u)
+        # turbine position
+        xt = self._position[0]
+        yt = self._position[1]
+        zt = self._hub_height
+        # shift spatial coordinate
+        xs = x[0] - xt
+        ys = x[1] - yt
+        zs = x[2] - zt
+        # rotate spatial coordinate
+        xr = -sin(self._yaw) * xs - cos(self._yaw) * ys
+        yr = cos(self._yaw) * xs - sin(self._yaw) * ys
+        zr = zs
+        # formulate forcing kernel
+        # 1.85544, 2.91452 are magic numbers that make kernel integrate to 1.
+        r = self._radius
+        w = self._thickness
+        gamma = 6
+        if conf.par.turbine.kernel == "king":
+            logger.info("Turbine forcing kernel as in work by R. King (2017)")
+            kernel = exp(-1 * pow(xr / w, gamma)) / (1.85544 * w) * \
+                     exp(-1 * pow(pow(yr / r, 2) + pow(zr / r, 2), gamma)) / (2.91452 * pow(r, 2))
+        elif conf.par.turbine.kernel == "gaussian":
+            logger.info("Turbine forcing with gaussian distribution")
+            r = self._radius * 0.6
+            w = self._thickness
+            # zr = 0
+            kernel = (exp(-1.0 * pow(xr / w, 6)) / (w * 1.85544)) * \
+                     (exp(-0.5 * pow(yr / r, 2)) / (r * sqrt(2 * pi))) * \
+                     (exp(-0.5 * pow(zr / r, 2)) / (r * sqrt(2 * pi)))
+
+        # compute forcing function with kernel
+        # scale = conf.par.turbine.deflection_scale
+        # axial_scale = conf.par.turbine.force_scale_axial
+        # transverse_scale = conf.par.turbine.force_scale_transverse
+        # # logger.info("Scaling force for wake deflection by factor {:.1f}".format(scale))
+        # logger.info("Scaling  turbine force - axial : {:.2f} - transverse : {:.2f}".format(axial_scale, transverse_scale))
+        # forcing = -1 * force_constant * kernel * as_vector((-axial_scale*sin(self._yaw), -transverse_scale * cos(self._yaw))) * ud ** 2
+        forcing = force_constant * kernel * as_vector((sin(self._yaw), cos(self._yaw),0.)) * ud ** 2
+        # todo: check this
+        power_scale = conf.par.turbine.power_scale
+        power = power_scale * power_constant * kernel * ud ** 3
+
+        # The above computation yields a two-dimensional body force.
+        # This is scaled to a 3D equivalent for output.
+        # set to 1 for dim=3
+        fscale = 1  # pi * 0.5 * self._radius
         # todo: compute accurate 3D scaling factor
         self._force = forcing * fscale
         self._power = power * fscale

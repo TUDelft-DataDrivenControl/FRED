@@ -23,7 +23,7 @@ logging.basicConfig(level=logging.INFO,
                     filemode='w')
 logger = logging.getLogger('')
 
-parameters["form_compiler"]["quadrature_degree"] = 8
+parameters["form_compiler"]["quadrature_degree"] = 4
 parameters["form_compiler"]["optimize"] = True
 # parameters["reorder_dofs_serial"] = False
 
@@ -84,7 +84,8 @@ def main_with_ssc():
 
 if __name__ == '__main__':
 
-    conf.par.load("./config/farmconners/fc.A1.yaml")
+    # conf.par.load("./config/farmconners/fc.A1.yaml")
+    conf.par.load("./config/3d.1wt.yaml")
     main()
     # main_steady()
     # main_with_ssc()

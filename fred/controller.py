@@ -109,6 +109,8 @@ class Control:
         self._reference_series = None
 
         if control_type == "series":
+            if value.dtype.kind not in np.typecodes["AllFloat"]:
+                raise TypeError("Controller value series for {:s} is not of type float".format(name))
             self._time_series = value[:, 0]
             self._reference_series = value[:, 1:]
             if name == "yaw":
