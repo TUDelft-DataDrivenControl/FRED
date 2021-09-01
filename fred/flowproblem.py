@@ -119,6 +119,11 @@ class FlowProblem:
     def _setup_boundary_conditions(self):
         bound_margin = 1.
         self._boundary_field.assign(project(self._inflow_velocity, self._vector_space))
+        if self._dim == 3:
+            #todo: check ABL power law theory
+            x = SpatialCoordinate(self._mesh)
+            a = 0.143
+            self._boundary_field.assign(project(self._boundary_field * pow(x[2] / conf.par.turbine.hub_height, a), self._vector_space))
 
         def wall_boundary_north(x, on_boundary):
             return x[1] >= conf.par.wind_farm.size[1] - bound_margin and on_boundary
@@ -142,11 +147,15 @@ class FlowProblem:
                       wall_boundary_east,
                       wall_boundary_south,
                       wall_boundary_west]
-        if self._dim ==3:
-            boundaries.append(bottom_boundary)
-            boundaries.append(top_boundary)
+
 
         bcs = [DirichletBC(self._mixed_function_space.sub(0), self._boundary_field, b) for b in boundaries]
+        if self._dim ==3:
+            # bcs.append(bottom_boundary)
+            # bcs.append(DirichletBC(self._mixed_function_space.sub(0), Constant((0.,0.,0.)), bottom_boundary))
+            bcs.append(DirichletBC(self._mixed_function_space.sub(0), self._boundary_field, bottom_boundary))
+            bcs.append(DirichletBC(self._mixed_function_space.sub(0), self._boundary_field, top_boundary))
+
         self._boundary_conditions = bcs
 
     def get_boundary_conditions(self):
@@ -302,8 +311,15 @@ class DynamicFlowProblem(FlowProblem):
             vx, vy = self._inflow_velocity.values()
             initial_condition = Constant((vx, vy, 0.))
         elif self._dim == 3:
-            vx, vy, vz = self._inflow_velocity.values()
-            initial_condition = Constant((vx, vy, vz, 0.))
+            # vx, vy, vz = self._inflow_velocity.values()
+            # initial_condition = Constant((vx, vy, vz, 0.))
+            initial_condition = Function(self._mixed_function_space)
+            assign(initial_condition.sub(0),self._boundary_field)
+
+        # ic = File("ic.pvd")
+        # ic.write(initial_condition.sub(0))
+        # ic.write(self._boundary_field)
+
         self._up_prev2.assign(interpolate(initial_condition, self._mixed_function_space))
         self._up_prev.assign(interpolate(initial_condition, self._mixed_function_space))
         self._up_next.assign(interpolate(initial_condition, self._mixed_function_space))

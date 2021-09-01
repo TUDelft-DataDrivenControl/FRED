@@ -210,6 +210,7 @@ class DynamicFlowSolver(FlowSolver):
 
         logger.info("adjusted solver to a==L format")
         solve(self._left==self._right, self._up_next, self._flow_problem.get_boundary_conditions())
+              # solver_parameters={'linear_solver': 'gmres'})
         self._u_sol, self._p_sol = self._up_next.split()
         logger.info(
             "{:.2f} seconds sim-time in {:.2f} seconds real-time".format(self._simulation_time,
