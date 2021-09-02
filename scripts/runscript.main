@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-#PBS -l nodes=1:ppn=16
+#PBS -l nodes=1:ppn=20
 #PBS -N fred.main.3d
 
 bash
@@ -31,5 +31,5 @@ export LD_LIBRARY_PATH=$HOME/opt/lib:$HOME/opt/lib64:$LD_LIBRARY_PATH
 alias cmake=cmake3
 
 # python ./main.py
-mpirun -np 16 python ./main.py
+mpirun -np 20 python ./main.py
 

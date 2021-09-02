@@ -1,9 +1,9 @@
 mode: simulation
 
 simulation:
-  name: 3d.1wt.hpc
+  name: 3d.1wt.hpc.v2
   is_dynamic: True
-  total_time: 200. # s
+  total_time: 600. # s
   time_step: 1. # s
   # set dimensions to three
   dimensions: 3 # -
@@ -12,14 +12,14 @@ simulation:
 
 flow:
   type: "steady"
-  inflow_velocity: [7.7, 270.]  # [|U|, theta]
+  inflow_velocity: [9.0, 270.]  # [|U|, theta]
   kinematic_viscosity: 0.000015 # kg.m^-1.s^-1
   tuning_viscosity: 1. # kg.m^-1.s^-1
-  mixing_length: 10. #30. #20 # m
+  mixing_length: 3. #30. #20 # m
   wake_mixing_length: 1.5 # D
   wake_mixing_width: 0.6  # D
   wake_mixing_offset: 3.0 # D
-  wake_mixing_ml_max: 25 # m
+  wake_mixing_ml_max: 0 # m
   density: 1.2 # kg.m^-3
   # set c.c. to 'none'
   continuity_correction: none #wfsim_gen # none, wfsim, (general)
