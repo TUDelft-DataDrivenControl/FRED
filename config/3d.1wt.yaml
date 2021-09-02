@@ -12,14 +12,14 @@ simulation:
 
 flow:
   type: "steady"
-  inflow_velocity: [7.7, 270.]  # [|U|, theta]
+  inflow_velocity: [9.0, 270.]  # [|U|, theta]
   kinematic_viscosity: 0.000015 # kg.m^-1.s^-1
   tuning_viscosity: 1. # kg.m^-1.s^-1
   mixing_length: 10. #30. #20 # m
   wake_mixing_length: 1.5 # D
   wake_mixing_width: 0.6  # D
   wake_mixing_offset: 3.0 # D
-  wake_mixing_ml_max: 25 # m
+  wake_mixing_ml_max: 0 #25 # m
   density: 1.2 # kg.m^-3
   # set c.c. to 'none'
   continuity_correction: none #wfsim_gen # none, wfsim, (general)
@@ -28,7 +28,7 @@ flow:
 wind_farm:
   # adjust size and cells to dim=3
   size: [1000,500,500]
-  cells: [20, 10, 10]
+  cells: [10, 5, 5]
   do_refine_turbines: 1 # n refinements
   refine_radius: 200. # m
   positions: # [x, y] m

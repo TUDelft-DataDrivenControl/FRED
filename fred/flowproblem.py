@@ -80,7 +80,7 @@ class FlowProblem:
     def _refine_mesh(self, step):
         # todo: adjust refinement for 3d
         #
-        cell_markers = MeshFunction("bool", self._mesh, 2)
+        cell_markers = MeshFunction("bool", self._mesh, self._dim)
         cell_markers.set_all(False)
 
         def _is_near_turbine(cell, pos, radius):
@@ -91,7 +91,7 @@ class FlowProblem:
                 in_rz = abs(cell.midpoint().z() - conf.par.turbine.hub_height) <= radius
             else:
                 in_rz = True
-            return in_rx and in_ry
+            return in_rx and in_ry and in_rz
 
         for position in conf.par.wind_farm.positions:
             for cell in cells(self._mesh):
