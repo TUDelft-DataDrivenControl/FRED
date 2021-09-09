@@ -75,6 +75,10 @@ class FlowProblem:
         northeastupper_corner = Point(conf.par.wind_farm.size)
         cells = conf.par.wind_farm.cells
         self._mesh = BoxMesh(southwestlower_corner,northeastupper_corner,cells[0],cells[1],cells[2])
+        x = self._mesh.coordinates()
+        z = x[:,2]
+        zmax = conf.par.wind_farm.size[2]
+        x[:,2] = zmax * pow(z/zmax,1.43)
 
 
     def _refine_mesh(self, step):
