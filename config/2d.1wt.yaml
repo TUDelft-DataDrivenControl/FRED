@@ -1,14 +1,14 @@
 mode: simulation
 
 simulation:
-  name: 3d.1wt
+  name: 2d.1wt.yaw.s3
   is_dynamic: True
-  total_time: 600. # s
+  total_time: 1000. # s
   time_step: 0.5 # s
   # set dimensions to three
-  dimensions: 3 # -
+  dimensions: 2 # -
   save_logs: True
-  write_time_step: 10.0
+  write_time_step: 1.0
 
 flow:
   type: "steady"
@@ -22,24 +22,33 @@ flow:
   wake_mixing_ml_max: 0 #25 # m
   density: 1.2 # kg.m^-3
   # set c.c. to 'none'
-  continuity_correction: none #wfsim_gen # none, wfsim, (general)
+  continuity_correction: wfsim_gen #wfsim_gen # none, wfsim, (general)
   finite_element: MINI # TH, MINI
 
 wind_farm:
   # adjust size and cells to dim=3
-  size: [1000,500,500]
-  cells: [10, 5, 5]
+  size: [2000,1000,500]
+  cells: [80, 40, 20]
   do_refine_turbines: 0 # n refinements
   refine_radius: 200. # m
   positions: # [x, y] m
-    - [300, 250]
+    - [500, 500]
   yaw_angles: # [gamma] deg
     - 290.
   farm_controller:
     control_discretisation: 1.
     controls:
       yaw:
-        type: fixed
+        type: series
+        values:
+          - [0., 270.]
+          - [199.9, 270.]
+          - [200.0, 300.]
+          - [499.9, 300.]
+          - [500.0, 285.]
+          - [699.9, 285.]
+          - [700.0, 270.]
+          - [899.90, 270.]
 
 turbine:
   axial_induction: 0.33
@@ -48,7 +57,7 @@ turbine:
   hub_height: 119.0 # m
   kernel: king # king, gaussian
   force_scale_axial: 1
-  force_scale_transverse: 1
+  force_scale_transverse: 3
   power_scale: 1
   yaw_rate_limit: 0.3
   coefficients: induction

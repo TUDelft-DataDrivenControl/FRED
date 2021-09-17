@@ -1,14 +1,14 @@
 mode: simulation
 
 simulation:
-  name: 3d.1wt
+  name: 3d.3wt.dyn
   is_dynamic: True
-  total_time: 600. # s
+  total_time: 1200. # s
   time_step: 0.5 # s
   # set dimensions to three
   dimensions: 3 # -
   save_logs: True
-  write_time_step: 10.0
+  write_time_step: 1.0
 
 flow:
   type: "steady"
@@ -19,7 +19,7 @@ flow:
   wake_mixing_length: 1.5 # D
   wake_mixing_width: 0.6  # D
   wake_mixing_offset: 3.0 # D
-  wake_mixing_ml_max: 0 #25 # m
+  wake_mixing_ml_max: 0 # m
   density: 1.2 # kg.m^-3
   # set c.c. to 'none'
   continuity_correction: none #wfsim_gen # none, wfsim, (general)
@@ -27,19 +27,31 @@ flow:
 
 wind_farm:
   # adjust size and cells to dim=3
-  size: [1000,500,500]
-  cells: [10, 5, 5]
+  size: [3000,1000,500]
+  cells: [60, 40, 20]
   do_refine_turbines: 0 # n refinements
   refine_radius: 200. # m
   positions: # [x, y] m
-    - [300, 250]
+    - [900, 500]
+    - [1500, 500]
+    - [2400, 500]
   yaw_angles: # [gamma] deg
     - 290.
+    - 270.
+    - 270.
   farm_controller:
     control_discretisation: 1.
     controls:
       yaw:
-        type: fixed
+        type: series
+        values:
+          - [  0., 270., 270., 270.]
+          - [200., 270., 270., 270.]
+          - [233., 280., 270., 270.]
+          - [800., 280., 270., 270.]
+          - [833., 290., 270., 270.]
+          - [1200, 290., 270., 270.]
+
 
 turbine:
   axial_induction: 0.33
